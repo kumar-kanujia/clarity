@@ -1,67 +1,62 @@
-import os
-
 import streamlit as st
 
-# Import our new modules
 from modules import processor, scanner, ui
 
 st.set_page_config(layout="wide", page_title="Clarity", page_icon="✨")
-st.title("✨ Clarity: Visual Image Manager")
+st.title("✨ Clarity: Visual Manager")
 
-# 1. Setup UI & Get Inputs
-folder_path, threshold, run_btn = ui.render_sidebar()
+# --- 1. Sidebar & Inputs ---
+folder_path, threshold, auto_select, scan_btn = ui.render_sidebar()
 
-# 2. Session State Management
-if run_btn:
-    if folder_path and os.path.exists(folder_path):
-        st.session_state["scanning"] = True
-        st.session_state["folder"] = folder_path
-        # Clear old hashes if scanning a new folder
-        if "hashes" in st.session_state:
-            del st.session_state["hashes"]
+# --- 2. State Management ---
+if scan_btn and folder_path:
+    st.session_state["scanning"] = True
+    # Clear cache if new scan requested
+    if "hashes" in st.session_state:
+        del st.session_state["hashes"]
+
+# --- 3. Main Logic ---
+if st.session_state.get("scanning") and folder_path:
+    # A. Discovery
+    files = scanner.get_image_files(folder_path)
+
+    if not files:
+        st.warning("No images found in this folder.")
     else:
-        st.error("Please enter a valid folder path.")
+        # B. Hashing (Cached)
+        if "hashes" not in st.session_state:
+            with st.spinner(f"Analyzing {len(files)} images..."):
+                st.session_state["hashes"] = processor.compute_hashes(files)
 
-# 3. Main Application Logic
-if st.session_state.get("scanning"):
-    folder = st.session_state["folder"]
+        # C. Grouping (Reactive!)
+        # This runs every time the slider moves because it's not cached in session state
+        groups = processor.group_images(st.session_state["hashes"], threshold)
 
-    # Step A: Find Files
-    files = scanner.get_image_files(folder)
-    st.write(f"📂 Found {len(files)} images.")
+        st.info(f"Found {len(groups)} groups of similar images.")
 
-    # Step B: Process (Hash)
-    # Note: Streamlit caches this automatically inside the processor module
-    if "hashes" not in st.session_state:
-        st.session_state["hashes"] = processor.compute_hashes(files)
+        # D. Rendering
+        with st.form("bulk_delete_form"):
+            all_marked_files = []
 
-    # Step C: Group
-    groups = processor.group_images(st.session_state["hashes"], threshold)
-
-    if not groups:
-        st.info("No similar images found.")
-    else:
-        st.success(f"Found {len(groups)} groups.")
-
-        # Step D: Render Results
-        with st.form("deletion_form"):
-            all_files_to_delete = []
-
-            # Loop through groups and render them
             for i, group in enumerate(groups):
-                # UI module handles the drawing
-                to_delete = ui.render_group(i + 1, group)
-                all_files_to_delete.extend(to_delete)
+                # Identify the "Best" to star it
+                best_img = processor.identify_best_image(group)
 
-            # Step E: Handle Deletion
-            if st.form_submit_button("Trash Selected"):
-                count, errors = scanner.safe_delete(all_files_to_delete)
+                # Render the group UI
+                marked = ui.render_group(i + 1, group, best_img, auto_select)
+                all_marked_files.extend(marked)
 
-                if count > 0:
-                    st.success(f"Moved {count} images to Trash.")
-                    # Clear cache to force refresh
+            # E. Bulk Action
+            # This floating button acts as the bulk delete for ALL selected images
+            st.write("")
+            st.markdown(f"### 🗑️ Selected {len(all_marked_files)} images for deletion")
+
+            if st.form_submit_button("Trash All Selected", type="primary"):
+                if all_marked_files:
+                    count, errors = scanner.safe_delete(all_marked_files)
+                    st.success(f"Moved {count} images to Trash!")
+                    # Clear hash cache to force a re-scan next time
                     del st.session_state["hashes"]
                     st.rerun()
-
-                if errors:
-                    st.error(f"Errors: {errors}")
+                else:
+                    st.warning("No images selected.")

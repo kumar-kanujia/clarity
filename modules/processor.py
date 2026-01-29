@@ -1,3 +1,5 @@
+import os
+
 import imagehash
 import streamlit as st
 from PIL import Image
@@ -5,35 +7,27 @@ from PIL import Image
 
 @st.cache_data(show_spinner=False)
 def compute_hashes(image_paths):
-    """Compute perceptual hash for all images with progress tracking."""
+    """Compute hashes (Heavy lifting - Cached)."""
     hashes = {}
-
-    # Create a placeholder for the progress bar in the UI
     progress_bar = st.progress(0)
-    status_text = st.empty()
-
     total = len(image_paths)
+
     for i, path in enumerate(image_paths):
         try:
             with Image.open(path) as img:
                 hashes[path] = imagehash.phash(img)
-        except Exception:
-            continue  # Skip bad images
+        except Exception as e:
+            print(f"Exception Occured! {e}")
 
-        # Update UI every 10 images to save resources
-        if i % 10 == 0:
-            progress = (i + 1) / total
-            progress_bar.progress(progress)
-            status_text.text(f"Processing {i + 1}/{total}")
+        if i % 5 == 0:
+            progress_bar.progress((i + 1) / total)
 
     progress_bar.empty()
-    status_text.empty()
     return hashes
 
 
-@st.cache_data
 def group_images(hashes, threshold):
-    """Group images based on hash difference."""
+    """Group images (Fast - Runs when slider moves)."""
     groups = []
     visited = set()
     paths = list(hashes.keys())
@@ -45,15 +39,14 @@ def group_images(hashes, threshold):
 
         current_group = [path_a]
         visited.add(path_a)
-        hash_a = hashes[path_a]
 
         for j in range(i + 1, len(paths)):
             path_b = paths[j]
             if path_b in visited:
                 continue
 
-            # The Magic: Compare Hash Difference
-            if hash_a - hashes[path_b] <= threshold:
+            # Compare hashes
+            if hashes[path_a] - hashes[path_b] <= threshold:
                 current_group.append(path_b)
                 visited.add(path_b)
 
@@ -61,3 +54,9 @@ def group_images(hashes, threshold):
             groups.append(current_group)
 
     return groups
+
+
+def identify_best_image(group_files):
+    """Identifies the largest file in the group as the 'best'."""
+    # Return the path of the file with the largest size
+    return max(group_files, key=lambda x: os.path.getsize(x))
