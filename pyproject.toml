@@ -8,6 +8,7 @@ dependencies = [
     "imagehash>=4.3.2",
     "numpy>=2.4.1",
     "pillow>=12.1.0",
+    "pyinstaller>=6.18.0",
     "pyqt6>=6.10.2",
     "send2trash>=2.1.0",
 ]

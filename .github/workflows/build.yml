@@ -1,0 +1,52 @@
+name: Build App (POC)
+
+on:
+  # Trigger on push to main branch
+  push:
+    branches: ['poc']
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build App
+    runs-on: macos-latest
+
+    steps:
+      # 1. Check out your code
+      - uses: actions/checkout@v4
+
+      # 2. Install 'uv' (The fast package manager)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true # Speeds up builds by caching dependencies
+
+      # 3. Install Python 3.12
+      - name: Set up Python
+        run: uv python install 3.12
+
+      # 4. Install dependencies (PyQt6, etc.)
+      - name: Install dependencies
+        run: uv sync
+
+      # 5. Run PyInstaller
+      # We use 'uv run' to ensure it uses the virtual environment
+      - name: Build Application
+        run: |
+          uv run pyinstaller --name Clarity --windowed --clean --noconfirm main.py
+
+      # 6. Zip the App
+      # macOS apps act like folders. We must ZIP them to preserve permissions before uploading.
+      - name: Compress App
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent Clarity.app Clarity.zip
+
+      # 7. Upload the result so you can download it
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Clarity-App-Build
+          path: dist/Clarity.zip
+          retention-days: 5

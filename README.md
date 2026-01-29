@@ -1,73 +1,55 @@
 # ✨ Clarity
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit)
-![Status](https://img.shields.io/badge/Status-Active-success)
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![PyQt6](https://img.shields.io/badge/GUI-PyQt6-green?logo=qt)
+![Build](https://img.shields.io/github/actions/workflow/status/yourusername/clarity/build.yml)
 
-**Clarity** is an intelligent, modular image organization tool designed for macOS.
+**Clarity** is a native macOS application designed to organize and declutter large photo collections.
 
-Unlike standard duplicate finders that only look for identical file sizes or names, Clarity uses **Perceptual Hashing (pHash)** to identify images that _look_ similar. This allows you to group burst photos, edited versions, and resized copies, helping you curate your best shots and clear the clutter.
+Unlike standard duplicate finders, Clarity uses **Perceptual Hashing (pHash)** to group images that _look_ similar (burst shots, edits, resized copies). It features a native high-performance grid, background scanning, and smart quality detection.
 
-## 🚀 Key Features
+## 🚀 Features
 
-- **👁️ Visual Similarity Search:** Groups images by visual composition, not just metadata.
-- **🧠 Smart Select:** Automatically identifies and preserves the highest quality (largest file size) image in a group, pre-selecting lower-quality versions for deletion.
-- **🎛️ Adjustable Sensitivity:** Use the "Similarity Threshold" slider to toggle between finding exact duplicates or loosely similar shots.
-- **🗑️ Mac-Safe Deletion:** Uses `send2trash` to move files to the System Trash. No accidental permanent data loss.
-- **🧩 Modular Architecture:** Clean separation of concerns (UI, Logic, File Operations) for easy maintenance and scalability.
+- **Native Performance:** Built with PyQt6 for smooth scrolling of thousands of images.
+- **Visual Grouping:** Groups images by visual composition, not just filename.
+- **Smart Select:** Automatically identifies the "Best" image (highest resolution/size) in a group.
+- **Non-Destructive:** Moves files to the macOS Trash (Bin) so you can recover mistakes.
+- **Adjustable Sensitivity:** Slider to control how strict the similarity search is.
 
-## 🛠️ Installation & Setup
+## 🛠️ Development Setup
 
-Clarity is built with modern Python tooling using **uv**.
+Clarity uses [uv](https://github.com/astral-sh/uv) for fast, modern dependency management.
 
 ### Prerequisites
 
-- Python 3.10 or higher
-- [uv](https://github.com/astral-sh/uv) (Recommended for dependency management)
+- Python 3.12+
+- `uv` installed
 
-### Step-by-Step
+### Installation
 
 1.  **Clone the repository:**
 
     ```bash
     git clone https://github.com/kumar-kanujia/clarity
     cd clarity
+    git checkout poc
     ```
 
-2.  **Initialize environment & install dependencies:**
-    ```bash
-    uv init
-    uv pip install streamlit imagehash pillow send2trash numpy
-    ```
-
-## 🖥️ Usage
-
-1.  **Run the Application:**
+2.  **Install dependencies:**
 
     ```bash
-    uv run streamlit run app.py
+    uv sync
     ```
 
-2.  **The Workflow:**
-    - **Folder Path:** Paste the absolute path to your image directory (e.g., `/Users/name/Pictures/Trip`).
-    - **Threshold:** \* `0`: Exact duplicates only.
-      - `5`: Standard similarity (recommended).
-      - `10+`: Group loosely related images.
-    - **Scan:** Click "Scan Images".
-    - **Review:** Browse the groups. The "Smart Select" feature will auto-check the boxes for images likely to be discarded.
-    - **Trash:** Click "Trash Selected" to move them to the Mac Trash bin.
+3.  **Run the App:**
+    ```bash
+    uv run python main.py
+    ```
 
-## 📂 Project Structure
+## 📦 Building the App (Locally)
 
-Clarity follows a **Model-View-Controller (MVC)** inspired structure:
+To create a standalone `.app` file on your machine:
 
-```text
-clarity/
-├── app.py              # Controller: Entry point and state management
-├── modules/
-│   ├── scanner.py      # File Ops: Directory scanning & safe deletion
-│   ├── processor.py    # Model: Image hashing, caching, & logic
-│   └── ui.py           # View: Sidebar & Image Grid rendering
-├── .gitignore          # System & Python exclusions
-└── README.md           # Documentation
+```bash
+uv run pyinstaller --name Clarity --windowed --clean --noconfirm main.py
 ```
