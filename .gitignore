@@ -1,0 +1,59 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- uv & Environments ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- Streamlit ---
+# Optional: Ignore local streamlit config if you don't want to share it
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# --- macOS Specific ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+*.lp7
+*.document
+*.swp
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Project Specific ---
+# Ignore the actual images folder if you keep it inside the project
+# (Highly recommended so you don't accidentally commit 800 photos!)
+images/
+output/
+*.log
