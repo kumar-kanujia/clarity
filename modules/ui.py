@@ -1,24 +1,55 @@
-import os
 import subprocess
 import sys
 
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageOps
 
-from modules import scanner  # Import scanner to get file info
+from modules import state
 
 
-def select_folder_dialog():
-    """
-    Robust macOS folder picker with error reporting.
-    """
-    if sys.platform != "darwin":
-        st.error("This feature is Mac-only.")
+# --- CSS for Perfect Alignment ---
+def inject_custom_css():
+    st.markdown(
+        """
+        <style>
+        /* Force images to fill their container */
+        div[data-testid="stImage"] img {
+            object-fit: cover;
+            height: 200px; /* Fixed height for all images */
+            width: 100%;
+        }
+        /* Style the 'Deleted' card */
+        .deleted-card {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f2f6;
+            border: 1px dashed #bdc3c7;
+            border-radius: 8px;
+            color: #95a5a6;
+            font-weight: bold;
+        }
+        </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
+# --- Image Processor ---
+def load_square_image(image_path, size=(300, 300)):
+    try:
+        img = Image.open(image_path)
+        img = ImageOps.fit(img, size, Image.Resampling.LANCZOS)
+        return img
+    except:
         return None
 
-    # The script:
-    # 1. 'activate' forces the dialog to the front
-    # 2. We ask 'System Events' (standard macOS helper) to show the dialog
+
+# --- Folder Picker ---
+def select_folder_dialog():
+    if sys.platform != "darwin":
+        return None
     script = """
     try
         tell application "System Events"
@@ -30,109 +61,96 @@ def select_folder_dialog():
         return "ERROR:" & errMsg
     end try
     """
-
     try:
-        # Run the script
         result = subprocess.run(
             ["osascript", "-e", script], capture_output=True, text=True
         )
-
-        output = result.stdout.strip()
-
-        # Debugging: Print to terminal so you can see what's happening
-        print(f"AppleScript Output: {output}")
-
-        if "ERROR:" in output:
-            # User hit Cancel or Permission Denied
-            if "User canceled" not in output:
-                st.error(f"macOS Error: {output}")
-            return None
-
-        return output
-
-    except Exception as e:
-        st.error(f"Python Error: {e}")
+        out = result.stdout.strip()
+        return None if "ERROR:" in out else out
+    except:
         return None
 
 
+# --- Sidebar ---
 def render_sidebar():
     with st.sidebar:
-        st.header("Settings")
+        st.header("✨ Clarity Settings")
 
-        # 1. Folder Selection (Two options: Browse or Type)
-        col1, col2 = st.columns([3, 1])
+        # Folder Input
+        if "folder_path" not in st.session_state:
+            st.session_state["folder_path"] = ""
+
+        col1, col2 = st.columns([4, 1])
         with col1:
-            # We use session state to persist the folder path
-            if "folder_path" not in st.session_state:
-                st.session_state["folder_path"] = ""
-
-            st.text_input(
+            st.session_state["folder_path"] = st.text_input(
                 "Path",
                 value=st.session_state["folder_path"],
                 label_visibility="collapsed",
             )
-
         with col2:
             if st.button("📂"):
-                selected = select_folder_dialog()
-                if selected:
-                    st.session_state["folder_path"] = selected
-                    st.rerun()  # Refresh to show the new path
+                path = select_folder_dialog()
+                if path:
+                    st.session_state["folder_path"] = path
+                    st.rerun()
 
-        # 2. Reactive Slider (No form wrapping ensures instant update)
-        threshold = st.slider("Similarity Threshold", 0, 20, 5)
+        threshold = st.slider("Sensitivity", 0, 20, 5)
 
-        auto_select = st.checkbox("Auto-Select Lower Quality", value=True)
+        # Main Actions
+        st.divider()
+        col_scan, col_reset = st.columns([2, 1])
+        with col_scan:
+            scan = st.button("🔍 Scan", type="primary", use_container_width=True)
+        with col_reset:
+            reset = st.button("🔄", help="Reset All")
 
-        # Button to start the HASHING process (expensive)
-        scan_btn = st.button("Start Scan", type="primary")
+        # Live Stats
+        st.divider()
+        count = state.get_selection_count()
+        if count > 0:
+            st.metric("Selected to Trash", count)
 
-        return st.session_state["folder_path"], threshold, auto_select, scan_btn
+        return st.session_state["folder_path"], threshold, scan, reset
 
 
-def render_group(index, group_files, best_image, auto_select_enabled):
-    st.markdown(f"#### Group {index}")
+# --- The Grid Renderer ---
+def render_group(index, group_files, best_image):
+    # Filter out files that are already deleted
+    # We still want to show a placeholder for them
 
-    # Dynamic columns based on group size
-    cols = st.columns(min(len(group_files), 4))
-    selected_files = []
+    st.markdown(f"**Group {index}**")
+    cols = st.columns(4)
 
     for idx, file_path in enumerate(group_files):
         col_idx = idx % 4
-
-        # Get Metadata
-        size_str, dims, raw_size = scanner.get_file_info(file_path)
-        is_best = file_path == best_image
-
         with cols[col_idx]:
-            # Visual Container
-            container = st.container(border=True)
-            with container:
-                # 3. Best Image Indicator
+            # CASE A: File was deleted in a previous batch
+            if file_path in st.session_state["deleted_files"]:
+                st.markdown(
+                    '<div class="deleted-card">Deleted</div>', unsafe_allow_html=True
+                )
+                continue
+
+            # CASE B: Active File
+            img = load_square_image(file_path)
+            if img:
+                st.image(img, use_container_width=True)
+
+                # Metadata / Best Badge
+                is_best = file_path == best_image
                 if is_best:
-                    st.markdown("⭐ **Best Quality**")
+                    st.caption("⭐ Best Quality")
+                else:
+                    st.caption("Duplicate")
 
-                try:
-                    img = Image.open(file_path)
-                    img.thumbnail((250, 250))
-                    st.image(img, use_container_width=True)
-                except Exception as e:
-                    print(f"Exception Occured! {e}")
-                    st.error("Img Error")
-
-                # 3. Metadata Display
-                st.caption(f"📏 {dims} | 💾 {size_str}")
-                st.caption(f"📄 ...{os.path.basename(file_path)[-15:]}")
-
-                # Logic for Auto-Selection
-                # If auto-select is ON: Select everything EXCEPT the best image
-                should_check = False
-                if auto_select_enabled and not is_best:
-                    should_check = True
-
-                # The Checkbox
-                if st.checkbox("Delete", key=file_path, value=should_check):
-                    selected_files.append(file_path)
-
+                # The "Live" Checkbox
+                # We use the on_change callback to update the counter instantly
+                is_checked = state.is_selected(file_path)
+                st.checkbox(
+                    "Delete",
+                    value=is_checked,
+                    key=f"chk_{file_path}",
+                    on_change=state.toggle_selection,
+                    args=(file_path,),
+                )
     st.divider()
-    return selected_files
