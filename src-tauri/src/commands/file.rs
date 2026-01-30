@@ -1,4 +1,4 @@
-use super::imagefile::ImageFile;
+use crate::models::imagefile::ImageFile;
 
 use std::{fs, path::PathBuf};
 
