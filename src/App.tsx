@@ -25,7 +25,7 @@ export default function PhotoGrid() {
       <div className="flex items-center justify-between border-b pb-4">
         <h1 className="text-xl font-bold flex items-center gap-2">
           <ImageIcon className="w-6 h-6" />
-          Tauri Gallery
+          Clarity
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground truncate max-w-75">
