@@ -1,23 +1,17 @@
+use super::imagefile::ImageFile;
+
 use std::{fs, path::PathBuf};
 
 #[tauri::command]
-pub async fn scan_folder(path: &str) -> Result<Vec<String>, String> {
+pub async fn scan_folder(path: &str) -> Result<Vec<ImageFile>, String> {
   let folder_path = PathBuf::from(path);
-
-  let result: Vec<String> = convert_images(&folder_path.display().to_string())?;
-
-  Ok(result)
-}
-
-pub fn convert_images(folder: &str) -> Result<Vec<String>, String> {
-  let folder_path = PathBuf::from(folder);
 
   let entries: Vec<_> = match fs::read_dir(&folder_path) {
     Ok(dir) => dir.filter_map(|e| e.ok()).collect(),
     Err(e) => return Err(format!("Failed to read directory: {}", e)),
   };
 
-  let image_files = entries
+  let result: Vec<ImageFile> = entries
     .into_iter()
     .filter_map(|entry| {
       let file_path = entry.path();
@@ -38,8 +32,8 @@ pub fn convert_images(folder: &str) -> Result<Vec<String>, String> {
         None
       }
     })
-    .map(|f| f.display().to_string())
+    .map(|f| ImageFile::from_path(&f).unwrap())
     .collect();
 
-  Ok(image_files)
+  Ok(result)
 }

@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, Image as ImageIcon } from "lucide-react";
 
-import { loadImage, getFileURI } from "./lib/tauri-api";
+import { loadImage, getFileURI, ImageFile, formatSize } from "./lib/tauri-api";
 
 export default function PhotoGrid() {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageFile[]>([]);
   const [currentPath, setCurrentPath] = useState<string>("");
 
   const handleOpenFolder = () => {
@@ -42,14 +42,28 @@ export default function PhotoGrid() {
       {images.length > 0 ? (
         <div className="columns-2 md:columns-4 lg:columns-6 gap-4 space-y-4 pb-10 mx-auto">
           {images.map((photo) => (
-            <div className="break-inside-avoid rounded-xl overflow-hidden border bg-muted">
+            <div
+              key={photo.name}
+              className="break-inside-avoid relative group rounded-lg overflow-hidden border bg-muted mb-4"
+            >
               <img
-                src={getFileURI(photo)}
+                src={getFileURI(photo.path)}
                 loading="lazy"
-                className="w-full h-auto block" // h-auto maintains aspect ratio
+                className="w-full h-auto object-cover"
               />
-              {/* Optional: Overlay with name */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity truncate"></div>
+
+              {/* Metadata Overlay (Appears on Hover) */}
+              <div className="absolute inset-x-0 bottom-0 bg-black/70 backdrop-blur-sm text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <p className="text-xs font-medium truncate">{photo.name}</p>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-[10px] text-gray-300">
+                    {photo.width ? `${photo.width}×${photo.height}` : "Unknown"}
+                  </span>
+                  <span className="text-[10px] font-mono bg-white/20 px-1 rounded">
+                    {formatSize(photo.size_bytes)}
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
