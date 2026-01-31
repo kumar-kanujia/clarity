@@ -1,4 +1,6 @@
-use crate::features::Scanner;
+use std::path::Path;
+
+use crate::features::{FileOps, Scanner};
 use crate::models::Image;
 
 #[tauri::command]
@@ -19,4 +21,11 @@ pub async fn scan_and_group_duplicates(
       .map_err(|e| e.to_string())??;
 
   Ok(result)
+}
+
+#[tauri::command]
+pub async fn move_to_trash(paths: Vec<String>) -> Result<(), String> {
+  let paths: Vec<&Path> = paths.iter().map(|p| Path::new(p)).collect();
+  FileOps::soft_delete(paths).map_err(|e| e.to_string())?;
+  Ok(())
 }

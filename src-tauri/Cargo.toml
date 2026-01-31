@@ -1,6 +1,6 @@
 [package]
 name = "clarity"
-version = "0.0.1-alpha"
+version = "0.0.1"
 description = "A Photo App"
 authors = ["kumar-kanujia"]
 edition = "2024"
@@ -26,3 +26,4 @@ tauri-plugin-dialog = "2"
 image = "0.25.9"
 image_hasher = "3.1.0"
 rayon = "1.11.0"
+trash = "5.2.5"
