@@ -1,97 +1,136 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
-import { loadImage, scanForGroups } from "./lib/tauri-api";
-
-import { AppState, Image } from "./types";
-
+import { selectDir } from "./tauri/tauri-api";
+import { ScannerHeader } from "./features/scanner/components/scanner-header";
 import { InitView } from "./features/scanner/components/init";
-import { Header } from "./features/scanner/components/header";
 import { LoadingFile } from "./features/scanner/components/loading";
 import { ScanResult } from "./features/scanner/components/scan-result";
 import { ScanPreview } from "./features/scanner/components/scan-preview";
+import { useGetFolderStore } from "./features/gallery/hooks/use-folder-store";
+import { useGetScannerStore } from "./features/scanner/hooks/use-scanner-store";
+import { loadImagesFromDir, scanForGroups } from "./tauri/tauri-commands";
+import { cn } from "./lib/utils";
 
+/**
+ * Main Application Component
+ * Manages the high-level routing between different views (INIT, PREVIEW, SCANNING, RESULTS).
+ * Utilizes Zustand stores for global state management.
+ */
 export default function App() {
-  // State
-  const [appState, setAppState] = useState<AppState>("INIT");
-  const [images, setImages] = useState<Image[]>([]);
-  const [currentPath, setCurrentPath] = useState<string>("");
-  const [groups, setGroups] = useState<Image[][]>([]);
-  const [threshold, setThreshold] = useState<number>(5); // Default threshold
-  const [loadingText, setLoadingText] = useState("Processing...");
+  // Global State (Zustand)
+  const { currentFolderPath, isFolderSelected, setCurrentFolder } =
+    useGetFolderStore();
+  const {
+    appState,
+    images,
+    threshold,
+    loadingText,
+    setAppState,
+    setImages,
+    setGroups,
+    setLoadingText,
+    reset: resetScanner,
+  } = useGetScannerStore();
 
-  // Handlers
-  const handleOpenFolder = async () => {
+  /**
+   * Opens a directory selection dialog and updates the folder store.
+   */
+  const handleOpenClick = async () => {
     try {
-      const { folder, loadedPhotos } = await loadImage();
-      if (loadedPhotos.length > 0) {
-        setImages(loadedPhotos);
-        setCurrentPath(folder);
-        setAppState("PREVIEW");
+      const folderPath = await selectDir();
+      if (folderPath) {
+        setCurrentFolder(folderPath);
+        toast.success("Folder selected successfully");
       }
     } catch (error) {
-      console.error("Failed to load images", error);
+      console.error("Failed to open folder:", error);
+      toast.error("Failed to open folder");
     }
   };
 
+  /**
+   * Loads images whenever a new valid folder is selected.
+   */
+  useEffect(() => {
+    if (isFolderSelected && currentFolderPath) {
+      loadImagesFromDir(currentFolderPath)
+        .then((loadedImages) => {
+          setImages(loadedImages);
+          setAppState("PREVIEW");
+        })
+        .catch((error) => {
+          console.error("Failed to load images:", error);
+          toast.error("Failed to load images from directory");
+        });
+    } else {
+      setImages([]);
+    }
+  }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
+
+  /**
+   * Starts the duplicate scanning process.
+   */
   const handleRunScan = async () => {
     setAppState("SCANNING");
     setLoadingText("Analyzing images for similarities...");
     try {
-      const resultGroups = await scanForGroups(currentPath, threshold);
+      const resultGroups = await scanForGroups(currentFolderPath, threshold);
       setGroups(resultGroups);
       setAppState("RESULTS");
+      toast.success("Scan completed successfully");
     } catch (error) {
-      console.error("Failed to scan", error);
-      setAppState("PREVIEW"); // Revert on error
+      console.error("Failed to scan:", error);
+      toast.error("An error occurred during scanning");
+      setAppState("PREVIEW");
     }
   };
 
+  /**
+   * Resets the application state to the initial view.
+   */
   const handleReset = () => {
-    setAppState("INIT");
-    setImages([]);
-    setCurrentPath("");
-    setGroups([]);
-    setThreshold(5);
+    resetScanner();
+    setCurrentFolder("");
   };
 
-  let view = <InitView handleOpenFolder={handleOpenFolder} />;
-
+  // View Routing Logic
+  let view = null;
   switch (appState) {
     case "INIT":
-      view = <InitView handleOpenFolder={handleOpenFolder} />;
+      view = <InitView handleOpenFolder={handleOpenClick} />;
       break;
     case "PREVIEW":
-      view = (
-        <ScanPreview
-          threshold={threshold}
-          setThreshold={setThreshold}
-          handleRunScan={handleRunScan}
-          images={images}
-        />
-      );
+      view = <ScanPreview handleRunScan={handleRunScan} images={images} />;
       break;
     case "SCANNING":
       view = <LoadingFile loadingText={loadingText} />;
       break;
     case "RESULTS":
-      view = (
-        <ScanResult
-          groups={groups}
-          setAppState={(state) => setAppState(state)}
-        />
-      );
+      view = <ScanResult />;
       break;
   }
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#0a0a0a] text-foreground p-8">
-      <Header
+    <div
+      className={cn(
+        "h-screen w-full flex flex-col bg-background text-foreground p-8 font-sans antialiased selection:bg-primary/30",
+        "transition-colors duration-300",
+      )}
+    >
+      {/* Background Effect */}
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[radial-gradient(circle_at_50%_50%,rgba(120,50,255,0.05),transparent_50%)]" />
+
+      <ScannerHeader
         appState={appState}
-        currentPath={currentPath}
-        handleOpenFolder={handleOpenFolder}
+        currentPath={currentFolderPath}
+        handleOpenFolder={handleOpenClick}
         handleReset={handleReset}
       />
-      {view}
+
+      <main className="flex-1 min-h-0 relative animate-in fade-in duration-700">
+        {view}
+      </main>
     </div>
   );
 }

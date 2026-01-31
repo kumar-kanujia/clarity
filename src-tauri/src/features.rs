@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use image_hasher::{HashAlg, HasherConfig};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
@@ -83,5 +85,18 @@ impl Scanner {
       .collect();
 
     Ok(sorted_groups)
+  }
+}
+
+pub struct FileOps;
+
+impl FileOps {
+  pub fn soft_delete(image_paths: Vec<&Path>) -> Result<(), String> {
+    let paths_str: Vec<String> = image_paths
+      .iter()
+      .map(|path| path.to_string_lossy().to_string())
+      .collect();
+    trash::delete_all(paths_str).map_err(|e| e.to_string())?;
+    Ok(())
   }
 }
