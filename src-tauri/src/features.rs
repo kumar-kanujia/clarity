@@ -18,7 +18,7 @@ impl Scanner {
     Some(hash.as_bytes().to_vec())
   }
 
-  pub fn detect_duplicates(path: String, threshold: u32) -> Result<Vec<Vec<Image>>, String> {
+  pub fn detect_duplicates(path: &str, threshold: u32) -> Result<Vec<Vec<Image>>, String> {
     // --- STEP 1: FIND FILES ---
     let image_entries = Image::from_dir(&path)?;
 
@@ -91,7 +91,7 @@ impl Scanner {
 pub struct FileOps;
 
 impl FileOps {
-  pub fn soft_delete(image_paths: Vec<&Path>) -> Result<(), String> {
+  pub fn soft_delete(image_paths: &[&Path]) -> Result<(), String> {
     let paths_str: Vec<String> = image_paths
       .iter()
       .map(|path| path.to_string_lossy().to_string())
