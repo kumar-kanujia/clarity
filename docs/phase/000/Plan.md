@@ -149,33 +149,33 @@ This creates a reliable index of all images and ensures the library can be recon
 
 ### Upload Image
 
-- [ ] User can select one or more image files
-- [ ] Non-image files are rejected gracefully
-- [ ] Upload failures are clearly reported
+- [x] User can select one or more image files
+- [x] Non-image files are rejected gracefully
+- [!!] Upload failures are clearly reported
 
 ### Copy Image
 
-- [ ] Images are copied into app-controlled storage
-- [ ] Original files remain untouched
-- [ ] Each image receives a unique internal identity
+- [x] Images are copied into app-controlled storage
+- [x] Original files remain untouched
+- [!!] Each image receives a unique internal identity
 
 ### Store Image
 
-- [ ] Images are persistently stored
-- [ ] Stored images are accessible after app restart
-- [ ] No orphaned or partial files exist
+- [x] Images are persistently stored
+- [x] Stored images are accessible after app restart
+- [!!] No orphaned or partial files exist
 
 ### Get Metadata
 
-- [ ] Metadata is extracted for every imported image
-- [ ] Width and height match the actual image
-- [ ] File size and type are accurate
+- [x] Metadata is extracted for every imported image
+- [x] Width and height match the actual image
+- [x] File size and type are accurate
 
 ### Store Metadata
 
-- [ ] Metadata is persisted reliably
-- [ ] Metadata matches stored images
-- [ ] App restart does not lose library state
+- [x] Metadata is persisted reliably
+- [x] Metadata matches stored images
+- [x] App restart does not lose library state
 
 ---
 
