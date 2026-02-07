@@ -1,3 +1,6 @@
+use std::io;
+
+use futures::TryStreamExt;
 use sqlx::{Row, SqlitePool};
 
 use crate::domain::entity::ImageFile;
@@ -24,10 +27,11 @@ pub async fn save(db: &SqlitePool, image: &ImageFile) -> Result<(), sqlx::Error>
   Ok(())
 }
 
-pub async fn get_all_paths(db: &SqlitePool) -> Result<Vec<String>, sqlx::Error> {
-  let rows = sqlx::query("SELECT path from image_file")
-    .fetch_all(db)
+pub async fn get_all_paths(db: &SqlitePool) -> Result<Vec<ImageFile>, sqlx::Error> {
+  let files: Vec<ImageFile> = sqlx::query_as::<_, ImageFile>("SELECT * from image_file")
+    .fetch(db)
+    .try_collect()
     .await?;
 
-  Ok(rows.iter().map(|row| row.get("path")).collect())
+  Ok(files)
 }

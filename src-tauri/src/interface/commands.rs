@@ -1,6 +1,6 @@
-use crate::application::importer;
 use crate::infrastructure::repo::image_repo;
 use crate::state::AppState;
+use crate::{application::importer, domain::dto::Image};
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
@@ -18,8 +18,10 @@ pub async fn load_dir(
 }
 
 #[tauri::command]
-pub async fn get_loaded_files(state: State<'_, AppState>) -> Result<Vec<String>, String> {
-  image_repo::get_all_paths(&state.db)
-    .await
-    .map_err(|e| e.to_string())
+pub async fn get_loaded_files(state: State<'_, AppState>) -> Result<Vec<Image>, String> {
+  let Ok(files) = image_repo::get_all_paths(&state.db).await else {
+    return Err("Unable to get images".to_string());
+  };
+
+  Ok(files.into_iter().map(|file| Image::from(file)).collect())
 }
