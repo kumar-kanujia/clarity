@@ -1,13 +1,13 @@
 mod commands;
 mod db;
-mod features;
-mod models;
+mod model;
+mod old;
 mod state;
 mod storage;
 
-use commands::{
-  get_loaded_files, load_dir, move_to_trash, scan_and_group_duplicates, scan_dir_for_images,
-};
+use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
+
+use commands::{get_loaded_files, load_dir};
 use tauri::Manager;
 
 use crate::{db::setup_db, state::AppState};

@@ -3,7 +3,7 @@ use std::path::Path;
 use image_hasher::{HashAlg, HasherConfig};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::models::Image;
+use crate::old::image::Image;
 
 pub struct Scanner;
 
