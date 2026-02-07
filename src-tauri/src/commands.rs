@@ -19,7 +19,7 @@ pub async fn scan_and_group_duplicates(
   // 'spawn_blocking' is crucial! It tells Tauri to run this on a thread
   // optimized for heavy CPU work (like image hashing).
   let result =
-    tauri::async_runtime::spawn_blocking(move || Scanner::detect_duplicates(path, threshold))
+    tauri::async_runtime::spawn_blocking(move || Scanner::detect_duplicates(&path, threshold))
       .await
       .map_err(|e| e.to_string())??;
 
@@ -29,7 +29,7 @@ pub async fn scan_and_group_duplicates(
 #[tauri::command]
 pub async fn move_to_trash(paths: Vec<String>) -> Result<(), String> {
   let paths: Vec<&Path> = paths.iter().map(|p| Path::new(p)).collect();
-  FileOps::soft_delete(paths).map_err(|e| e.to_string())?;
+  FileOps::soft_delete(&paths).map_err(|e| e.to_string())?;
   Ok(())
 }
 
