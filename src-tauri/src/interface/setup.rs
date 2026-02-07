@@ -1,4 +1,4 @@
-use std::{fs, str::FromStr};
+use std::str::FromStr;
 
 use sqlx::{
   SqlitePool, migrate,
@@ -14,7 +14,7 @@ pub async fn setup_db(app: &App) -> SqlitePool {
 
   app_data.push("db");
 
-  ops::ensure_dir(&app_data).map_err(|e| e.to_string());
+  let _ = ops::ensure_dir(&app_data);
 
   app_data.push("clarity.db");
 
@@ -57,7 +57,7 @@ pub async fn setup_db(app: &App) -> SqlitePool {
 
   let _ = sqlx::query("PRAGMA optimize;").execute(&db).await;
 
-  println!("Database initialized, path: {:?}", db_path);
+  println!("Database initialized, path: {db_path:?}");
 
   db
 }

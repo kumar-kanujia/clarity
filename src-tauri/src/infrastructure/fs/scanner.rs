@@ -10,8 +10,7 @@ fn is_image_file(path: &Path) -> bool {
     && path
       .extension()
       .and_then(|e| e.to_str())
-      .map(|e| IMAGE_EXTENSIONS.contains(&e))
-      .unwrap_or(false)
+      .is_some_and(|e| IMAGE_EXTENSIONS.contains(&e))
 }
 
 pub fn scan_for_images(source: &Path) -> Vec<PathBuf> {
@@ -39,6 +38,7 @@ pub fn extract_metadata(
 
   let size_bytes = fs::metadata(path)?.len();
 
+  #[allow(clippy::cast_precision_loss)]
   let size_string = ImageFile::size_string(size_bytes as f32);
 
   let dimensions = image::image_dimensions(path).unwrap_or((0, 0));
@@ -51,20 +51,21 @@ pub fn extract_metadata(
 
   let original_path = match original_path {
     Some(original_path) => original_path.to_str().unwrap().to_string(),
-    None => "".to_string(),
+    None => String::new(),
   };
 
   Ok(ImageFile {
     id: 0,
     filename,
     path: path.to_str().unwrap().to_string(),
-    size_bytes: size_bytes as u32,
+    #[allow(clippy::cast_possible_truncation)]
+    size_bytes: u32::try_from(size_bytes).unwrap_or(0),
     size_string,
     dimension_x: dimensions.0,
     dimension_y: dimensions.1,
     dimension_string: ImageFile::dimensions_string(dimensions.0, dimensions.1),
     image_extension,
     original_path,
-    mean_hash: "".to_string(), // Ready for future hash implementation
+    mean_hash: String::new(),
   })
 }
