@@ -1,16 +1,16 @@
-mod commands;
-mod db;
-mod model;
+mod application;
+mod domain;
+mod infrastructure;
+mod interface;
 mod old;
 mod state;
-mod storage;
 
+use interface::commands::{get_loaded_files, load_dir};
 use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
-use commands::{get_loaded_files, load_dir};
 use tauri::Manager;
 
-use crate::{db::setup_db, state::AppState};
+use crate::{interface::setup::setup_db, state::AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
