@@ -4,6 +4,10 @@ use std::{
   path::{Path, PathBuf},
 };
 
+use futures::TryStreamExt;
+use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
+
 use crate::state::Db;
 
 const IMAGE_FILE_EXTENSIONS: [&str; 6] = ["jpg", "jpeg", "png", "webp", "bmp", "gif"];
@@ -101,4 +105,22 @@ pub fn load_dir(source: &str, target: &str) -> Vec<PathBuf> {
   let images = read_images(&source_path);
 
   save_files(&images, &target_path)
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+struct ImageFile {
+  pub path: String,
+}
+
+pub async fn get_loaded_files(db: &Db) -> Vec<String> {
+  let fetched: Vec<ImageFile> = sqlx::query_as::<_, ImageFile>("SELECT path from image_files")
+    .fetch(db)
+    .try_collect()
+    .await
+    .unwrap();
+
+  fetched
+    .iter()
+    .map(|object| object.path.to_string())
+    .collect()
 }

@@ -34,9 +34,9 @@ This milestone introduces the entry point for all images. The system should allo
 
 ### Completion Checklist
 
-- [ ] User can select image files
-- [ ] Non-image files are rejected gracefully
-- [ ] Invalid inputs do not crash the app
+- [x] User can select image files
+- [x] Non-image files are rejected gracefully
+- [x] Invalid inputs do not crash the app
 
 ---
 
@@ -64,9 +64,9 @@ Once images are accepted, the app creates its own internal copies. The original 
 
 ### Completion Checklist
 
-- [ ] Images are copied into app storage
-- [ ] Original files remain unchanged
-- [ ] Copied images persist after app restart
+- [x] Images are copied into app storage
+- [x] Original files remain unchanged
+- [x] Copied images persist after app restart
 
 ---
 
@@ -94,9 +94,9 @@ This milestone validates that the app can reliably manage stored images and trea
 
 ### Completion Checklist
 
-- [ ] App can enumerate all stored images
-- [ ] No broken or missing image files
-- [ ] Restarting the app preserves all stored images
+- [x] App can enumerate all stored images
+- [x] No broken or missing image files
+- [x] Restarting the app preserves all stored images
 
 ---
 

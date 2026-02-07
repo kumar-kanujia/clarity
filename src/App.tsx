@@ -10,6 +10,7 @@ import { ScanPreview } from "./features/scanner/components/scan-preview";
 import { useGetFolderStore } from "./features/gallery/hooks/use-folder-store";
 import { useGetScannerStore } from "./features/scanner/hooks/use-scanner-store";
 import {
+  getLoadedFiles,
   loadDir,
   loadImagesFromDir,
   scanForGroups,
@@ -56,25 +57,39 @@ export default function App() {
   /**
    * Loads images whenever a new valid folder is selected.
    */
-  useEffect(() => {
-    if (isFolderSelected && currentFolderPath) {
-      loadImagesFromDir(currentFolderPath)
-        .then((loadedImages) => {
-          setImages(loadedImages);
-          setAppState("PREVIEW");
-        })
-        .catch((error) => {
-          console.error("Failed to load images:", error);
-          toast.error("Failed to load images from directory");
-        });
-    } else {
-      setImages([]);
-    }
-  }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
+  // useEffect(() => {
+  //   if (isFolderSelected && currentFolderPath) {
+  //     loadImagesFromDir(currentFolderPath)
+  //       .then((loadedImages) => {
+  //         setImages(loadedImages);
+  //         setAppState("PREVIEW");
+  //       })
+  //       .catch((error) => {
+  //         console.error("Failed to load images:", error);
+  //         toast.error("Failed to load images from directory");
+  //       });
+  //   } else {
+  //     setImages([]);
+  //   }
+  // }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
 
   useEffect(() => {
     if (currentFolderPath && isFolderSelected) {
-      loadDir(currentFolderPath);
+      getLoadedFiles()
+        .then((loadedFiles) => {
+          return loadedFiles.map((file) => {
+            return {
+              path: file,
+              filename: file.split("/").pop(),
+              size: file.split("/").pop(),
+              resolution: file.split("/").pop(),
+            };
+          });
+        })
+        .then((loadedFiles) => {
+          setImages(loadedFiles);
+          setAppState("PREVIEW");
+        });
     }
   }, [currentFolderPath]);
 

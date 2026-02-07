@@ -5,7 +5,9 @@ mod models;
 mod state;
 mod storage;
 
-use commands::{load_dir, move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
+use commands::{
+  get_loaded_files, load_dir, move_to_trash, scan_and_group_duplicates, scan_dir_for_images,
+};
 use tauri::Manager;
 
 use crate::{db::setup_db, state::AppState};
@@ -19,6 +21,7 @@ pub fn run() {
       scan_and_group_duplicates,
       scan_dir_for_images,
       move_to_trash,
+      get_loaded_files,
       load_dir
     ])
     .setup(|app| {

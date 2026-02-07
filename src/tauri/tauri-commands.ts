@@ -56,3 +56,12 @@ export const loadDir = async (path: string) => {
     throw new Error("Failed to load dir");
   }
 };
+
+export const getLoadedFiles = async () => {
+  try {
+    const loadedFiles = await invoke<string[]>("get_loaded_files");
+    return loadedFiles;
+  } catch (_) {
+    throw new Error("Failed to get loaded files");
+  }
+};

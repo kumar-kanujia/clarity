@@ -45,3 +45,9 @@ pub async fn load_dir(
   storage::save_files_db(loaded_files, &state.db).await;
   Ok(())
 }
+
+#[tauri::command]
+pub async fn get_loaded_files(state: tauri::State<'_, AppState>) -> Result<Vec<String>, String> {
+  let loaded_files = storage::get_loaded_files(&state.db).await;
+  Ok(loaded_files)
+}
