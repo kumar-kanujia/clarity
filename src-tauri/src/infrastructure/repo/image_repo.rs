@@ -1,7 +1,5 @@
-use std::io;
-
 use futures::TryStreamExt;
-use sqlx::{Row, SqlitePool};
+use sqlx::SqlitePool;
 
 use crate::domain::entity::ImageFile;
 

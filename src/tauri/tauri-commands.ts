@@ -47,6 +47,11 @@ export async function moveToTrash(images: Image[]) {
   }
 }
 
+/**
+ *
+ * @param path - dir path to scan
+ * Scan the selected dir and save them in app storage
+ */
 export const loadDir = async (path: string) => {
   try {
     await invoke<Image[]>("load_dir", {
@@ -56,7 +61,10 @@ export const loadDir = async (path: string) => {
     throw new Error("Failed to load dir");
   }
 };
-
+/**
+ *
+ * @returns saved images in app storage
+ */
 export const getLoadedFiles = async () => {
   try {
     const loadedFiles = await invoke<Image[]>("get_loaded_files");
