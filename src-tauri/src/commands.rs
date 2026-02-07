@@ -1,9 +1,10 @@
 use std::path::Path;
 
+use futures::future::join_all;
 use tauri::{AppHandle, Manager};
 
 use crate::features::{FileOps, Scanner};
-use crate::models::Image;
+use crate::models::{Image, ImageFile};
 use crate::state::AppState;
 use crate::storage;
 
@@ -42,7 +43,19 @@ pub async fn load_dir(
 ) -> Result<(), String> {
   let target = app.path().app_data_dir().unwrap();
   let loaded_files = storage::load_dir(&path, target.to_str().unwrap());
-  storage::save_files_db(loaded_files, &state.db).await;
+
+  let futures = loaded_files.into_iter().filter_map(|file| {
+    ImageFile::from_path(&file, None).ok().map(async |image| {
+      image.save_db(&state.db).await;
+    })
+  });
+
+  println!("futures: {:?}", futures);
+
+  join_all(futures).await;
+
+  println!("futures done");
+
   Ok(())
 }
 

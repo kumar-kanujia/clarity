@@ -181,10 +181,10 @@ This milestone confirms that uploading, copying, storing, metadata extraction, a
 
 ### Completion Checklist
 
-- [ ] Multiple images import successfully end-to-end
-- [ ] Errors do not corrupt storage or metadata
-- [ ] App behaves predictably after restart
-- [ ] No orphaned files or records exist
+- [x] Multiple images import successfully end-to-end
+- [x] Errors do not corrupt storage or metadata
+- [x] App behaves predictably after restart
+- [x] No orphaned files or records exist
 
 ---
 

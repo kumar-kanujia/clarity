@@ -81,17 +81,6 @@ fn set_storage_path(target_path: &mut PathBuf) -> Result<(), Error> {
   Ok(())
 }
 
-pub async fn save_files_db(saved_files: Vec<PathBuf>, db: &Db) {
-  for saved_file in saved_files {
-    sqlx::query("INSERT INTO image_files (name, path) VALUES (?1, ?2)")
-      .bind(saved_file.file_name().unwrap().to_str().unwrap())
-      .bind(saved_file.as_path().to_str().unwrap())
-      .execute(db)
-      .await
-      .unwrap();
-  }
-}
-
 // Load the images from the source path and save them to the target path
 pub fn load_dir(source: &str, target: &str) -> Vec<PathBuf> {
   let source_path = PathBuf::from(source);

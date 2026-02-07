@@ -26,6 +26,7 @@ export default function App() {
   // Global State (Zustand)
   const { currentFolderPath, isFolderSelected, setCurrentFolder } =
     useGetFolderStore();
+
   const {
     appState,
     images,
@@ -73,23 +74,29 @@ export default function App() {
   //   }
   // }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
 
+  // useEffect(() => {
+  //   if (currentFolderPath && isFolderSelected) {
+  //     getLoadedFiles()
+  //       .then((loadedFiles) => {
+  //         return loadedFiles.map((file) => {
+  //           return {
+  //             path: file,
+  //             filename: file.split("/").pop(),
+  //             size: file.split("/").pop(),
+  //             resolution: file.split("/").pop(),
+  //           };
+  //         });
+  //       })
+  //       .then((loadedFiles) => {
+  //         setImages(loadedFiles);
+  //         setAppState("PREVIEW");
+  //       });
+  //   }
+  // }, [currentFolderPath]);
+
   useEffect(() => {
-    if (currentFolderPath && isFolderSelected) {
-      getLoadedFiles()
-        .then((loadedFiles) => {
-          return loadedFiles.map((file) => {
-            return {
-              path: file,
-              filename: file.split("/").pop(),
-              size: file.split("/").pop(),
-              resolution: file.split("/").pop(),
-            };
-          });
-        })
-        .then((loadedFiles) => {
-          setImages(loadedFiles);
-          setAppState("PREVIEW");
-        });
+    if (currentFolderPath) {
+      loadDir(currentFolderPath);
     }
   }, [currentFolderPath]);
 

@@ -32,7 +32,7 @@ impl Image {
   }
 
   // Create Image object assuming the path is for Image file
-  fn from_path(file_path: &Path) -> Option<Self> {
+  pub fn from_path(file_path: &Path) -> Option<Self> {
     // Get file metadata
     let fs_meta = fs::metadata(file_path).ok()?;
 
