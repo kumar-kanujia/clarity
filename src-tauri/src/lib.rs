@@ -1,8 +1,9 @@
 mod commands;
 mod features;
 mod models;
+mod storage;
 
-use commands::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
+use commands::{load_dir, move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -12,7 +13,8 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       scan_and_group_duplicates,
       scan_dir_for_images,
-      move_to_trash
+      move_to_trash,
+      load_dir
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

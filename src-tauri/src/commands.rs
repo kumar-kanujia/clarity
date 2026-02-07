@@ -1,7 +1,10 @@
 use std::path::Path;
 
+use tauri::{AppHandle, Manager};
+
 use crate::features::{FileOps, Scanner};
 use crate::models::Image;
+use crate::storage;
 
 #[tauri::command]
 pub async fn scan_dir_for_images(path: &str) -> Result<Vec<Image>, String> {
@@ -28,4 +31,10 @@ pub async fn move_to_trash(paths: Vec<String>) -> Result<(), String> {
   let paths: Vec<&Path> = paths.iter().map(|p| Path::new(p)).collect();
   FileOps::soft_delete(paths).map_err(|e| e.to_string())?;
   Ok(())
+}
+
+#[tauri::command]
+pub async fn load_dir(app: AppHandle, path: String) {
+  let target = app.path().data_dir().unwrap();
+  storage::load_dir(&path, target.to_str().unwrap());
 }

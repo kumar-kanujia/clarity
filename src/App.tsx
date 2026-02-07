@@ -9,7 +9,11 @@ import { ScanResult } from "./features/scanner/components/scan-result";
 import { ScanPreview } from "./features/scanner/components/scan-preview";
 import { useGetFolderStore } from "./features/gallery/hooks/use-folder-store";
 import { useGetScannerStore } from "./features/scanner/hooks/use-scanner-store";
-import { loadImagesFromDir, scanForGroups } from "./tauri/tauri-commands";
+import {
+  loadDir,
+  loadImagesFromDir,
+  scanForGroups,
+} from "./tauri/tauri-commands";
 import { cn } from "./lib/utils";
 
 /**
@@ -67,6 +71,12 @@ export default function App() {
       setImages([]);
     }
   }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
+
+  useEffect(() => {
+    if (currentFolderPath && isFolderSelected) {
+      loadDir(currentFolderPath);
+    }
+  }, [currentFolderPath]);
 
   /**
    * Starts the duplicate scanning process.

@@ -46,3 +46,13 @@ export async function moveToTrash(images: Image[]) {
     throw new Error("Failed to move to trash");
   }
 }
+
+export const loadDir = async (path: string) => {
+  try {
+    await invoke<Image[]>("load_dir", {
+      path,
+    });
+  } catch (_) {
+    throw new Error("Failed to load dir");
+  }
+};
