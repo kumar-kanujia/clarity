@@ -4,6 +4,8 @@ use std::{
   path::{Path, PathBuf},
 };
 
+use crate::state::Db;
+
 const IMAGE_FILE_EXTENSIONS: [&str; 6] = ["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
 fn read_path(path: &PathBuf, files: &mut Vec<PathBuf>) -> Result<(), Error> {
@@ -49,30 +51,45 @@ fn read_images(path: &PathBuf) -> Vec<PathBuf> {
 }
 
 // Save the images to the target path
-fn save_files(files: &[PathBuf], target_path: &Path) {
+fn save_files(files: &[PathBuf], target_path: &Path) -> Vec<PathBuf> {
+  let mut saved_files = Vec::new();
   if target_path.exists() {
     for file in files {
       {
         let mut new_path = target_path.to_path_buf();
         if let Some(file_name) = file.file_name() {
           new_path.push(file_name);
-          let _ = fs::copy(file, new_path);
+          if let Ok(_) = fs::copy(file, &new_path) {
+            saved_files.push(new_path);
+          }
         }
       }
     }
   }
+  saved_files
 }
 
 fn set_storage_path(target_path: &mut PathBuf) -> Result<(), Error> {
-  target_path.push("clarity/img");
+  target_path.push("img");
   if !target_path.exists() {
     fs::create_dir_all(&target_path)?;
   }
   Ok(())
 }
 
+pub async fn save_files_db(saved_files: Vec<PathBuf>, db: &Db) {
+  for saved_file in saved_files {
+    sqlx::query("INSERT INTO image_files (name, path) VALUES (?1, ?2)")
+      .bind(saved_file.file_name().unwrap().to_str().unwrap())
+      .bind(saved_file.as_path().to_str().unwrap())
+      .execute(db)
+      .await
+      .unwrap();
+  }
+}
+
 // Load the images from the source path and save them to the target path
-pub fn load_dir(source: &str, target: &str) {
+pub fn load_dir(source: &str, target: &str) -> Vec<PathBuf> {
   let source_path = PathBuf::from(source);
   let mut target_path = PathBuf::from(target);
 
@@ -83,5 +100,5 @@ pub fn load_dir(source: &str, target: &str) {
   println!("Storage path: {:?}", target_path.display());
   let images = read_images(&source_path);
 
-  save_files(&images, &target_path);
+  save_files(&images, &target_path)
 }

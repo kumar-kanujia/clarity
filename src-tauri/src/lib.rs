@@ -1,9 +1,14 @@
 mod commands;
+mod db;
 mod features;
 mod models;
+mod state;
 mod storage;
 
 use commands::{load_dir, move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
+use tauri::Manager;
+
+use crate::{db::setup_db, state::AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,6 +21,13 @@ pub fn run() {
       move_to_trash,
       load_dir
     ])
+    .setup(|app| {
+      tauri::async_runtime::block_on(async move {
+        let db = setup_db(app).await;
+        app.manage(AppState { db });
+      });
+      Ok(())
+    })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

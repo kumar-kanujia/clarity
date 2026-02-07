@@ -4,6 +4,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::features::{FileOps, Scanner};
 use crate::models::Image;
+use crate::state::AppState;
 use crate::storage;
 
 #[tauri::command]
@@ -34,7 +35,13 @@ pub async fn move_to_trash(paths: Vec<String>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn load_dir(app: AppHandle, path: String) {
-  let target = app.path().data_dir().unwrap();
-  storage::load_dir(&path, target.to_str().unwrap());
+pub async fn load_dir(
+  app: AppHandle,
+  state: tauri::State<'_, AppState>,
+  path: String,
+) -> Result<(), String> {
+  let target = app.path().app_data_dir().unwrap();
+  let loaded_files = storage::load_dir(&path, target.to_str().unwrap());
+  storage::save_files_db(loaded_files, &state.db).await;
+  Ok(())
 }
