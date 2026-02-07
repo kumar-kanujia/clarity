@@ -9,7 +9,12 @@ import { ScanResult } from "./features/scanner/components/scan-result";
 import { ScanPreview } from "./features/scanner/components/scan-preview";
 import { useGetFolderStore } from "./features/gallery/hooks/use-folder-store";
 import { useGetScannerStore } from "./features/scanner/hooks/use-scanner-store";
-import { loadImagesFromDir, scanForGroups } from "./tauri/tauri-commands";
+import {
+  getLoadedFiles,
+  loadDir,
+  loadImagesFromDir,
+  scanForGroups,
+} from "./tauri/tauri-commands";
 import { cn } from "./lib/utils";
 
 /**
@@ -21,6 +26,7 @@ export default function App() {
   // Global State (Zustand)
   const { currentFolderPath, isFolderSelected, setCurrentFolder } =
     useGetFolderStore();
+
   const {
     appState,
     images,
@@ -52,21 +58,47 @@ export default function App() {
   /**
    * Loads images whenever a new valid folder is selected.
    */
+  // useEffect(() => {
+  //   if (isFolderSelected && currentFolderPath) {
+  //     loadImagesFromDir(currentFolderPath)
+  //       .then((loadedImages) => {
+  //         setImages(loadedImages);
+  //         setAppState("PREVIEW");
+  //       })
+  //       .catch((error) => {
+  //         console.error("Failed to load images:", error);
+  //         toast.error("Failed to load images from directory");
+  //       });
+  //   } else {
+  //     setImages([]);
+  //   }
+  // }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
+
+  // useEffect(() => {
+  //   if (currentFolderPath && isFolderSelected) {
+  //     getLoadedFiles()
+  //       .then((loadedFiles) => {
+  //         return loadedFiles.map((file) => {
+  //           return {
+  //             path: file,
+  //             filename: file.split("/").pop(),
+  //             size: file.split("/").pop(),
+  //             resolution: file.split("/").pop(),
+  //           };
+  //         });
+  //       })
+  //       .then((loadedFiles) => {
+  //         setImages(loadedFiles);
+  //         setAppState("PREVIEW");
+  //       });
+  //   }
+  // }, [currentFolderPath]);
+
   useEffect(() => {
-    if (isFolderSelected && currentFolderPath) {
-      loadImagesFromDir(currentFolderPath)
-        .then((loadedImages) => {
-          setImages(loadedImages);
-          setAppState("PREVIEW");
-        })
-        .catch((error) => {
-          console.error("Failed to load images:", error);
-          toast.error("Failed to load images from directory");
-        });
-    } else {
-      setImages([]);
+    if (currentFolderPath) {
+      loadDir(currentFolderPath);
     }
-  }, [isFolderSelected, currentFolderPath, setImages, setAppState]);
+  }, [currentFolderPath]);
 
   /**
    * Starts the duplicate scanning process.

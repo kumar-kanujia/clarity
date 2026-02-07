@@ -1,5 +1,4 @@
-import { Image } from "@/types";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
 // Convert file path to image URI

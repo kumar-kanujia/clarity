@@ -20,9 +20,10 @@ pub struct Image {
 impl Image {
   // Get the size of the file in human readable format
   // e.g., "100.0 KB", "1.2 MB", "5.1 GB"
+  #[allow(clippy::cast_possible_truncation)]
   fn get_size(size_bytes: u64) -> String {
     if size_bytes < 1024 {
-      format!("{:.2} KB", size_bytes as f64 / 1000.0)
+      format!("{:.2} KB", size_bytes as f64 / 1000.0) // NOLINT
     } else if size_bytes < 1024 * 1024 {
       format!("{:.2} MB", size_bytes as f64 / 1000.0 / 1000.0)
     } else {
@@ -31,7 +32,7 @@ impl Image {
   }
 
   // Create Image object assuming the path is for Image file
-  fn from_path(file_path: &Path) -> Option<Self> {
+  pub fn from_path(file_path: &Path) -> Option<Self> {
     // Get file metadata
     let fs_meta = fs::metadata(file_path).ok()?;
 
@@ -52,9 +53,9 @@ impl Image {
     Some(Image {
       path,
       filename,
+      size_bytes,
       size,
       resolution,
-      size_bytes,
     })
   }
 
@@ -86,9 +87,8 @@ impl Image {
         {
           if IMAGE_FILE_EXTENSIONS.contains(&ext) {
             return Some(file_path);
-          } else {
-            None
           }
+          None
         }
         // Skip non-extension files
         else {
