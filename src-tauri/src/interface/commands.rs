@@ -3,7 +3,7 @@ use crate::application::library;
 use crate::state::AppState;
 use crate::{application::importer, domain::dto::Image};
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]

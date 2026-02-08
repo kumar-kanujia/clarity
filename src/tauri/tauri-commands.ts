@@ -62,12 +62,14 @@ export const saveImages = async (files: string[]) => {
  * @param path - dir path to scan
  * Scan the selected dir and save them in app storage
  */
-export const saveDir = async (path: string) => {
+export const saveDirs = async (paths: string[]) => {
+  console.log(paths);
   try {
-    await invoke<void>("save_dir", {
-      path
+    await invoke<void>("save_dirs", {
+      paths
     });
-  } catch (_) {
+  } catch (err) {
+    console.error("errr", err);
     throw new Error("Failed to load dir");
   }
 };

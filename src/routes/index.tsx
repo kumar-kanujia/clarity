@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { saveDir, getSavedImages, saveImages } from "@/tauri/tauri-commands";
-import { selectDir, selectImages, getFileURI } from "@/tauri/tauri-api";
+import { saveDirs, getSavedImages, saveImages } from "@/tauri/tauri-commands";
+import { selectDirs, selectImages, getFileURI } from "@/tauri/tauri-api";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/types";
 import { toast } from "sonner";
 import { FolderInput, ImagePlus, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Index
 });
 
 function Index() {
@@ -54,10 +54,10 @@ function Index() {
 
   const handleImportFolder = async () => {
     try {
-      const path = await selectDir();
+      const path = await selectDirs();
       if (path) {
         setIsLoading(true);
-        await saveDir(path);
+        await saveDirs(path);
         toast.success("Folder imported successfully");
         await loadLibrary();
       }

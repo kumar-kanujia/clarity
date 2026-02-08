@@ -1,20 +1,32 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
-// Convert file path to image URI
+const allowedExtensions = ["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"];
+
 export function getFileURI(file: string) {
   return convertFileSrc(file);
 }
 
-// Opens a dialog to select a folder
 export const selectDir = async () => {
   const dir = await open({
     directory: true,
-    multiple: false,
+    multiple: false
   });
-
   if (dir) {
     return dir;
+  } else {
+    throw new Error("No directory selected");
+  }
+};
+
+export const selectDirs = async () => {
+  const dirs = await open({
+    directory: true,
+    multiple: true
+  });
+
+  if (dirs && dirs.length > 0) {
+    return dirs;
   } else {
     throw new Error("No directory selected");
   }
@@ -27,20 +39,9 @@ export const selectImages = async () => {
     filters: [
       {
         name: "Images",
-        extensions: [
-          "jpg",
-          "jpeg",
-          "png",
-          "gif",
-          "webp",
-          "bmp",
-          "tiff",
-          "ico",
-          "svg",
-          "avif",
-        ],
-      },
-    ],
+        extensions: allowedExtensions
+      }
+    ]
   });
 
   if (files && files.length > 0) {
