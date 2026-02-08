@@ -2,6 +2,7 @@ use crate::application::library;
 use crate::state::AppState;
 use crate::{application::importer, domain::dto::Image};
 
+use std::path::Path;
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
@@ -10,12 +11,14 @@ pub async fn load_dir(
   state: State<'_, AppState>,
   path: String,
 ) -> Result<(), String> {
-  let Ok(mut app_data) = app.path().app_data_dir() else {
-    // TODO: Handle error
+  let Ok(app_data) = app.path().app_data_dir() else {
     println!("Unable to get app data directory");
     return Err("Unable to get app data directory".to_string());
   };
-  importer::import_directory(&path, &mut app_data, &state.db)
+
+  let source = Path::new(&path);
+
+  importer::import_directory(source, &app_data, &state.db)
     .await
     .map_err(|err| {
       println!("Error: {:?}", err);

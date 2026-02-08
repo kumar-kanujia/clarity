@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
-use sqlx::prelude::FromRow;
+use sqlx::FromRow;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default, Clone)]
 pub struct ImageFile {
   pub file_id: String,
   pub filename: String,
-  pub size: u32,
+  pub size: i64,
   pub dimension_x: u32,
   pub dimension_y: u32,
   pub image_extension: String,
@@ -17,22 +17,25 @@ impl ImageFile {
     format!("{}x{}", self.dimension_x, self.dimension_y)
   }
 
-  pub fn get_storage_file_name(&self) -> String {
+  pub fn storage_file_name(&self) -> String {
     format!("{}.{}", self.file_id, self.image_extension)
   }
 
   pub fn size_string(&self) -> String {
-    let bytes: f64 = self.size as f64;
     const KB: f64 = 1_000.0;
     const MB: f64 = 1_000_000.0;
     const GB: f64 = 1_000_000_000.0;
 
-    if bytes < MB {
-      format!("{:.2} KB", bytes / KB)
+    let bytes = self.size as f64;
+
+    let (value, unit) = if bytes < MB {
+      (bytes / KB, "KB")
     } else if bytes < GB {
-      format!("{:.2} MB", bytes / MB)
+      (bytes / MB, "MB")
     } else {
-      format!("{:.2} GB", bytes / GB)
-    }
+      (bytes / GB, "GB")
+    };
+
+    format!("{value:.2} {unit}")
   }
 }

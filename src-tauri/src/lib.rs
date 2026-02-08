@@ -27,7 +27,7 @@ pub fn run() {
     ])
     .setup(|app| {
       tauri::async_runtime::block_on(async move {
-        let db = setup_db(app).await;
+        let db = setup_db(app).await.unwrap();
         app.manage(AppState { db });
       });
       Ok(())

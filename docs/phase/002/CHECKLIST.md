@@ -20,11 +20,11 @@
 
 ### Storage Layout
 
-- [ ] Decide deterministic subfolder strategy
-- [ ] Implement non-flat storage structure
-- [ ] Prevent filename collisions
-- [ ] Ensure storage layout is independent of source paths
-- [ ] Verify existing images still resolve correctly
+- [x] Decide deterministic subfolder strategy
+- [x] Implement non-flat storage structure
+- [x] Prevent filename collisions
+- [x] Ensure storage layout is independent of source paths
+- [x] Verify existing images still resolve correctly
 
 ---
 

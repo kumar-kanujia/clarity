@@ -13,16 +13,11 @@ pub struct Image {
 
 impl From<ImageFile> for Image {
   fn from(file: ImageFile) -> Self {
-    let size = file.size_string();
-    let resolution = file.dimensions_string();
-    let path = format!("{}.{}", file.file_id, file.image_extension);
-    let filename = file.filename;
-
     Self {
-      path,
-      filename,
-      size,
-      resolution,
+      path: format!("{}.{}", file.file_id, file.image_extension),
+      size: file.size_string(),
+      resolution: file.dimensions_string(),
+      filename: file.filename,
     }
   }
 }
