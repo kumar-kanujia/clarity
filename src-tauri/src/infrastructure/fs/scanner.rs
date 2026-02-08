@@ -39,7 +39,7 @@ pub fn extract_metadata(
   let size_bytes = fs::metadata(path)?.len();
 
   #[allow(clippy::cast_precision_loss)]
-  let size_string = ImageFile::size_string(size_bytes as f32);
+  let size_string = ImageFile::size_string(size_bytes as f64);
 
   let dimensions = image::image_dimensions(path).unwrap_or((0, 0));
 
