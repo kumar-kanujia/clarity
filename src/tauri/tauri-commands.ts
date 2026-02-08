@@ -47,27 +47,38 @@ export async function moveToTrash(images: Image[]) {
   }
 }
 
+export const saveImages = async (files: string[]) => {
+  try {
+    await invoke<void>("save_images", {
+      files
+    });
+  } catch (_) {
+    throw new Error("Failed to save images");
+  }
+};
+
 /**
  *
  * @param path - dir path to scan
  * Scan the selected dir and save them in app storage
  */
-export const loadDir = async (path: string) => {
+export const saveDir = async (path: string) => {
   try {
-    await invoke<Image[]>("load_dir", {
+    await invoke<void>("save_dir", {
       path
     });
   } catch (_) {
     throw new Error("Failed to load dir");
   }
 };
+
 /**
  *
  * @returns saved images in app storage
  */
-export const getLoadedFiles = async () => {
+export const getSavedImages = async () => {
   try {
-    const loadedFiles = await invoke<Image[]>("get_loaded_files");
+    const loadedFiles = await invoke<Image[]>("get_saved_images");
     return loadedFiles;
   } catch (_) {
     throw new Error("Failed to get loaded files");

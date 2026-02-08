@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { loadDir, getLoadedFiles } from "@/tauri/tauri-commands";
+import { saveDir, getSavedImages } from "@/tauri/tauri-commands";
 import { selectDir } from "@/tauri/tauri-api";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/types";
 import { getFileURI } from "@/tauri/tauri-api";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Index
 });
 
 function Index() {
@@ -19,7 +19,7 @@ function Index() {
 
   const loadImages = async () => {
     try {
-      const files = await getLoadedFiles();
+      const files = await getSavedImages();
       setImages(files);
     } catch (error) {
       console.error("Failed to load images:", error);
@@ -30,7 +30,7 @@ function Index() {
     try {
       const path = await selectDir();
       if (path) {
-        await loadDir(path);
+        await saveDir(path);
         await loadImages();
       }
     } catch (error) {

@@ -21,7 +21,7 @@ fn is_image_file(path: &Path) -> bool {
       .is_some_and(is_supported_image_ext)
 }
 
-pub fn scan_for_images(source: &Path) -> Vec<PathBuf> {
+pub fn scan_for_image(source: &Path) -> Vec<PathBuf> {
   if source.is_dir() {
     fs::read_dir(source)
       .into_iter()

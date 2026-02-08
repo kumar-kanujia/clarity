@@ -19,3 +19,33 @@ export const selectDir = async () => {
     throw new Error("No directory selected");
   }
 };
+
+export const selectImages = async () => {
+  const files = await open({
+    multiple: true,
+    directory: false,
+    filters: [
+      {
+        name: "Images",
+        extensions: [
+          "jpg",
+          "jpeg",
+          "png",
+          "gif",
+          "webp",
+          "bmp",
+          "tiff",
+          "ico",
+          "svg",
+          "avif",
+        ],
+      },
+    ],
+  });
+
+  if (files && files.length > 0) {
+    return files;
+  } else {
+    throw new Error("No files selected");
+  }
+};

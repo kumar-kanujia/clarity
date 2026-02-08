@@ -5,7 +5,7 @@ use crate::state::Db;
 
 use futures::stream::{self, StreamExt};
 use std::io::Error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
   let file_id = hashing::generate_file_id(file)?;
@@ -25,12 +25,24 @@ async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error
     .map_err(|_| Error::other("Something went wrong!"))
 }
 
-pub async fn import_directory(source: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
-  let detected_images = scanner::scan_for_images(source);
+pub async fn import_from_source(source: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
+  let detected_images = scanner::scan_for_image(source);
 
   stream::iter(detected_images)
     .for_each_concurrent(50, |file| async move {
       if let Err(err) = process_image(&file, app_dir, db).await {
+        eprintln!("Failed to process {}: {}", file.display(), err);
+      }
+    })
+    .await;
+
+  Ok(())
+}
+
+pub async fn import_files(files: Vec<PathBuf>, app_dir: &Path, db: &Db) -> Result<(), Error> {
+  stream::iter(files)
+    .for_each_concurrent(10, |file| async move {
+      if let Err(err) = import_from_source(&file, app_dir, db).await {
         eprintln!("Failed to process {}: {}", file.display(), err);
       }
     })
