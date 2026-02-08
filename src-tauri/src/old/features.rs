@@ -3,7 +3,7 @@ use std::path::Path;
 use image_hasher::{HashAlg, HasherConfig};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::models::Image;
+use crate::old::image::Image;
 
 pub struct Scanner;
 
@@ -20,7 +20,7 @@ impl Scanner {
 
   pub fn detect_duplicates(path: &str, threshold: u32) -> Result<Vec<Vec<Image>>, String> {
     // --- STEP 1: FIND FILES ---
-    let image_entries = Image::from_dir(&path)?;
+    let image_entries = Image::from_dir(path)?;
 
     // --- STEP 2: PARALLEL HASHING ---
     let hashed_images: Vec<(&Image, Vec<u8>)> = image_entries

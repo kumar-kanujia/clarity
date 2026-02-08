@@ -1,17 +1,18 @@
-mod commands;
-mod db;
-mod features;
-mod models;
+mod application;
+mod domain;
+mod infrastructure;
+mod interface;
+mod old;
 mod state;
-mod storage;
 
-use commands::{
-  get_loaded_files, load_dir, move_to_trash, scan_and_group_duplicates, scan_dir_for_images,
-};
+use interface::commands::{get_loaded_files, load_dir};
+use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
+
 use tauri::Manager;
 
-use crate::{db::setup_db, state::AppState};
+use crate::{interface::setup::setup_db, state::AppState};
 
+#[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()

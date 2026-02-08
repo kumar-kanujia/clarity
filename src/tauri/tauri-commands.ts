@@ -7,7 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
  */
 export const loadImagesFromDir = async (path: string): Promise<Image[]> => {
   const loadedPhotos: Image[] = await invoke("scan_dir_for_images", {
-    path,
+    path
   });
   return loadedPhotos;
 };
@@ -19,12 +19,12 @@ export const loadImagesFromDir = async (path: string): Promise<Image[]> => {
  */
 export const scanForGroups = async (
   dirPath: string,
-  threshold: number,
+  threshold: number
 ): Promise<Image[][]> => {
   try {
     const imageGroup = await invoke<Image[][]>("scan_and_group_duplicates", {
       path: dirPath,
-      threshold: threshold,
+      threshold: threshold
     });
     return imageGroup;
   } catch (_) {
@@ -40,26 +40,34 @@ export async function moveToTrash(images: Image[]) {
   const paths = images.map((image) => image.path);
   try {
     await invoke("move_to_trash", {
-      paths: paths,
+      paths: paths
     });
   } catch (_) {
     throw new Error("Failed to move to trash");
   }
 }
 
+/**
+ *
+ * @param path - dir path to scan
+ * Scan the selected dir and save them in app storage
+ */
 export const loadDir = async (path: string) => {
   try {
     await invoke<Image[]>("load_dir", {
-      path,
+      path
     });
   } catch (_) {
     throw new Error("Failed to load dir");
   }
 };
-
+/**
+ *
+ * @returns saved images in app storage
+ */
 export const getLoadedFiles = async () => {
   try {
-    const loadedFiles = await invoke<string[]>("get_loaded_files");
+    const loadedFiles = await invoke<Image[]>("get_loaded_files");
     return loadedFiles;
   } catch (_) {
     throw new Error("Failed to get loaded files");
