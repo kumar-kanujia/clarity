@@ -1,4 +1,5 @@
-use std::fs;
+use std::ffi::OsStr;
+use std::fs::{self};
 use std::io::Error;
 use std::path::{Path, PathBuf};
 
@@ -9,14 +10,20 @@ pub fn ensure_dir(path: &Path) -> Result<(), Error> {
   Ok(())
 }
 
-pub fn copy_file(source: &Path, target_dir: &Path) -> Result<PathBuf, Error> {
-  if let Some(file_name) = source.file_name() {
-    let new_path = target_dir.join(file_name);
-    if fs::copy(source, &new_path).is_ok() {
-      return Ok(new_path);
-    }
-  }
-  Err(Error::other("File not found"))
+pub fn copy_file(
+  source: &Path,
+  target_dir: &Path,
+  new_name: Option<&str>,
+) -> Result<PathBuf, Error> {
+  let file_name = new_name
+    .map(OsStr::new)
+    .or_else(|| source.file_name())
+    .ok_or_else(|| Error::other("Invalid source filename"))?;
+
+  let new_path = target_dir.join(file_name);
+
+  fs::copy(source, &new_path)?;
+  Ok(new_path)
 }
 
 #[cfg(test)]
@@ -65,7 +72,7 @@ mod copy_file_tests {
     let target_dir = temp.path().join("target");
     fs::create_dir(&target_dir).unwrap();
 
-    let result = copy_file(&source, &target_dir).unwrap();
+    let result = copy_file(&source, &target_dir, None).unwrap();
 
     assert!(result.exists());
     assert_eq!(result.file_name().unwrap(), "source.txt");

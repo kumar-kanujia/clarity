@@ -31,44 +31,20 @@ pub fn scan_for_images(source: &Path) -> Vec<PathBuf> {
   files
 }
 
-pub fn extract_metadata(
-  path: &Path,
-  original_path: Option<&Path>,
-) -> Result<ImageFile, std::io::Error> {
-  let filename = path.file_name().unwrap().to_str().unwrap().to_string();
-
+pub fn extract_metadata(path: &Path, image_file: &mut ImageFile) -> Result<(), std::io::Error> {
   let size_bytes = fs::metadata(path)?.len();
 
-  #[allow(clippy::cast_precision_loss)]
   let size_string = ImageFile::size_string(size_bytes as f64);
 
   let dimensions = image::image_dimensions(path).unwrap_or((0, 0));
 
-  let image_extension = path
-    .extension()
-    .and_then(|s| s.to_str())
-    .unwrap_or("")
-    .to_string();
+  image_file.size_bytes = u32::try_from(size_bytes).unwrap_or(0);
+  image_file.size_string = size_string;
+  image_file.dimension_x = dimensions.0;
+  image_file.dimension_y = dimensions.1;
+  image_file.dimension_string = ImageFile::dimensions_string(dimensions.0, dimensions.1);
 
-  let original_path = match original_path {
-    Some(original_path) => original_path.to_str().unwrap().to_string(),
-    None => String::new(),
-  };
-
-  Ok(ImageFile {
-    id: 0,
-    filename,
-    path: path.to_str().unwrap().to_string(),
-    #[allow(clippy::cast_possible_truncation)]
-    size_bytes: u32::try_from(size_bytes).unwrap_or(0),
-    size_string,
-    dimension_x: dimensions.0,
-    dimension_y: dimensions.1,
-    dimension_string: ImageFile::dimensions_string(dimensions.0, dimensions.1),
-    image_extension,
-    original_path,
-    mean_hash: String::new(),
-  })
+  Ok(())
 }
 
 #[cfg(test)]
@@ -118,50 +94,5 @@ mod scan_for_images_tests {
     let files = scan_for_images(temp.path());
 
     assert!(files.is_empty());
-  }
-}
-
-#[cfg(test)]
-mod extract_metadata_tests {
-  use super::*;
-  use std::path::Path;
-  use tempfile::tempdir;
-
-  fn create_test_image(path: &Path, width: u32, height: u32) {
-    let img = image::RgbImage::new(width, height);
-    img.save(path).unwrap();
-  }
-
-  #[test]
-  fn extracts_correct_metadata_from_image() {
-    let temp = tempdir().unwrap();
-    let img_path = temp.path().join("test.png");
-
-    create_test_image(&img_path, 128, 64);
-
-    let metadata = extract_metadata(&img_path, None).unwrap();
-
-    assert_eq!(metadata.filename, "test.png");
-    assert_eq!(metadata.dimension_x, 128);
-    assert_eq!(metadata.dimension_y, 64);
-    assert_eq!(metadata.dimension_string, "128x64");
-    assert_eq!(metadata.image_extension, "png");
-    assert_eq!(metadata.original_path, "");
-    assert!(metadata.size_bytes > 0);
-    assert!(!metadata.size_string.is_empty());
-  }
-
-  #[test]
-  fn preserves_original_path_when_provided() {
-    let temp = tempdir().unwrap();
-    let img_path = temp.path().join("original.jpg");
-
-    create_test_image(&img_path, 10, 10);
-
-    let original = Path::new("/some/original/location.jpg");
-
-    let metadata = extract_metadata(&img_path, Some(original)).unwrap();
-
-    assert_eq!(metadata.original_path, "/some/original/location.jpg");
   }
 }

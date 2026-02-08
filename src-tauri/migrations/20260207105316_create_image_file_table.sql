@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS image_file (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
     path TEXT NOT NULL,
     size_bytes INTEGER NOT NULL,

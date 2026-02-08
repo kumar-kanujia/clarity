@@ -1,8 +1,11 @@
+use crate::domain::imagefile::ImageFile;
 use crate::infrastructure::fs::{ops, scanner};
+use crate::infrastructure::media::hashing;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
-use futures::future::join_all;
+use futures::stream::{self, StreamExt};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Result<(), String> {
   let source_path = Path::new(source);
@@ -13,32 +16,44 @@ pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Re
 
   let detected_images = scanner::scan_for_images(source_path);
 
-  let copied_files: Vec<_> = detected_images
-    .iter()
-    .filter_map(|original| {
-      // TODO: Handle error
-      if let Ok(new_path) = ops::copy_file(original, target) {
-        Some((new_path, original))
-      } else {
-        None
-      }
-    })
-    .collect();
+  let target_path = Arc::new(target.clone());
+  let db_handle = db.clone();
 
-  let futures = copied_files.into_iter().map(|(new_path, original_path)| {
-    let db = db.clone();
+  let tasks = stream::iter(detected_images).map(|file| {
+    let target_path = Arc::clone(&target_path);
+
+    let db_handle = db_handle.clone();
+
     async move {
-      if let Ok(image) = scanner::extract_metadata(&new_path, Some(original_path)) {
-        let _ = image_repo::save(&db, &image).await;
-      }
+      let mut image_file = ImageFile::default();
+
+      let _ = scanner::extract_metadata(&file, &mut image_file);
+
+      image_file.original_path = file.to_str()?.to_string();
+
+      let file_name = file.file_name()?.to_str()?;
+
+      image_file.filename = file_name.to_string();
+
+      let file_id = hashing::generate_file_id(&file).ok()?;
+
+      let file_ext = file.extension()?.to_str()?.to_string();
+      let new_name = format!("{}.{}", file_id, file_ext);
+      image_file.image_extension = file_ext;
+
+      let new_path = ops::copy_file(&file, &*target_path, Some(&new_name)).ok()?;
+      image_file.path = new_path.to_str()?.to_string();
+      image_file.id = file_id;
+
+      let _ = image_repo::save(&db_handle, &image_file);
+      Some(())
     }
   });
 
-  join_all(futures).await;
+  tasks.buffer_unordered(50).collect::<Vec<_>>().await;
 
   Ok(())
 }
-
 #[cfg(test)]
 mod tests {
   use super::*;

@@ -5,10 +5,11 @@ use crate::domain::imagefile::ImageFile;
 
 pub async fn save(db: &SqlitePool, image: &ImageFile) -> Result<(), sqlx::Error> {
   let sql = "INSERT INTO image_file 
-    (filename, path, size_bytes, size_string, dimension_x, dimension_y, dimension_string, image_extension, original_path, mean_hash) 
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
+    (id, filename, path, size_bytes, size_string, dimension_x, dimension_y, dimension_string, image_extension, original_path, mean_hash) 
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)";
 
   sqlx::query(sql)
+    .bind(&image.id)
     .bind(&image.filename)
     .bind(&image.path)
     .bind(image.size_bytes)
@@ -71,7 +72,7 @@ mod tests {
     let db = setup_db().await;
 
     let image = ImageFile {
-      id: 0,
+      id: "abc123".into(),
       filename: "photo.png".into(),
       path: "/images/photo.png".into(),
       size_bytes: 12345,
@@ -99,7 +100,7 @@ mod tests {
     let db = setup_db().await;
 
     let image1 = ImageFile {
-      id: 0,
+      id: "hash1".into(),
       filename: "a.jpg".into(),
       path: "/a.jpg".into(),
       size_bytes: 10,
@@ -113,7 +114,7 @@ mod tests {
     };
 
     let image2 = ImageFile {
-      id: 0,
+      id: "hash2".into(),
       filename: "b.png".into(),
       path: "/b.png".into(),
       size_bytes: 20,

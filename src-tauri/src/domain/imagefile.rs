@@ -3,7 +3,7 @@ use sqlx::prelude::FromRow;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default)]
 pub struct ImageFile {
-  pub id: i32,
+  pub id: String,
   pub filename: String,
   pub path: String,
   pub size_bytes: u32,
@@ -93,7 +93,7 @@ mod image_conversion_tests {
   #[test]
   fn converts_image_file_into_image_dto() {
     let image_file = ImageFile {
-      id: 1,
+      id: "abc123".into(),
       filename: "photo.png".into(),
       path: "/uploads".into(),
       size_bytes: 500_000,
