@@ -5,7 +5,7 @@ use std::fs;
 use std::io::Error;
 use std::path::{Path, PathBuf};
 
-const IMAGE_EXTENSIONS: [&str; 6] = ["jpg", "jpeg", "png", "webp", "bmp", "gif"];
+const IMAGE_EXTENSIONS: [&str; 7] = ["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"];
 
 fn is_supported_image_ext(ext: &str) -> bool {
   IMAGE_EXTENSIONS
