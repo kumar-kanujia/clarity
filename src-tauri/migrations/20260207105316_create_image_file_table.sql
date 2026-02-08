@@ -1,13 +1,9 @@
 CREATE TABLE IF NOT EXISTS image_file (
-    id TEXT PRIMARY KEY,
+    file_id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
-    path TEXT NOT NULL,
-    size_bytes INTEGER NOT NULL,
-    size_string TEXT,
+    size INTEGER NOT NULL,
     dimension_x INTEGER,
     dimension_y INTEGER,
-    dimension_string TEXT,
     image_extension TEXT,
-    original_path TEXT,
-    mean_hash TEXT
+    original_path TEXT
 );

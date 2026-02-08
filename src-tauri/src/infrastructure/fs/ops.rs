@@ -26,6 +26,13 @@ pub fn copy_file(
   Ok(new_path)
 }
 
+pub fn get_image_path(path: &str, target: &PathBuf) -> String {
+  let mut new_path = target.clone();
+  new_path.push("img");
+  new_path.push(path);
+  new_path.to_str().unwrap().to_string()
+}
+
 #[cfg(test)]
 mod ensure_dir_tests {
   use super::*;

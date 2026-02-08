@@ -1,7 +1,9 @@
-use std::fs;
-use std::path::{Path, PathBuf};
-
 use crate::domain::imagefile::ImageFile;
+
+use std::ffi::OsStr;
+use std::fs;
+use std::io::Error;
+use std::path::{Path, PathBuf};
 
 const IMAGE_EXTENSIONS: [&str; 6] = ["jpg", "jpeg", "png", "webp", "bmp", "gif"];
 
@@ -31,20 +33,34 @@ pub fn scan_for_images(source: &Path) -> Vec<PathBuf> {
   files
 }
 
-pub fn extract_metadata(path: &Path, image_file: &mut ImageFile) -> Result<(), std::io::Error> {
-  let size_bytes = fs::metadata(path)?.len();
+pub fn build_image_from_path(path: &Path) -> Result<ImageFile, Error> {
+  let filename = path
+    .file_name()
+    .and_then(OsStr::to_str)
+    .unwrap_or("unknown")
+    .to_string();
 
-  let size_string = ImageFile::size_string(size_bytes as f64);
+  let meta = fs::metadata(path)?;
+
+  let size = meta.len();
+
+  let image_extension = path
+    .extension()
+    .and_then(OsStr::to_str)
+    .unwrap_or("jpg")
+    .to_string();
 
   let dimensions = image::image_dimensions(path).unwrap_or((0, 0));
 
-  image_file.size_bytes = u32::try_from(size_bytes).unwrap_or(0);
-  image_file.size_string = size_string;
+  let mut image_file = ImageFile::default();
+
+  image_file.filename = filename;
+  image_file.size = size as u32;
   image_file.dimension_x = dimensions.0;
   image_file.dimension_y = dimensions.1;
-  image_file.dimension_string = ImageFile::dimensions_string(dimensions.0, dimensions.1);
+  image_file.image_extension = image_extension;
 
-  Ok(())
+  Ok(image_file)
 }
 
 #[cfg(test)]

@@ -1,11 +1,29 @@
-use crate::domain::imagefile::ImageFile;
 use crate::infrastructure::fs::{ops, scanner};
 use crate::infrastructure::media::hashing;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
+
 use futures::stream::{self, StreamExt};
+use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+async fn process_single_image(file: &PathBuf, target_dir: &PathBuf, db: &Db) -> Result<(), Error> {
+  let mut image_file = scanner::build_image_from_path(file)?;
+
+  let file_id = hashing::generate_file_id(&file)?;
+
+  let new_filename = format!("{}.{}", file_id, image_file.image_extension);
+
+  ops::copy_file(&file, target_dir, Some(&new_filename))?;
+
+  image_file.file_id = file_id;
+
+  if let Ok(_) = image_repo::save(db, &image_file).await {
+    return Ok(());
+  }
+  Err(Error::other("Something went wrong!"))
+}
 
 pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Result<(), String> {
   let source_path = Path::new(source);
@@ -24,36 +42,14 @@ pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Re
 
     let db_handle = db_handle.clone();
 
-    async move {
-      let mut image_file = ImageFile::default();
-
-      let _ = scanner::extract_metadata(&file, &mut image_file);
-
-      image_file.original_path = file.to_str()?.to_string();
-
-      let file_name = file.file_name()?.to_str()?;
-
-      image_file.filename = file_name.to_string();
-
-      let file_id = hashing::generate_file_id(&file).ok()?;
-
-      let file_ext = file.extension()?.to_str()?.to_string();
-      let new_name = format!("{}.{}", file_id, file_ext);
-      image_file.image_extension = file_ext;
-
-      let new_path = ops::copy_file(&file, &*target_path, Some(&new_name)).ok()?;
-      image_file.path = new_path.to_str()?.to_string();
-      image_file.id = file_id;
-
-      let _ = image_repo::save(&db_handle, &image_file);
-      Some(())
-    }
+    async move { process_single_image(&file, &target_path, &db_handle).await }
   });
 
   tasks.buffer_unordered(50).collect::<Vec<_>>().await;
 
   Ok(())
 }
+
 #[cfg(test)]
 mod tests {
   use super::*;

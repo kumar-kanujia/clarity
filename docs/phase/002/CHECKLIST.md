@@ -11,10 +11,10 @@
 
 ### Internal Identity
 
-- [ ] Define a stable internal image ID
-- [ ] Ensure DB records use internal ID as primary reference
-- [ ] Ensure UI logic does not rely on filesystem paths
-- [ ] Verify IDs remain stable across restarts
+- [x] Define a stable internal image ID
+- [x] Ensure DB records use internal ID as primary reference
+- [x] Ensure UI logic does not rely on filesystem paths
+- [x] Verify IDs remain stable across restarts
 
 ---
 
