@@ -23,5 +23,5 @@ pub async fn get_loaded_files(state: State<'_, AppState>) -> Result<Vec<Image>, 
     return Err("Unable to get images".to_string());
   };
 
-  Ok(files.into_iter().map(|file| Image::from(file)).collect())
+  Ok(files.into_iter().map(Image::from).collect())
 }

@@ -10,7 +10,7 @@ fn is_image_file(path: &Path) -> bool {
     && path
       .extension()
       .and_then(|e| e.to_str())
-      .map(|e| e.to_lowercase())
+      .map(str::to_lowercase)
       .is_some_and(|e| IMAGE_EXTENSIONS.contains(&e.as_str()))
 }
 

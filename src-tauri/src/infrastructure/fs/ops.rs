@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 use std::path::{Path, PathBuf};
 
 pub fn ensure_dir(path: &Path) -> Result<(), Error> {
@@ -16,7 +16,7 @@ pub fn copy_file(source: &Path, target_dir: &Path) -> Result<PathBuf, Error> {
       return Ok(new_path);
     }
   }
-  Err(Error::new(ErrorKind::Other, "File not found"))
+  Err(Error::other("File not found"))
 }
 
 #[cfg(test)]

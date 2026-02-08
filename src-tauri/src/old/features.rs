@@ -20,7 +20,7 @@ impl Scanner {
 
   pub fn detect_duplicates(path: &str, threshold: u32) -> Result<Vec<Vec<Image>>, String> {
     // --- STEP 1: FIND FILES ---
-    let image_entries = Image::from_dir(&path)?;
+    let image_entries = Image::from_dir(path)?;
 
     // --- STEP 2: PARALLEL HASHING ---
     let hashed_images: Vec<(&Image, Vec<u8>)> = image_entries

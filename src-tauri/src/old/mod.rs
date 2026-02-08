@@ -30,7 +30,7 @@ pub async fn scan_and_group_duplicates(
 
 #[tauri::command]
 pub async fn move_to_trash(paths: Vec<String>) -> Result<(), String> {
-  let paths: Vec<&Path> = paths.iter().map(|p| Path::new(p)).collect();
+  let paths: Vec<&Path> = paths.iter().map(Path::new).collect();
   FileOps::soft_delete(&paths).map_err(|e| e.to_string())?;
   Ok(())
 }
