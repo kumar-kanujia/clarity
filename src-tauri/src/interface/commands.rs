@@ -15,7 +15,12 @@ pub async fn load_dir(
     println!("Unable to get app data directory");
     return Err("Unable to get app data directory".to_string());
   };
-  importer::import_directory(&path, &mut app_data, &state.db).await
+  importer::import_directory(&path, &mut app_data, &state.db)
+    .await
+    .map_err(|err| {
+      println!("Error: {:?}", err);
+      err.to_string()
+    })
 }
 
 #[tauri::command]

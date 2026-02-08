@@ -8,33 +8,36 @@ use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-async fn process_single_image(file: &PathBuf, target_dir: &PathBuf, db: &Db) -> Result<(), Error> {
+async fn process_single_image(file: &PathBuf, app_dir: &PathBuf, db: &Db) -> Result<(), Error> {
   let mut image_file = scanner::build_image_from_path(file)?;
 
   let file_id = hashing::generate_file_id(&file)?;
 
+  let target_dir = ops::get_target_dir(app_dir, &file_id);
+
+  ops::ensure_dir(&target_dir)?;
+
   let new_filename = format!("{}.{}", file_id, image_file.image_extension);
 
-  ops::copy_file(&file, target_dir, Some(&new_filename))?;
+  ops::copy_file(&file, &target_dir, Some(&new_filename))?;
+
+  println!("New File Saved: {}", new_filename);
 
   image_file.file_id = file_id;
 
   if let Ok(_) = image_repo::save(db, &image_file).await {
     return Ok(());
   }
+  println!("Error saving file: {}", file.display());
   Err(Error::other("Something went wrong!"))
 }
 
-pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Result<(), String> {
+pub async fn import_directory(source: &str, app_dir: &mut PathBuf, db: &Db) -> Result<(), String> {
   let source_path = Path::new(source);
-
-  target.push("img");
-
-  ops::ensure_dir(target).map_err(|e| e.to_string())?;
 
   let detected_images = scanner::scan_for_images(source_path);
 
-  let target_path = Arc::new(target.clone());
+  let target_path = Arc::new(app_dir.clone());
   let db_handle = db.clone();
 
   let tasks = stream::iter(detected_images).map(|file| {

@@ -1,12 +1,13 @@
+use crate::infrastructure::fs::ops;
+
+use tauri::{App, Manager};
+
 use std::str::FromStr;
 
 use sqlx::{
   SqlitePool, migrate,
   sqlite::{SqliteConnectOptions, SqlitePoolOptions},
 };
-use tauri::{App, Manager};
-
-use crate::infrastructure::fs::ops;
 
 pub async fn setup_db(app: &App) -> SqlitePool {
   println!("Setting up database");
@@ -57,7 +58,7 @@ pub async fn setup_db(app: &App) -> SqlitePool {
 
   let _ = sqlx::query("PRAGMA optimize;").execute(&db).await;
 
-  println!("Database initialized, path: {db_path:?}");
+  println!("Database setup complete");
 
   db
 }

@@ -10,6 +10,22 @@ pub fn ensure_dir(path: &Path) -> Result<(), Error> {
   Ok(())
 }
 
+pub fn get_target_dir(app_dir: &Path, file_id: &str) -> PathBuf {
+  let mut target_path = PathBuf::new();
+  target_path.push(app_dir);
+  target_path.push("img");
+  target_path.push(file_id[0..2].to_string());
+  target_path.push(file_id[2..4].to_string());
+  target_path
+}
+
+pub fn get_target_path(file_name: &str, target: &Path) -> String {
+  let mut new_path = PathBuf::from(target);
+  new_path.push(file_name);
+  println!("New Path: {}", target.display());
+  new_path.to_str().unwrap().to_string()
+}
+
 pub fn copy_file(
   source: &Path,
   target_dir: &Path,
@@ -24,13 +40,6 @@ pub fn copy_file(
 
   fs::copy(source, &new_path)?;
   Ok(new_path)
-}
-
-pub fn get_image_path(path: &str, target: &PathBuf) -> String {
-  let mut new_path = target.clone();
-  new_path.push("img");
-  new_path.push(path);
-  new_path.to_str().unwrap().to_string()
 }
 
 #[cfg(test)]

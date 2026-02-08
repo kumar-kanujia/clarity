@@ -14,8 +14,9 @@ pub async fn get_image_files(app_dir: &mut PathBuf, db: &Db) -> Result<Vec<Image
   let images: Vec<Image> = files
     .into_iter()
     .map(|file| {
+      let target_dir = ops::get_target_dir(app_dir, &file.file_id);
       let mut image = Image::from(file);
-      image.path = ops::get_image_path(&image.path, app_dir);
+      image.path = ops::get_target_path(&image.path, &target_dir);
       image
     })
     .collect();
