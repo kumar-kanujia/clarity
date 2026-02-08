@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::domain::entity::ImageFile;
+use crate::domain::imagefile::ImageFile;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +26,7 @@ impl From<ImageFile> for Image {
 mod tests {
   use serde_json::json;
 
-  use crate::domain::{dto::Image, entity::ImageFile};
+  use crate::domain::{dto::Image, imagefile::ImageFile};
 
   #[test]
   fn converts_image_file_into_image() {

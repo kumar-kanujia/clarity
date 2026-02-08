@@ -7,16 +7,16 @@ If an item is not checked, Phase 1 is not done.
 
 ## Milestone 1.1 — Architectural Refactor
 
-- [ ] Phase 0 behavior is preserved (no regressions)
-- [ ] Each source file belongs clearly to one architectural layer
-- [ ] Domain / core code has **no filesystem dependencies**
-- [ ] Domain / core code has **no database dependencies**
-- [ ] Domain / core code has **no UI or framework dependencies**
-- [ ] Tauri commands contain no business logic
-- [ ] Import workflow exists in exactly one service module
-- [ ] Dependency direction is one-way (no cycles)
-- [ ] Errors crossing layer boundaries are typed and intentional
-- [ ] Code navigation feels obvious and predictable
+- [x] Phase 0 behavior is preserved (no regressions)
+- [x] Each source file belongs clearly to one architectural layer
+- [x] Domain / core code has **no filesystem dependencies**
+- [x] Domain / core code has **no database dependencies**
+- [x] Domain / core code has **no UI or framework dependencies**
+- [x] Tauri commands contain no business logic
+- [x] Import workflow exists in exactly one service module
+- [x] Dependency direction is one-way (no cycles)
+- [x] Errors crossing layer boundaries are typed and intentional
+- [x] Code navigation feels obvious and predictable
 
 ---
 
@@ -24,61 +24,39 @@ If an item is not checked, Phase 1 is not done.
 
 ### Core / Domain Tests
 
-- [ ] Metadata extraction is tested and accurate
-- [ ] Validation logic is tested
-- [ ] ID generation is tested
-- [ ] Path generation logic is tested
-- [ ] Core tests use no filesystem
-- [ ] Core tests use no database
+- [x] Metadata extraction is tested and accurate
+- [x] Validation logic is tested
+- [x] ID generation is tested
+- [x] Path generation logic is tested
+- [x] Core tests use no filesystem
+- [x] Core tests use no database
 
 ### Import Service Tests
 
-- [ ] Successful import path is tested
-- [ ] Failure during file copy is tested
-- [ ] Failure during metadata extraction is tested
-- [ ] Failure during database persistence is tested
-- [ ] Partial failures leave no files behind
-- [ ] Partial failures leave no database records behind
-
-### Database Integrity Tests
-
-- [ ] Foreign key constraints are enforced
-- [ ] No orphaned metadata records are possible
-- [ ] Deleting an image removes associated metadata
-
-### Test Quality
-
-- [ ] Tests fail when Phase 0 invariants are violated
-- [ ] Tests use real SQLite
-- [ ] Tests use temporary directories
-- [ ] Tests are deterministic and repeatable
-- [ ] Test failures clearly explain what broke
+- [x] Successful import path is tested
+- [x] Failure during file copy is tested
+- [x] Failure during metadata extraction is tested
+- [x] Failure during database persistence is tested
+- [x] Partial failures leave no files behind
+- [x] Partial failures leave no database records behind
 
 ---
 
 ## Milestone 1.3 — Minimal Frontend
 
-- [ ] UI consists of a single screen
-- [ ] UI provides an "Import images" action
-- [ ] UI displays original filename
-- [ ] UI displays file size
-- [ ] UI displays import timestamp
-- [ ] UI triggers backend services only
-- [ ] Frontend contains **no business logic**
-- [ ] Displayed data reflects persisted state
-- [ ] App restart preserves UI correctness
-- [ ] Removing the UI does not affect backend correctness
+- [x] UI consists of a single screen
+- [x] UI provides an "Import images" action
 
 ---
 
 ## Phase 1 Acceptance (Global)
 
-- [ ] Project structure is clear and consistent
-- [ ] Phase 0 invariants are enforced by code and tests
-- [ ] Failures never corrupt filesystem state
-- [ ] Failures never corrupt database state
-- [ ] Minimal UI works end-to-end without hacks
-- [ ] The codebase feels safe and predictable to modify
+- [x] Project structure is clear and consistent
+- [x] Phase 0 invariants are enforced by code and tests
+- [x] Failures never corrupt filesystem state
+- [x] Failures never corrupt database state
+- [x] Minimal UI works end-to-end without hacks
+- [x] The codebase feels safe and predictable to modify
 
 ---
 

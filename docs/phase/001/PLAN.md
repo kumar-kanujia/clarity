@@ -59,11 +59,11 @@ This milestone improves **code shape**, not functionality.
 
 ### Completion Checklist
 
-- [ ] Each module has a clear responsibility
-- [ ] No domain logic depends on filesystem, database, or UI
-- [ ] Tauri commands act as thin adapters only
-- [ ] Import logic exists in exactly one place
-- [ ] Code navigation feels obvious
+- [x] Each module has a clear responsibility
+- [x] No domain logic depends on filesystem, database, or UI
+- [x] Tauri commands act as thin adapters only
+- [x] Import logic exists in exactly one place
+- [x] Code navigation feels obvious
 
 ---
 
@@ -133,10 +133,10 @@ Characteristics:
 
 ### Completion Checklist
 
-- [ ] Tests fail when invariants are violated
-- [ ] Tests are readable and intention-revealing
-- [ ] Tests do not rely on mocks for core behavior
-- [ ] Test failures clearly explain what broke
+- [x] Tests fail when invariants are violated
+- [x] Tests are readable and intention-revealing
+- [x] Tests do not rely on mocks for core behavior
+- [x] Test failures clearly explain what broke
 
 ---
 
@@ -173,10 +173,10 @@ The frontend is **not** a product surface in this phase.
 
 ### Completion Checklist
 
-- [ ] UI triggers backend workflows only
-- [ ] No business logic exists in the frontend
-- [ ] UI reflects persisted state accurately
-- [ ] Restarting the app preserves displayed data
+- [x] UI triggers backend workflows only
+- [x] No business logic exists in the frontend
+- [x] UI reflects persisted state accurately
+- [x] Restarting the app preserves displayed data
 
 ---
 

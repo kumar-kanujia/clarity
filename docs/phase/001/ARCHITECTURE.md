@@ -16,9 +16,10 @@ This structure ensures separation of concerns and prepares the app for complex f
 src/
 ├── domain/                  # THE CORE (Pure Rust, No IO)
 │   ├── mod.rs
-│   ├── image.rs             # Image entity & metadata logic
+│   ├── imagefile.rs         # Image entity & metadata logic
 │   ├── tag.rs               # Tag entity definitions
-│   └── rules.rs             # Core logic (e.g., hash comparison thresholds)
+│   ├── rules.rs             # Core logic (e.g., hash comparison thresholds)
+│   └── dtos.rs              # Data Transfer Objects (Frontend JSON shapes)
 │
 ├── application/             # THE ORCHESTRATOR (Use Cases)
 │   ├── mod.rs
@@ -35,17 +36,17 @@ src/
 │   ├── fs/                  # File System interactions
 │   │   ├── scanner.rs       # Directory walking
 │   │   ├── ops.rs           # Safe Delete, Copy, Move
-│   │   └── local.rs         # Path management (App Data vs. External)
+│   │   └── local.rs         # Path management (App Data And External)
 │   └── media/               # Heavy Lifting
 │       ├── processing.rs    # Thumbnail generation & Resizing
 │       └── hashing.rs       # Perceptual hash calculation
 │
 ├── interface/               # THE GATEWAY (Tauri)
 │   ├── mod.rs
-│   ├── commands.rs          # Exposes Application logic to Frontend
-│   └── dtos.rs              # Data Transfer Objects (Frontend JSON shapes)
+│   └── commands.rs          # Exposes Application logic to Frontend
 │
 ├── lib.rs                   # Library root
+├── state.rs                 # Application state management
 └── main.rs                  # Application entry & Dependency wiring
 ```
 

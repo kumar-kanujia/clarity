@@ -1,7 +1,7 @@
 use futures::TryStreamExt;
 use sqlx::SqlitePool;
 
-use crate::domain::entity::ImageFile;
+use crate::domain::imagefile::ImageFile;
 
 pub async fn save(db: &SqlitePool, image: &ImageFile) -> Result<(), sqlx::Error> {
   let sql = "INSERT INTO image_file 

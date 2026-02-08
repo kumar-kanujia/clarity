@@ -35,11 +35,11 @@ This milestone is successful when the **shape of the codebase communicates inten
 
 ### Acceptance Criteria
 
-- [ ] UI actions map directly to backend service calls
-- [ ] Rust code is refactored for modularity
-- [ ] Displayed data always reflects persisted state
-- [ ] Restarting the app preserves both data and UI correctness
-- [ ] Removing the UI does not affect backend correctness
+- [x] UI actions map directly to backend service calls
+- [x] Rust code is refactored for modularity
+- [x] Displayed data always reflects persisted state
+- [x] Restarting the app preserves both data and UI correctness
+- [x] Removing the UI does not affect backend correctness
 
 ---
 
@@ -111,10 +111,10 @@ Constraints:
 
 ### Acceptance Criteria
 
-- [ ] Tests fail if invariants are violated
-- [ ] Failure scenarios are explicitly tested
-- [ ] Tests are readable and intention-revealing
-- [ ] Test setup mirrors real runtime behavior
+- [x] Tests fail if invariants are violated
+- [x] Failure scenarios are explicitly tested
+- [x] Tests are readable and intention-revealing
+- [x] Test setup mirrors real runtime behavior
 
 ---
 
@@ -152,10 +152,10 @@ The frontend exists to **prove wiring**, not to deliver UX value.
 
 ### Acceptance Criteria
 
-- [ ] UI triggers backend services only
-- [ ] No business logic exists in frontend code
-- [ ] Displayed data matches persisted state
-- [ ] App restart preserves UI state
+- [x] UI triggers backend services only
+- [x] No business logic exists in frontend code
+- [x] Displayed data matches persisted state
+- [x] App restart preserves UI state
 
 ---
 
@@ -175,14 +175,14 @@ If the UI becomes "interesting", it is too complex.
 
 Phase 1 is considered **successful** only if _all_ of the following are true:
 
-- [ ] The Rust project is cleanly layered and easy to navigate
-- [ ] Phase 0 behavior is preserved with no regressions
-- [ ] Core invariants are enforced by tests, not convention
-- [ ] Import failures never leave partial files or records
-- [ ] Tests are reliable, readable, and fast enough to run frequently
-- [ ] The frontend is minimal and contains no business logic
-- [ ] Restarting the app never corrupts or loses state
-- [ ] You can confidently refactor a module without fear of hidden coupling
+- [x] The Rust project is cleanly layered and easy to navigate
+- [x] Phase 0 behavior is preserved with no regressions
+- [x] Core invariants are enforced by tests, not convention
+- [x] Import failures never leave partial files or records
+- [x] Tests are reliable, readable, and fast enough to run frequently
+- [x] The frontend is minimal and contains no business logic
+- [x] Restarting the app never corrupts or loses state
+- [x] You can confidently refactor a module without fear of hidden coupling
 
 Failing any single item means Phase 1 is **not complete**.
 
