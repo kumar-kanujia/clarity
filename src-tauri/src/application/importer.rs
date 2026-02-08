@@ -16,8 +16,12 @@ pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Re
   let copied_files: Vec<_> = detected_images
     .iter()
     .filter_map(|original| {
-      let new_path = ops::copy_file(original, target)?;
-      Some((new_path, original))
+      // TODO: Handle error
+      if let Ok(new_path) = ops::copy_file(original, target) {
+        Some((new_path, original))
+      } else {
+        None
+      }
     })
     .collect();
 
