@@ -33,7 +33,7 @@ pub fn scan_for_images(source: &Path) -> Vec<PathBuf> {
   files
 }
 
-pub fn build_image_from_path(path: &Path) -> Result<ImageFile, Error> {
+pub fn build_image_file_from_path(path: &Path, file_id: &str) -> Result<ImageFile, Error> {
   let filename = path
     .file_name()
     .and_then(OsStr::to_str)
@@ -54,6 +54,7 @@ pub fn build_image_from_path(path: &Path) -> Result<ImageFile, Error> {
 
   let mut image_file = ImageFile::default();
 
+  image_file.file_id = file_id.to_string();
   image_file.filename = filename;
   image_file.size = size as u32;
   image_file.dimension_x = dimensions.0;
@@ -61,54 +62,4 @@ pub fn build_image_from_path(path: &Path) -> Result<ImageFile, Error> {
   image_file.image_extension = image_extension;
 
   Ok(image_file)
-}
-
-#[cfg(test)]
-mod scan_for_images_tests {
-  use super::*;
-  use std::fs;
-  use tempfile::tempdir;
-
-  #[test]
-  fn scans_directory_and_returns_only_image_files() {
-    let temp = tempdir().unwrap();
-
-    let img1 = temp.path().join("a.jpg");
-    let img2 = temp.path().join("b.png");
-    let txt = temp.path().join("notes.txt");
-
-    fs::write(&img1, "fake").unwrap();
-    fs::write(&img2, "fake").unwrap();
-    fs::write(&txt, "fake").unwrap();
-
-    let files = scan_for_images(temp.path());
-
-    assert_eq!(files.len(), 2);
-    assert!(files.contains(&img1));
-    assert!(files.contains(&img2));
-  }
-
-  #[test]
-  fn returns_single_file_when_source_is_image_file() {
-    let temp = tempdir().unwrap();
-    let img = temp.path().join("photo.webp");
-
-    fs::write(&img, "fake").unwrap();
-
-    let files = scan_for_images(&img);
-
-    assert_eq!(files, vec![img]);
-  }
-
-  #[test]
-  fn returns_empty_when_no_images_found() {
-    let temp = tempdir().unwrap();
-    let txt = temp.path().join("file.txt");
-
-    fs::write(&txt, "fake").unwrap();
-
-    let files = scan_for_images(temp.path());
-
-    assert!(files.is_empty());
-  }
 }

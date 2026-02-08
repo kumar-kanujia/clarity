@@ -17,6 +17,10 @@ impl ImageFile {
     format!("{}x{}", self.dimension_x, self.dimension_y)
   }
 
+  pub fn get_storage_file_name(&self) -> String {
+    format!("{}.{}", self.file_id, self.image_extension)
+  }
+
   pub fn size_string(&self) -> String {
     let bytes: f64 = self.size as f64;
     const KB: f64 = 1_000.0;
