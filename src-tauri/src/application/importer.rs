@@ -5,9 +5,13 @@ use crate::state::Db;
 
 use futures::stream::{self, StreamExt};
 use std::io::Error;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
+async fn import_image_file(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
+  if !scanner::is_image_file(file) {
+    return Err(Error::other("Not an image file"));
+  }
+
   let file_id = hashing::generate_file_id(file)?;
 
   let image_file = scanner::build_image_file_from_path(file, &file_id)?;
@@ -25,13 +29,17 @@ async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error
     .map_err(|_| Error::other("Something went wrong!"))
 }
 
-pub async fn import_from_source(source: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
-  let detected_images = scanner::scan_for_image(source);
+pub async fn import_image_files<I, P>(files: I, app_dir: &Path, db: &Db) -> Result<(), Error>
+where
+  I: IntoIterator<Item = P>,
+  P: AsRef<Path>,
+{
+  stream::iter(files)
+    .for_each_concurrent(10, |file| async move {
+      let path = file.as_ref();
 
-  stream::iter(detected_images)
-    .for_each_concurrent(50, |file| async move {
-      if let Err(err) = process_image(&file, app_dir, db).await {
-        eprintln!("Failed to process {}: {}", file.display(), err);
+      if let Err(err) = import_image_file(path, app_dir, db).await {
+        eprintln!("Failed to process {}: {}", path.display(), err);
       }
     })
     .await;
@@ -39,14 +47,7 @@ pub async fn import_from_source(source: &Path, app_dir: &Path, db: &Db) -> Resul
   Ok(())
 }
 
-pub async fn import_files(files: Vec<PathBuf>, app_dir: &Path, db: &Db) -> Result<(), Error> {
-  stream::iter(files)
-    .for_each_concurrent(10, |file| async move {
-      if let Err(err) = import_from_source(&file, app_dir, db).await {
-        eprintln!("Failed to process {}: {}", file.display(), err);
-      }
-    })
-    .await;
-
-  Ok(())
+pub async fn import_path(path: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
+  let files = scanner::scan_for_image_files(path);
+  import_image_files(files, app_dir, db).await
 }

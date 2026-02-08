@@ -1,4 +1,4 @@
-use crate::application::importer::import_files;
+use crate::application::importer::import_image_files;
 use crate::application::library;
 use crate::state::AppState;
 use crate::{application::importer, domain::dto::Image};
@@ -19,7 +19,7 @@ pub async fn save_images(
 
   let paths: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();
 
-  if let Err(err) = import_files(paths, &app_data, &state.db).await {
+  if let Err(err) = import_image_files(paths, &app_data, &state.db).await {
     eprintln!("Import failed: {}", err);
   }
 
@@ -37,9 +37,9 @@ pub async fn save_dir(
     return Err("Unable to get app data directory".to_string());
   };
 
-  let source = Path::new(&path);
+  let path = Path::new(&path);
 
-  importer::import_from_source(source, &app_data, &state.db)
+  importer::import_path(path, &app_data, &state.db)
     .await
     .map_err(|err: std::io::Error| {
       println!("Error: {:?}", err);
