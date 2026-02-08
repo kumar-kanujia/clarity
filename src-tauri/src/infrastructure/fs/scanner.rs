@@ -1,3 +1,5 @@
+use walkdir::WalkDir;
+
 use crate::domain::imagefile::ImageFile;
 
 use std::ffi::OsStr;
@@ -22,18 +24,19 @@ pub fn is_image_file(path: &Path) -> bool {
 }
 
 pub fn scan_for_image_files(source: &Path) -> Vec<PathBuf> {
-  if source.is_dir() {
-    fs::read_dir(source)
-      .into_iter()
-      .flat_map(|entries| entries.flatten())
-      .map(|entry| entry.path())
-      .filter(|path| is_image_file(path))
-      .collect()
-  } else if is_image_file(source) {
-    vec![source.to_path_buf()]
-  } else {
-    Vec::new()
+  if source.is_file() {
+    return is_image_file(source)
+      .then(|| vec![source.to_path_buf()])
+      .unwrap_or_default();
   }
+
+  WalkDir::new(source)
+    .into_iter()
+    .filter_map(Result::ok)
+    .filter(|e| e.file_type().is_file())
+    .map(|e| e.into_path())
+    .filter(|path| is_image_file(path))
+    .collect()
 }
 
 pub fn build_image_file_from_path(path: &Path, file_id: &str) -> Result<ImageFile, Error> {

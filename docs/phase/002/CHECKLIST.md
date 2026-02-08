@@ -30,9 +30,9 @@
 
 ### Unified Import Pipeline
 
-- [ ] Normalize single-file selection into import pipeline
-- [ ] Normalize multi-file selection into import pipeline
-- [ ] Normalize multi-directory selection into import pipeline
+- [x] Normalize single-file selection into import pipeline
+- [x] Normalize multi-file selection into import pipeline
+- [] Normalize multi-directory selection into import pipeline
 - [ ] Handle mixed selection (files + directories)
 - [ ] Prevent duplicate scans for overlapping directories
 - [ ] Ensure import failure leaves no partial state
