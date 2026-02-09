@@ -1,66 +1,89 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { getSavedImages, saveImages } from "@/tauri/tauri-commands";
-import { selectDirs, selectImages, getFileURI } from "@/tauri/tauri-api";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState, useCallback } from "react";
+import { getSavedImagesBatch, saveImages } from "@/tauri/tauri-commands";
+import { selectDirs, selectImages } from "@/tauri/tauri-api";
 import { Image, ImportSummary } from "@/types";
 import { toast } from "sonner";
-import {
-  FolderInput,
-  ImagePlus,
-  Maximize2,
-  X,
-  ImageOff,
-  CheckCircle2
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { CheckCircle2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+import { GalleryHeader } from "@/features/gallery/components/gallery-header";
+import { EmptyState } from "@/features/gallery/components/empty-state";
+import { ImageGrid } from "@/features/gallery/components/image-grid";
 import { ImageModal } from "@/features/scanner/components/image-modal";
 
 export const Route = createFileRoute("/")({
-  component: Index
+  component: Index,
 });
+
+const BATCH_SIZE = 50;
 
 function Index() {
   const [images, setImages] = useState<Image[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(
-    null
+    null,
   );
   const [previewImage, setPreviewImage] = useState<Image | null>(null);
 
-  useEffect(() => {
-    loadLibrary();
-  }, []);
+  const loadImages = useCallback(
+    async (isReset = false) => {
+      if (isLoading && !isReset) return [];
 
-  const loadLibrary = async () => {
-    try {
-      setIsLoading(true);
-      const files = await getSavedImages();
-      setImages(files);
-    } catch (error) {
-      console.error("Failed to load library:", error);
-      toast.error("Failed to load library images");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      try {
+        setIsLoading(true);
+        const currentOffset = isReset ? 0 : offset;
+        const newImages = await getSavedImagesBatch(currentOffset, BATCH_SIZE);
+
+        if (newImages.length < BATCH_SIZE) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+
+        if (isReset) {
+          setImages(newImages);
+          setOffset(BATCH_SIZE);
+        } else {
+          setImages((prev) => [...prev, ...newImages]);
+          setOffset((prev) => prev + BATCH_SIZE); // Increment offset
+        }
+        return newImages;
+      } catch (error) {
+        console.error("Failed to load library:", error);
+        toast.error("Failed to load library images");
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [offset, isLoading],
+  );
+
+  // Initial load
+  useEffect(() => {
+    loadImages(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const handleImportImages = async () => {
     try {
       const files = await selectImages();
       if (files && files.length > 0) {
         setIsLoading(true);
-        setImportSummary(null); // Clear previous summary
+        setImportSummary(null);
         const summary = await saveImages(files);
         setImportSummary(summary);
-        await loadLibrary();
+        await loadImages(true); // Reset and reload
       }
     } catch (error) {
       if (error instanceof Error && error.message !== "No files selected") {
         console.error("Failed to import images:", error);
         toast.error("Failed to import images");
       }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -70,55 +93,57 @@ function Index() {
       const path = await selectDirs();
       if (path) {
         setIsLoading(true);
-        setImportSummary(null); // Clear previous summary
+        setImportSummary(null);
         const summary = await saveImages(path);
         setImportSummary(summary);
-        await loadLibrary();
+        await loadImages(true); // Reset and reload
       }
     } catch (error) {
       if (error instanceof Error && error.message !== "No directory selected") {
         console.error("Failed to import folder:", error);
         toast.error("Failed to import folder");
       }
-    } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Navigation Logic
+  const handleNextImage = async () => {
+    if (!previewImage) return;
+    const currentIndex = images.findIndex(
+      (img) => img.path === previewImage.path,
+    );
+
+    // If next image exists, go to it
+    if (currentIndex < images.length - 1) {
+      setPreviewImage(images[currentIndex + 1]);
+    }
+    // If at the end and has more, load more then go to next
+    else if (hasMore && !isLoading) {
+      const newImages = await loadImages(false);
+      if (newImages && newImages.length > 0) {
+        setPreviewImage(newImages[0]);
+      }
+    }
+  };
+
+  const handlePrevImage = () => {
+    if (!previewImage) return;
+    const currentIndex = images.findIndex(
+      (img) => img.path === previewImage.path,
+    );
+    if (currentIndex > 0) {
+      setPreviewImage(images[currentIndex - 1]);
     }
   };
 
   return (
     <div className="flex flex-col h-full space-y-8 p-4 animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-8 bg-primary rounded-full" />
-            <h2 className="text-3xl font-black tracking-tight">Library</h2>
-          </div>
-          <p className="text-muted-foreground font-medium pl-5">
-            Manage your collection
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={handleImportFolder}
-            disabled={isLoading}
-            className="rounded-2xl h-12 px-6 border-white/10 hover:bg-white/5 font-bold"
-          >
-            <FolderInput className="mr-2 h-5 w-5" />
-            Import Folder
-          </Button>
-          <Button
-            onClick={handleImportImages}
-            disabled={isLoading}
-            className="rounded-2xl h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-black shadow-lg shadow-primary/20"
-          >
-            <ImagePlus className="mr-2 h-5 w-5" />
-            Import Images
-          </Button>
-        </div>
-      </div>
+      <GalleryHeader
+        onImportFolder={handleImportFolder}
+        onImportImages={handleImportImages}
+        isLoading={isLoading}
+      />
 
       {/* Import Summary Alert */}
       <AnimatePresence>
@@ -169,93 +194,39 @@ function Index() {
         )}
       </AnimatePresence>
 
-      {/* Gallery Grid */}
       <div className="flex-1 overflow-y-auto pr-2 pb-20 custom-scrollbar">
-        {images.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[50vh] border-2 border-dashed border-white/5 rounded-4xl bg-secondary/5">
-            <div className="p-8 bg-secondary/20 rounded-full mb-6">
-              <ImageOff className="w-16 h-16 text-muted-foreground/20" />
-            </div>
-            <h3 className="text-2xl font-black text-foreground">
-              No images yet
-            </h3>
-            <p className="text-muted-foreground font-medium mt-2 max-w-sm text-center opacity-60">
-              Import images or folders to start building your collection.
-            </p>
-            <div className="flex gap-4 mt-8">
-              <Button
-                variant="secondary"
-                onClick={handleImportFolder}
-                className="rounded-xl"
-              >
-                Import Folder
-              </Button>
-              <Button onClick={handleImportImages} className="rounded-xl">
-                Import Images
-              </Button>
-            </div>
-          </div>
+        {!isLoading && images.length === 0 ? (
+          <EmptyState
+            onImportFolder={handleImportFolder}
+            onImportImages={handleImportImages}
+          />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8 pb-10">
-            <AnimatePresence mode="popLayout">
-              {images.map((image, idx) => (
-                <div key={image.path} className="flex flex-col group">
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: Math.min(idx * 0.05, 0.5)
-                    }}
-                    className="relative rounded-3xl overflow-hidden border border-white/5 bg-secondary/10 aspect-square shadow-md transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-1"
-                  >
-                    <img
-                      src={getFileURI(image.path)}
-                      alt={image.filename}
-                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 opacity-95 group-hover:opacity-100"
-                      loading="lazy"
-                    />
-
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                    {/* Hover Actions */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPreviewImage(image);
-                      }}
-                      className="absolute top-4 right-4 bg-white/10 backdrop-blur-xl text-white p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 hover:bg-primary hover:scale-110 z-10 border border-white/20 shadow-2xl"
-                      title="View Full Size"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  </motion.div>
-                  {/* Details below image */}
-                  <div className="mt-4 px-2 space-y-1 transition-all duration-500 group-hover:translate-x-1">
-                    <p className="text-xs font-black text-foreground truncate tracking-tight">
-                      {image.filename}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                        {image.size}
-                      </p>
-                      <div className="w-1 h-1 bg-muted-foreground/20 rounded-full" />
-                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                        {image.resolution || "Unknown"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </AnimatePresence>
-          </div>
+          <ImageGrid
+            images={images}
+            isLoading={isLoading}
+            hasMore={hasMore}
+            onLoadMore={() => loadImages(false)}
+            onPreview={setPreviewImage}
+          />
         )}
       </div>
 
-      <ImageModal image={previewImage} onClose={() => setPreviewImage(null)} />
+      <ImageModal
+        image={previewImage}
+        onClose={() => setPreviewImage(null)}
+        onNext={handleNextImage}
+        onPrev={handlePrevImage}
+        hasNext={
+          (!!previewImage &&
+            images.findIndex((img) => img.path === previewImage.path) <
+              images.length - 1) ||
+          hasMore
+        }
+        hasPrev={
+          !!previewImage &&
+          images.findIndex((img) => img.path === previewImage.path) > 0
+        }
+      />
     </div>
   );
 }
