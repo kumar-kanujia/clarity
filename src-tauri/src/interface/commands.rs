@@ -1,5 +1,5 @@
 use crate::application::{importer::import_images, library};
-use crate::domain::dto::Image;
+use crate::domain::dto::{Image, ImportSummary};
 use crate::state::AppState;
 
 use std::path::PathBuf;
@@ -10,7 +10,7 @@ pub async fn save_images(
   app: AppHandle,
   state: State<'_, AppState>,
   paths: Vec<String>,
-) -> Result<(), String> {
+) -> Result<ImportSummary, String> {
   let Ok(app_data) = app.path().app_data_dir() else {
     println!("Unable to get app data directory");
     return Err("Unable to get app data directory".to_string());
@@ -18,11 +18,9 @@ pub async fn save_images(
 
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-  if let Err(err) = import_images(paths, &app_data, &state.db).await {
-    eprintln!("Import failed: {}", err);
-  }
-
-  Ok(())
+  import_images(paths, &app_data, &state.db)
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
