@@ -1,7 +1,6 @@
-use crate::application::importer::import_images;
-use crate::application::library;
+use crate::application::{importer::import_images, library};
+use crate::domain::dto::Image;
 use crate::state::AppState;
-use crate::{application::importer, domain::dto::Image};
 
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
@@ -24,27 +23,6 @@ pub async fn save_images(
   }
 
   Ok(())
-}
-
-#[tauri::command]
-pub async fn save_dirs(
-  app: AppHandle,
-  state: State<'_, AppState>,
-  paths: Vec<String>,
-) -> Result<(), String> {
-  let Ok(app_data) = app.path().app_data_dir() else {
-    println!("Unable to get app data directory");
-    return Err("Unable to get app data directory".to_string());
-  };
-
-  let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
-
-  importer::import_paths(paths, &app_data, &state.db)
-    .await
-    .map_err(|err: std::io::Error| {
-      println!("Error: {:?}", err);
-      err.to_string()
-    })
 }
 
 #[tauri::command]

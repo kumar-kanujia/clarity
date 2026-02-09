@@ -23,14 +23,14 @@ pub fn is_image_file(path: &Path) -> bool {
       .is_some_and(is_supported_image_ext)
 }
 
-pub fn scan_for_image_files(source: &Path) -> Vec<PathBuf> {
-  if source.is_file() {
-    return is_image_file(source)
-      .then(|| vec![source.to_path_buf()])
+pub fn scan_for_image_files(path: &Path) -> Vec<PathBuf> {
+  if path.is_file() {
+    return is_image_file(path)
+      .then(|| vec![path.to_path_buf()])
       .unwrap_or_default();
   }
 
-  WalkDir::new(source)
+  WalkDir::new(path)
     .into_iter()
     .filter_map(Result::ok)
     .filter(|e| e.file_type().is_file())
