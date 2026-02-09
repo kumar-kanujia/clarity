@@ -9,14 +9,14 @@ use tauri::{AppHandle, Manager, State};
 pub async fn save_images(
   app: AppHandle,
   state: State<'_, AppState>,
-  files: Vec<String>,
+  paths: Vec<String>,
 ) -> Result<(), String> {
   let Ok(app_data) = app.path().app_data_dir() else {
     println!("Unable to get app data directory");
     return Err("Unable to get app data directory".to_string());
   };
 
-  let paths: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();
+  let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
   if let Err(err) = import_images(paths, &app_data, &state.db).await {
     eprintln!("Import failed: {}", err);

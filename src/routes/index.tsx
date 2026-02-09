@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { saveDirs, getSavedImages, saveImages } from "@/tauri/tauri-commands";
+import { getSavedImages, saveImages } from "@/tauri/tauri-commands";
 import { selectDirs, selectImages, getFileURI } from "@/tauri/tauri-api";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/types";
@@ -57,7 +57,7 @@ function Index() {
       const path = await selectDirs();
       if (path) {
         setIsLoading(true);
-        await saveDirs(path);
+        await saveImages(path);
         toast.success("Folder imported successfully");
         await loadLibrary();
       }

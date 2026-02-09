@@ -47,25 +47,15 @@ export async function moveToTrash(images: Image[]) {
   }
 }
 
-export const saveImages = async (files: string[]) => {
-  try {
-    await invoke<void>("save_images", {
-      files
-    });
-  } catch (_) {
-    throw new Error("Failed to save images");
-  }
-};
-
 /**
  *
- * @param path - dir path to scan
+ * @param path - List of paths for images or folders
  * Scan the selected dir and save them in app storage
  */
-export const saveDirs = async (paths: string[]) => {
+export const saveImages = async (paths: string[]) => {
   console.log(paths);
   try {
-    await invoke<void>("save_dirs", {
+    await invoke<void>("save_images", {
       paths
     });
   } catch (err) {

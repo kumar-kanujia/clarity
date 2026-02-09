@@ -24,7 +24,7 @@
 - [x] Implement non-flat storage structure
 - [x] Prevent filename collisions
 - [x] Ensure storage layout is independent of source paths
-- [x] Verify existing images still resolve correctly
+- [ ] Verify existing images still resolve correctly
 
 ---
 
@@ -32,10 +32,10 @@
 
 - [x] Normalize single-file selection into import pipeline
 - [x] Normalize multi-file selection into import pipeline
-- [] Normalize multi-directory selection into import pipeline
-- [ ] Handle mixed selection (files + directories)
+- [x] Normalize multi-directory selection into import pipeline
+- [x] ~~Handle mixed selection (files + directories)~~
 - [ ] Prevent duplicate scans for overlapping directories
-- [ ] Ensure import failure leaves no partial state
+- [ ] ~~Ensure import failure leaves no partial state~~
 
 ---
 
