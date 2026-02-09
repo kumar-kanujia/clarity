@@ -52,11 +52,11 @@
 
 ### Import Summary
 
-- [ ] Track total files scanned
-- [ ] Track files imported
-- [ ] Track files skipped
-- [ ] Track files failed
-- [ ] Surface summary after import completes
+- [x] Track total files scanned
+- [x] Track files imported
+- [x] Track files skipped
+- [x] Track files failed
+- [x] Surface summary after import completes
 
 ---
 

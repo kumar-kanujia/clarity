@@ -1,4 +1,4 @@
-import { Image } from "@/types";
+import { Image, ImportSummary } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 
 /**
@@ -52,12 +52,13 @@ export async function moveToTrash(images: Image[]) {
  * @param path - List of paths for images or folders
  * Scan the selected dir and save them in app storage
  */
-export const saveImages = async (paths: string[]) => {
+export const saveImages = async (paths: string[]): Promise<ImportSummary> => {
   console.log(paths);
   try {
-    await invoke<void>("save_images", {
+    let summary = await invoke<ImportSummary>("save_images", {
       paths
     });
+    return summary;
   } catch (err) {
     console.error("errr", err);
     throw new Error("Failed to load dir");
