@@ -34,6 +34,21 @@ pub async fn get_all_paths(db: &Db) -> Result<Vec<ImageFile>, sqlx::Error> {
     .await
 }
 
+pub async fn get_in_batch(db: &Db, offset: i64, limit: i64) -> Result<Vec<ImageFile>, sqlx::Error> {
+  sqlx::query_as::<_, ImageFile>(
+    r#"
+        SELECT *
+        FROM image_file
+        ORDER BY seq_id
+        LIMIT ?1 OFFSET ?2
+        "#,
+  )
+  .bind(limit)
+  .bind(offset)
+  .fetch_all(db)
+  .await
+}
+
 pub async fn check_if_exists(db: &Db, file_id: &str) -> Result<bool, sqlx::Error> {
   let exists = sqlx::query_scalar::<_, bool>(
     r#"

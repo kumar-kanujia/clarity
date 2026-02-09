@@ -7,6 +7,9 @@ use sqlx::{
   sqlite::{SqliteConnectOptions, SqlitePoolOptions},
 };
 
+pub const DB_DIR: &str = "db";
+pub const DB_FILE: &str = "clarity.db";
+
 pub async fn setup_db(app: &App) -> Result<SqlitePool, sqlx::Error> {
   println!("Setting up database");
 
@@ -15,10 +18,10 @@ pub async fn setup_db(app: &App) -> Result<SqlitePool, sqlx::Error> {
     .app_data_dir()
     .map_err(|_| sqlx::Error::Configuration("missing app data dir".into()))?;
 
-  let db_dir = app_data.join("db");
+  let db_dir = app_data.join(DB_DIR);
   ops::ensure_dir(&db_dir).map_err(|e| sqlx::Error::Configuration(e.to_string().into()))?;
 
-  let db_path: std::path::PathBuf = db_dir.join("clarity.db");
+  let db_path: std::path::PathBuf = db_dir.join(DB_FILE);
 
   let db_opts = SqliteConnectOptions::new()
     .filename(&db_path)

@@ -2,6 +2,8 @@ use std::fs::{self};
 use std::io::Error;
 use std::path::{Path, PathBuf};
 
+use crate::state::IMAGE_DIR;
+
 pub fn ensure_dir(path: &Path) -> Result<(), Error> {
   fs::create_dir_all(path)?;
   Ok(())
@@ -9,7 +11,7 @@ pub fn ensure_dir(path: &Path) -> Result<(), Error> {
 
 pub fn get_file_dir(app_dir: &Path, file_id: &str) -> PathBuf {
   app_dir
-    .join("images")
+    .join(IMAGE_DIR)
     .join(&file_id[0..2])
     .join(&file_id[2..4])
 }

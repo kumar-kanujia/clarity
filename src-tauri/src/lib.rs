@@ -5,7 +5,7 @@ mod interface;
 mod old;
 mod state;
 
-use interface::commands::{get_saved_images, save_images};
+use interface::commands::{get_saved_images, load_saved_images_in_batch, save_images};
 use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
 use tauri::Manager;
@@ -24,6 +24,7 @@ pub fn run() {
       move_to_trash,
       save_images,
       get_saved_images,
+      load_saved_images_in_batch
     ])
     .setup(|app| {
       tauri::async_runtime::block_on(async move {

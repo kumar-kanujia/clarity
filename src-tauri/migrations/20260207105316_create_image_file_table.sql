@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS image_file (
-    file_id TEXT PRIMARY KEY,
+    seq_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_id TEXT NOT NULL UNIQUE,
     filename TEXT NOT NULL,
     size INTEGER NOT NULL,
     dimension_x INTEGER,
