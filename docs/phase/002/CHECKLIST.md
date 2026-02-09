@@ -24,7 +24,7 @@
 - [x] Implement non-flat storage structure
 - [x] Prevent filename collisions
 - [x] Ensure storage layout is independent of source paths
-- [ ] Verify existing images still resolve correctly
+- [x] Verify existing images still resolve correctly
 
 ---
 
@@ -33,9 +33,9 @@
 - [x] Normalize single-file selection into import pipeline
 - [x] Normalize multi-file selection into import pipeline
 - [x] Normalize multi-directory selection into import pipeline
-- [x] ~~Handle mixed selection (files + directories)~~
-- [ ] Prevent duplicate scans for overlapping directories
-- [ ] ~~Ensure import failure leaves no partial state~~
+- [x] ~~Handle mixed selection (files + directories)~~ Not possible with Tauri
+- [x] Prevent duplicate scans for overlapping directories
+- [x] ~~Ensure import failure leaves no partial state~~ Future scope
 
 ---
 
@@ -43,20 +43,10 @@
 
 ### Exact Duplicate Detection
 
-- [ ] Define what counts as “same file” (content-based)
-- [ ] Detect duplicates during import
-- [ ] Ensure duplicate detection runs before file copy
-- [ ] Verify no duplicate DB entries are created accidentally
-
----
-
-### Explicit Import Modes
-
-- [ ] Define supported import modes
-- [ ] Implement “skip duplicate” behavior
-- [ ] Implement “reuse existing record” behavior
-- [ ] Implement “abort on duplicate” behavior
-- [ ] Ensure behavior is explicit, not implicit
+- [x] Define what counts as “same file” (content-based)
+- [x] Detect duplicates during import
+- [x] Ensure duplicate detection runs before file copy
+- [x] Verify no duplicate DB entries are created accidentally
 
 ---
 

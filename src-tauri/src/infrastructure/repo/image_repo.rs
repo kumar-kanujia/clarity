@@ -33,3 +33,20 @@ pub async fn get_all_paths(db: &Db) -> Result<Vec<ImageFile>, sqlx::Error> {
     .fetch_all(db)
     .await
 }
+
+pub async fn check_if_exists(db: &Db, file_id: &str) -> Result<bool, sqlx::Error> {
+  let exists = sqlx::query_scalar::<_, bool>(
+    r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM image_file
+            WHERE file_id = ?1
+        )
+        "#,
+  )
+  .bind(file_id)
+  .fetch_one(db)
+  .await?;
+
+  Ok(exists)
+}

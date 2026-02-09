@@ -11,6 +11,14 @@ use std::path::{Path, PathBuf};
 async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error> {
   let file_id = hashing::generate_file_id(file)?;
 
+  let is_exists = image_repo::check_if_exists(db, &file_id)
+    .await
+    .map_err(|_| Error::other("Something went wrong!"))?;
+
+  if is_exists {
+    return Ok(());
+  }
+
   let image_file = scanner::build_image_file_from_path(file, &file_id)?;
 
   let target_dir = ops::get_file_dir(app_dir, &file_id);
@@ -19,7 +27,7 @@ async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<(), Error
 
   let target_path = target_dir.join(image_file.storage_file_name());
 
-  ops::copy_file(file, &target_path)?;
+  ops::copy_file_async(file, &target_path).await?;
 
   image_repo::save(db, &image_file)
     .await
