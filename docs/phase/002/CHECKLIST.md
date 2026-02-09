@@ -64,38 +64,29 @@
 
 ### Batch-Based Retrieval
 
-- [ ] Define batch size handling
-- [ ] Implement deterministic ordering
-- [ ] Retrieve images batch-wise from DB
-- [ ] Ensure UI does not request full dataset
-- [ ] Verify batch retrieval across restarts
+- [x] Define batch size handling
+- [x] Implement deterministic ordering
+- [x] Retrieve images batch-wise from DB
+- [x] Ensure UI does not request full dataset
+- [x] Verify batch retrieval across restarts
 
 ---
 
 ### Reliable Image Viewing
 
-- [ ] Map DB records to filesystem via internal ID
-- [ ] Verify file exists before display
-- [ ] Handle missing file explicitly
-- [ ] Ensure viewing never depends on original paths
-
----
-
-### Read-Only Storage Inspection
-
-- [ ] Expose storage root path (read-only)
-- [ ] Display folder structure
-- [ ] Display file counts
-- [ ] Ensure no mutation is possible from inspection
+- [x] Map DB records to filesystem via internal ID
+- [x] Verify file exists before display
+- [x] ~~Verify file exists before display (future scope)~~
+- [x] Ensure viewing never depends on original paths
 
 ---
 
 ## Phase 2 Completion Check
 
-- [ ] Import large sets without manual babysitting
-- [ ] Storage layout scales cleanly
-- [ ] Duplicate imports behave predictably
-- [ ] Image retrieval works in batches
-- [ ] App feels safe to use on a real image library
+- [x] Import large sets without manual babysitting
+- [x] Storage layout scales cleanly
+- [x] Duplicate imports behave predictably
+- [x] Image retrieval works in batches
+- [x] App feels safe to use on a real image library
 
 ---

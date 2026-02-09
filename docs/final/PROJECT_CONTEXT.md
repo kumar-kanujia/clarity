@@ -4,47 +4,49 @@
 
 Clarity is a **local-first image management application**.
 
-The app lets users import images from their filesystem, stores those images in app-managed storage, and keeps a database record for each imported file. Once an image is imported, the app does not rely on the original file location.
+The app allows users to import images from their filesystem, stores those images in app-managed storage, and maintains a database record for each imported image. Once imported, images are fully owned by the application and no longer depend on their original file locations.
 
-At the moment, the functionality is basic:
+Users can import images by selecting files or directories. Imported images are stored in a structured internal layout and can be retrieved and displayed in batches through the UI.
 
-- Directories can be selected and scanned
-- Images are copied into app data
-- A database entry is created per image
-- Imported images can be listed and shown in the UI
-
-There is also an older, experimental section that attempts duplicate detection and allows sending selected files to trash. This part is not optimized and should not be treated as stable.
+Exact duplicate files are detected during import to avoid ambiguous state. Import operations provide clear feedback about what was scanned, imported, skipped, or failed.
 
 ---
 
 ## Direction
 
-Over time, Clarity is intended to become a **robust image resource management tool**, not just an image viewer. The focus is on safely handling large image collections and giving users clear control over their data.
+Clarity is intended to grow into a **robust image resource management tool**.
 
-Features will be added gradually, but the emphasis is on correctness and safety rather than speed or novelty.
+The long-term focus is on:
+
+- Safely handling large image collections
+- Maintaining clear relationships between files and metadata
+- Making destructive operations explicit and predictable
+- Preserving user trust through transparency and data integrity
+
+The project favors correctness, safety, and clarity over automation or novelty.
 
 ---
 
 ## Core Principles
 
-- **Local-first**
+- **Local-first**  
   All data stays on the user’s machine. No cloud dependency.
 
-- **App-owned storage**
-  Imported images are copied into app-managed storage. Original files are never modified.
+- **App-owned storage**  
+  Imported images are copied into app-managed storage. Original user files are never modified.
 
-- **Data integrity**
-  Filesystem state and database state must stay in sync. Failed operations should not leave partial data behind.
+- **Data integrity**  
+  Filesystem state and database state must remain consistent. Failed operations must not leave partial or corrupted state.
 
-- **Safety first**
-  Destructive actions should be explicit and, where possible, reversible.
+- **Safety first**  
+  Destructive actions should be explicit and deliberate.
 
-- **Clear boundaries**
+- **Clear boundaries**  
   Core logic should not be tightly coupled to UI or framework code.
 
 ---
 
-## Non-goals (Maybe)
+## Non-goals
 
 Clarity is not intended to be:
 
@@ -57,8 +59,7 @@ Clarity is not intended to be:
 
 ## Notes
 
-This document describes **what the project is**, not how complete or polished it currently is. Implementation quality and features will evolve, but these principles should remain stable.
+This document describes what the project **is**, not how complete or polished it is.  
+Features and implementation details will evolve, but these principles should remain stable.
 
-If other documents conflict with this one, this document takes priority.
-
----
+If another document conflicts with this one, this document takes priority.

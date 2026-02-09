@@ -2,7 +2,7 @@
 
 ## Phase 0 — Initial Implementation
 
-**Goal**
+**Goal**  
 Get a basic end-to-end flow working for importing and persisting images.
 
 **What was done**
@@ -28,7 +28,7 @@ Get a basic end-to-end flow working for importing and persisting images.
 
 ## Phase 1 — Stabilization and Cleanup
 
-**Goal**
+**Goal**  
 Make the existing functionality more reliable and easier to reason about, without adding major new features.
 
 **What was done**
@@ -42,12 +42,43 @@ Make the existing functionality more reliable and easier to reason about, withou
 **Notes**
 
 - No major new user-facing features were added
-- Some areas (error handling, optimization, legacy duplicate logic) are still incomplete
-- The focus was on understanding the system and preparing it for future work
+- Some areas (error handling, optimization) were intentionally deferred
+- The focus was on preparing the system for deliberate extension
 
 **Exit state**
 
-- The core import → store → list → display flow works reliably
-- The project is in a stable enough state to plan further improvements deliberately
+- The core import → store → list → display flow was stable enough to build on
 
 ---
+
+## Phase 2 — Import & Storage Scaling
+
+**Goal**  
+Make image import, storage, and retrieval reliable and scalable for real-world image libraries.
+
+**What was done**
+
+- Introduced stable internal image identifiers
+- Moved to a deterministic, non-flat storage layout
+- Unified import handling for:
+  - Single files
+  - Multiple files
+  - Multiple directories
+- Prevented duplicate scans for overlapping directories
+- Added exact duplicate detection based on file content
+- Ensured duplicate imports do not create ambiguous state
+- Added import summaries (scanned, imported, skipped, failed)
+- Implemented batch-based image retrieval with deterministic ordering
+- Ensured image viewing relies only on internal IDs and app-managed storage
+
+**Notes**
+
+- Duplicate handling is exact (file-level), not similarity-based
+- Some edge cases (e.g. partial failure recovery) are still explicitly deferred
+- Focus remained on correctness and predictability over optimization
+
+**Exit state**
+
+- The app can safely ingest and browse large image collections
+- Storage and retrieval behavior is predictable and transparent
+- The system is usable without manual babysitting
