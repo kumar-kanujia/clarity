@@ -42,9 +42,9 @@
 
 ### Metadata Robustness
 
-- [ ] Metadata extraction failures do not block import
-- [ ] Allow metadata to be re-extracted
-- [ ] Missing metadata is handled explicitly
+- [x] Metadata extraction failures do not block import
+- [x] ~~Allow metadata to be re-extracted~~
+- [x] ~~Missing metadata is handled explicitly~~
 
 ---
 

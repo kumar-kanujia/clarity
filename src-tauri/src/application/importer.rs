@@ -1,4 +1,5 @@
 use crate::domain::dto::{ImportCounters, ImportSummary, ProcessStatus};
+use crate::domain::imagefile::ImageFile;
 use crate::infrastructure::fs::scanner;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
@@ -20,7 +21,14 @@ async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
     return Ok(ProcessStatus::Skipped);
   }
 
-  let image_file = scanner::build_image_file_from_path(file)?;
+  let image_file = match scanner::build_image_file_from_path(file) {
+    Ok(image_file) => image_file,
+    // TODO: Handle error
+    Err(_) => ImageFile {
+      file_path: file_path.to_string(),
+      ..Default::default()
+    },
+  };
 
   image_repo::save_image_file(db, &image_file)
     .await
