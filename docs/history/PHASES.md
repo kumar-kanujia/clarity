@@ -82,3 +82,73 @@ Make image import, storage, and retrieval reliable and scalable for real-world i
 - The app can safely ingest and browse large image collections
 - Storage and retrieval behavior is predictable and transparent
 - The system is usable without manual babysitting
+
+---
+
+## Phase 3 — Image Indexing & Metadata
+
+**Goal**
+Shift from app-managed file storage to a **reference-based, database-driven image model** in order to unlock feature development and reduce storage complexity.
+
+---
+
+**What was done**
+
+- Implemented reference-based image import:
+  - Users can select one or more image files
+  - Files remain in their original locations
+  - No copying, moving, or mutation of user files
+
+- Registered imported images directly in the database
+
+- Assigned a stable internal image ID to each image
+
+- Ensured image identity survives restarts
+
+- Allowed database records to exist even if files later become unavailable
+
+- Implemented metadata extraction on import:
+  - Image dimensions
+  - File size
+  - Image format
+  - Import timestamp
+
+- Ensured metadata extraction failures do not block import
+
+- Established the database as the source of truth:
+  - One database record per image ID
+  - Metadata persists across restarts
+  - Database updates never touch the filesystem
+  - Metadata remains intact even if files move or disappear
+
+- Removed legacy app-managed storage code safely
+
+- Implemented retrieval and viewing:
+  - Batch-based image retrieval from the database
+  - Deterministic ordering
+  - UI never requests the full dataset at once
+  - Images load from original file paths
+  - File availability is checked at view time
+  - Missing or unreadable files fail explicitly without breaking browsing
+
+---
+
+**Notes**
+
+- This phase intentionally removes file ownership from the application
+- Image files are treated as external, read-only resources
+- The database now represents the full application state
+- Feature development is no longer blocked by storage concerns
+- Phase 2 storage work informed this phase but is no longer active
+
+---
+
+**Exit state**
+
+- Images can be imported by reference
+- Metadata is extracted and persisted reliably
+- The database fully represents image state
+- Images can be retrieved and viewed at scale
+- The app no longer manages or stores user image files
+
+---
