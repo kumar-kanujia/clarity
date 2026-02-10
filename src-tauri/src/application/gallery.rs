@@ -17,7 +17,7 @@ pub async fn get_image_files_in_batch(
 
   let images = files
     .into_iter()
-    .filter(|file| ops::check_if_file_exists(&file.file_path).unwrap_or(false))
+    .filter(|file| ops::verify_file_readbilty(&file.file_path).unwrap_or(false))
     .map(Image::from)
     .collect();
 

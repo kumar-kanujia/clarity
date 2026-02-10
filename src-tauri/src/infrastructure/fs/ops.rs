@@ -1,4 +1,4 @@
-use std::fs::{self};
+use std::fs::{self, File};
 use std::io::Error;
 use std::path::{Path, PathBuf};
 
@@ -29,7 +29,12 @@ pub async fn copy_file_async(source: &Path, target: &Path) -> Result<PathBuf, Er
   Ok(target.to_path_buf())
 }
 
-pub fn check_if_file_exists(path: &str) -> Result<bool, Error> {
-  let path = Path::new(path);
-  Ok(path.exists())
+pub fn verify_file_readbilty(path: &str) -> Result<bool, Error> {
+  match File::open(path) {
+    Ok(_) => Ok(true),
+    Err(e) => match e.kind() {
+      std::io::ErrorKind::NotFound => Ok(false),
+      _ => Err(e),
+    },
+  }
 }
