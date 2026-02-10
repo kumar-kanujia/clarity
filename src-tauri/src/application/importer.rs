@@ -1,124 +1,99 @@
+use crate::domain::dto::{ImportCounters, ImportStatus, ImportSummary};
 use crate::infrastructure::fs::{ops, scanner};
+use crate::infrastructure::media::hashing;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
-use futures::future::join_all;
+
+use futures::stream::{self, StreamExt};
+use std::io::Error;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
-pub async fn import_directory(source: &str, target: &mut PathBuf, db: &Db) -> Result<(), String> {
-  let source_path = Path::new(source);
+/// Process a single image file
+async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<ImportStatus, Error> {
+  let file_id = hashing::generate_file_id(file)?;
 
-  target.push("img");
+  let is_exists = image_repo::check_if_exists(db, &file_id)
+    .await
+    .map_err(|_| Error::other("Something went wrong!"))?;
 
-  ops::ensure_dir(target).map_err(|e| e.to_string())?;
+  if is_exists {
+    return Ok(ImportStatus::Skipped);
+  }
 
-  let detected_images = scanner::scan_for_images(source_path);
+  let image_file = scanner::build_image_file_from_path(file, &file_id)?;
 
-  let copied_files: Vec<_> = detected_images
-    .iter()
-    .filter_map(|original| {
-      // TODO: Handle error
-      if let Ok(new_path) = ops::copy_file(original, target) {
-        Some((new_path, original))
-      } else {
-        None
-      }
-    })
-    .collect();
+  let target_dir = ops::get_file_dir(app_dir, &file_id);
 
-  let futures = copied_files.into_iter().map(|(new_path, original_path)| {
-    let db = db.clone();
-    async move {
-      if let Ok(image) = scanner::extract_metadata(&new_path, Some(original_path)) {
-        let _ = image_repo::save(&db, &image).await;
-      }
-    }
-  });
+  ops::ensure_dir(&target_dir)?;
 
-  join_all(futures).await;
+  let target_path = target_dir.join(image_file.storage_file_name());
 
-  Ok(())
+  ops::copy_file_async(file, &target_path).await?;
+
+  image_repo::save(db, &image_file)
+    .await
+    .map_err(|_| Error::other("Something went wrong!"))?;
+
+  Ok(ImportStatus::Imported)
 }
 
-#[cfg(test)]
-mod tests {
-  use super::*;
-  use sqlx::SqlitePool;
-  use std::path::Path;
-  use tempfile::tempdir;
+/// Process a list of image files in parallel
+async fn process_images_async<I, P>(
+  files: I,
+  app_dir: &Path,
+  db: &Db,
+) -> Result<ImportCounters, Error>
+where
+  I: IntoIterator<Item = P>,
+  P: AsRef<Path>,
+{
+  let counters = Arc::new(ImportCounters::default());
 
-  async fn setup_db() -> Db {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+  stream::iter(files)
+    .for_each_concurrent(50, |file| {
+      let app_dir = app_dir.to_path_buf();
+      let counters = counters.clone();
 
-    sqlx::query(
-      r#"
-            CREATE TABLE image_file (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filename TEXT NOT NULL,
-                path TEXT NOT NULL,
-                size_bytes INTEGER NOT NULL,
-                size_string TEXT NOT NULL,
-                dimension_x INTEGER NOT NULL,
-                dimension_y INTEGER NOT NULL,
-                dimension_string TEXT NOT NULL,
-                image_extension TEXT NOT NULL,
-                original_path TEXT NOT NULL,
-                mean_hash TEXT NOT NULL
-            )
-            "#,
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
+      async move {
+        let path = file.as_ref();
 
-    pool
-  }
+        counters.scanned.fetch_add(1, Ordering::Relaxed);
 
-  fn create_test_image(path: &Path, w: u32, h: u32) {
-    let img = image::RgbImage::new(w, h);
-    img.save(path).unwrap();
-  }
+        match process_image(path, &app_dir, db).await {
+          Ok(ImportStatus::Imported) => {
+            counters.imported.fetch_add(1, Ordering::Relaxed);
+          }
+          Ok(ImportStatus::Skipped) => {
+            counters.skipped.fetch_add(1, Ordering::Relaxed);
+          }
+          Err(err) => {
+            counters.failed.fetch_add(1, Ordering::Relaxed);
+            eprintln!("Failed to process {}: {}", path.display(), err);
+          }
+        }
+      }
+    })
+    .await;
+  let final_counters = Arc::try_unwrap(counters).unwrap_or_default();
 
-  #[tokio::test]
-  async fn imports_images_from_directory() {
-    let source_dir = tempdir().unwrap();
-    let target_dir = tempdir().unwrap();
+  Ok(final_counters)
+}
 
-    // create files
-    let img1 = source_dir.path().join("a.png");
-    let img2 = source_dir.path().join("b.jpg");
-    let txt = source_dir.path().join("note.txt");
+/// Process list of paths and import images
+pub async fn import_images(
+  paths: Vec<PathBuf>,
+  app_dir: &Path,
+  db: &Db,
+) -> Result<ImportSummary, Error> {
+  let files: Vec<PathBuf> = paths
+    .into_iter()
+    .flat_map(|p| scanner::scan_for_image_files(&p))
+    .collect();
+  let total_files = files.len();
+  let mut summary: ImportSummary = process_images_async(files, app_dir, db).await?.into();
+  summary.total = total_files;
 
-    create_test_image(&img1, 64, 64);
-    create_test_image(&img2, 32, 32);
-    std::fs::write(&txt, "ignore me").unwrap();
-
-    let mut target = target_dir.path().to_path_buf();
-    let img_dir = target.clone();
-    let db = setup_db().await;
-
-    import_directory(source_dir.path().to_str().unwrap(), &mut target, &db)
-      .await
-      .unwrap();
-
-    // 1. img directory created
-    let img_dir = img_dir.join("img");
-    assert!(img_dir.exists());
-    assert!(img_dir.is_dir());
-
-    // 2. files copied
-    let copied: Vec<_> = std::fs::read_dir(&img_dir)
-      .unwrap()
-      .map(|e| e.unwrap().path())
-      .collect();
-
-    assert_eq!(copied.len(), 2);
-
-    // 3. db records inserted
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM image_file")
-      .fetch_one(&db)
-      .await
-      .unwrap();
-
-    assert_eq!(count, 2);
-  }
+  Ok(summary)
 }

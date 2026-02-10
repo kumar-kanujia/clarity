@@ -589,11 +589,13 @@ name = "clarity"
 version = "0.0.1"
 dependencies = [
  "futures",
+ "hex",
  "image",
  "image_hasher",
  "rayon",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "tauri",
  "tauri-build",
@@ -602,6 +604,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "trash",
+ "walkdir",
 ]
 
 [[package]]

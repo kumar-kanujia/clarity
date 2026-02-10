@@ -6,3 +6,11 @@ export type Image = {
 };
 
 export type AppState = "INIT" | "PREVIEW" | "SCANNING" | "RESULTS";
+
+export type ImportSummary = {
+  total: number;
+  scanned: number;
+  imported: number;
+  skipped: number;
+  failed: number;
+};

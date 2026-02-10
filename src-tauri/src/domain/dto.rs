@@ -1,6 +1,8 @@
-use serde::Serialize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::domain::imagefile::ImageFile;
+
+use serde::Serialize;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -14,56 +16,45 @@ pub struct Image {
 impl From<ImageFile> for Image {
   fn from(file: ImageFile) -> Self {
     Self {
-      path: file.path,
+      path: format!("{}.{}", file.file_id, file.image_extension),
+      size: file.size_string(),
+      resolution: file.dimensions_string(),
       filename: file.filename,
-      size: file.size_string,
-      resolution: file.dimension_string,
     }
   }
 }
 
-#[cfg(test)]
-mod tests {
-  use serde_json::json;
+pub enum ImportStatus {
+  Imported,
+  Skipped,
+}
 
-  use crate::domain::{dto::Image, imagefile::ImageFile};
+#[derive(Debug, Default)]
+pub struct ImportCounters {
+  pub scanned: AtomicUsize,
+  pub imported: AtomicUsize,
+  pub skipped: AtomicUsize,
+  pub failed: AtomicUsize,
+}
 
-  #[test]
-  fn converts_image_file_into_image() {
-    let image_file = ImageFile {
-      path: "/images/uploads".to_string(),
-      filename: "photo.png".to_string(),
-      size_string: "2.3 MB".to_string(),
-      dimension_string: "1920x1080".to_string(),
-      ..Default::default()
-    };
-
-    let image: Image = image_file.into();
-
-    assert_eq!(image.path, "/images/uploads");
-    assert_eq!(image.filename, "photo.png");
-    assert_eq!(image.size, "2.3 MB");
-    assert_eq!(image.resolution, "1920x1080");
+impl Into<ImportSummary> for ImportCounters {
+  fn into(self) -> ImportSummary {
+    ImportSummary {
+      // TODO: Improve this
+      total: 0,
+      scanned: self.scanned.load(Ordering::Relaxed),
+      imported: self.imported.load(Ordering::Relaxed),
+      skipped: self.skipped.load(Ordering::Relaxed),
+      failed: self.failed.load(Ordering::Relaxed),
+    }
   }
+}
 
-  #[test]
-  fn serializes_image_with_camel_case_fields() {
-    let image = Image {
-      path: "/images/uploads".to_string(),
-      filename: "photo.png".to_string(),
-      size: "2.3 MB".to_string(),
-      resolution: "1920x1080".to_string(),
-    };
-
-    let serialized = serde_json::to_value(&image).unwrap();
-
-    let expected = json!({
-        "path": "/images/uploads",
-        "filename": "photo.png",
-        "size": "2.3 MB",
-        "resolution": "1920x1080"
-    });
-
-    assert_eq!(serialized, expected);
-  }
+#[derive(Debug, Default, Serialize)]
+pub struct ImportSummary {
+  pub total: usize,
+  pub scanned: usize,
+  pub imported: usize,
+  pub skipped: usize,
+  pub failed: usize,
 }

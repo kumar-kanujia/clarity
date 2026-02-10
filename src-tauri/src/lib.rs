@@ -5,7 +5,7 @@ mod interface;
 mod old;
 mod state;
 
-use interface::commands::{get_loaded_files, load_dir};
+use interface::commands::{get_saved_images, load_saved_images_in_batch, save_images};
 use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
 use tauri::Manager;
@@ -22,12 +22,13 @@ pub fn run() {
       scan_and_group_duplicates,
       scan_dir_for_images,
       move_to_trash,
-      get_loaded_files,
-      load_dir
+      save_images,
+      get_saved_images,
+      load_saved_images_in_batch
     ])
     .setup(|app| {
       tauri::async_runtime::block_on(async move {
-        let db = setup_db(app).await;
+        let db = setup_db(app).await.unwrap();
         app.manage(AppState { db });
       });
       Ok(())

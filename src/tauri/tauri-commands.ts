@@ -1,4 +1,4 @@
-import { Image } from "@/types";
+import { Image, ImportSummary } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 
 /**
@@ -7,7 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
  */
 export const loadImagesFromDir = async (path: string): Promise<Image[]> => {
   const loadedPhotos: Image[] = await invoke("scan_dir_for_images", {
-    path
+    path,
   });
   return loadedPhotos;
 };
@@ -19,12 +19,12 @@ export const loadImagesFromDir = async (path: string): Promise<Image[]> => {
  */
 export const scanForGroups = async (
   dirPath: string,
-  threshold: number
+  threshold: number,
 ): Promise<Image[][]> => {
   try {
     const imageGroup = await invoke<Image[][]>("scan_and_group_duplicates", {
       path: dirPath,
-      threshold: threshold
+      threshold: threshold,
     });
     return imageGroup;
   } catch (_) {
@@ -40,7 +40,7 @@ export async function moveToTrash(images: Image[]) {
   const paths = images.map((image) => image.path);
   try {
     await invoke("move_to_trash", {
-      paths: paths
+      paths: paths,
     });
   } catch (_) {
     throw new Error("Failed to move to trash");
@@ -49,25 +49,41 @@ export async function moveToTrash(images: Image[]) {
 
 /**
  *
- * @param path - dir path to scan
+ * @param path - List of paths for images or folders
  * Scan the selected dir and save them in app storage
  */
-export const loadDir = async (path: string) => {
+export const saveImages = async (paths: string[]): Promise<ImportSummary> => {
+  console.log(paths);
   try {
-    await invoke<Image[]>("load_dir", {
-      path
+    let summary = await invoke<ImportSummary>("save_images", {
+      paths,
     });
-  } catch (_) {
+    return summary;
+  } catch (err) {
+    console.error("errr", err);
     throw new Error("Failed to load dir");
   }
 };
+
 /**
  *
  * @returns saved images in app storage
  */
-export const getLoadedFiles = async () => {
+export const getSavedImages = async () => {
   try {
-    const loadedFiles = await invoke<Image[]>("get_loaded_files");
+    const loadedFiles = await invoke<Image[]>("get_saved_images");
+    return loadedFiles;
+  } catch (_) {
+    throw new Error("Failed to get loaded files");
+  }
+};
+
+export const getSavedImagesBatch = async (offset: number, limit: number) => {
+  try {
+    const loadedFiles = await invoke<Image[]>("load_saved_images_in_batch", {
+      offset,
+      limit,
+    });
     return loadedFiles;
   } catch (_) {
     throw new Error("Failed to get loaded files");
