@@ -8,6 +8,7 @@ use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::time::Instant;
 
 async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
   let path_str = file
@@ -51,10 +52,11 @@ async fn process_images_async(db: &Db, files: Vec<PathBuf>) -> Result<ImportSumm
           }
           Ok(ProcessStatus::Skipped) => {
             counters.skipped.fetch_add(1, Ordering::Relaxed);
+            log::info!("Skipped {:?}", path);
           }
           Err(err) => {
             counters.failed.fetch_add(1, Ordering::Relaxed);
-            eprintln!("Failed to process {:?}: {}", path, err);
+            log::error!("Failed to process {:?}: {}", path, err);
           }
         }
       }
@@ -64,6 +66,9 @@ async fn process_images_async(db: &Db, files: Vec<PathBuf>) -> Result<ImportSumm
 }
 
 pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
+  let t0 = Instant::now();
+  log::info!("Scanning and processing images started");
+
   let mut all_images = Vec::new();
   let mut total_scanned = 0;
   let mut set = tokio::task::JoinSet::new();
@@ -79,7 +84,20 @@ pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<Imp
   }
 
   let mut summary: ImportSummary = process_images_async(db, all_images).await?;
+
+  let t1 = Instant::now();
+
   summary.total = total_scanned;
+
+  log::info!("Scanning and processing images completed in {:?}", t1 - t0);
+  log::info!(
+    "Total: {:?} Scanned: {:?} Imported: {:?} Skipped: {:?} Failed: {:?}",
+    summary.total,
+    summary.scanned,
+    summary.imported,
+    summary.skipped,
+    summary.failed
+  );
 
   Ok(summary)
 }

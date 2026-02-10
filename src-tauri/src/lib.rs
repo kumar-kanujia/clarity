@@ -8,8 +8,8 @@ mod state;
 use crate::{
   interface::{
     commands::{load_saved_images_in_batch, save_images},
+    dbsetup::setup_db,
     logsetup::{LOG_LEVEL, get_log_target},
-    setup::setup_db,
   },
   state::AppState,
 };
@@ -40,8 +40,12 @@ pub fn run() {
     ])
     .setup(|app| {
       tauri::async_runtime::block_on(async move {
-        let db = setup_db(app).await.unwrap();
-        app.manage(AppState { db });
+        if let Ok(db) = setup_db(app)
+          .await
+          .map_err(|err| log::error!("DB Error: {}", err))
+        {
+          app.manage(AppState { db });
+        }
       });
       Ok(())
     })

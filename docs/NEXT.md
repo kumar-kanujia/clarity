@@ -49,20 +49,20 @@ Focus only on **paths you already execute**.
 
 Logging is for **you**, not users (yet).
 
-- [ ] Introduce log levels: info / warn / error
-- [ ] Log scan start + completion (counts only)
-- [ ] Log skipped files with reason
-- [ ] Log fatal failures with enough context to reproduce
-- [ ] Ensure logs never include raw image data
+- [x] Introduce log levels: info / warn / error
+- [x] Log scan start + completion (counts only)
+- [x] Log skipped files with reason
+- [x] Log fatal failures with enough context to reproduce
+- [x] Ensure logs never include raw image data
 
 ---
 
 ### Completion Check (Part 1)
 
-- [ ] App never crashes on bad files
-- [ ] Failures are visible in logs
-- [ ] Large scans feel predictable
-- [ ] You trust the system to keep running
+- [x] App never crashes on bad files
+- [x] Failures are visible in logs
+- [x] Large scans feel predictable
+- [x] You trust the system to keep running
 
 ---
 
