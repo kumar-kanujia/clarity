@@ -1,6 +1,9 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 use crate::domain::imagefile::ImageFile;
+
+use std::sync::{
+  Arc,
+  atomic::{AtomicUsize, Ordering},
+};
 
 use serde::Serialize;
 
@@ -37,8 +40,8 @@ pub struct ImportCounters {
   pub failed: AtomicUsize,
 }
 
-impl From<ImportCounters> for ImportSummary {
-  fn from(val: ImportCounters) -> Self {
+impl From<Arc<ImportCounters>> for ImportSummary {
+  fn from(val: Arc<ImportCounters>) -> Self {
     ImportSummary {
       // TODO: Improve this
       total: 0,

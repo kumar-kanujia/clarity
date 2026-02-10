@@ -1,5 +1,4 @@
 use crate::domain::dto::{ImportCounters, ImportSummary, ProcessStatus};
-use crate::domain::imagefile::ImageFile;
 use crate::infrastructure::fs::scanner;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
@@ -11,50 +10,40 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
 async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
-  let file_path = file.to_str().ok_or(Error::other("Invalid file path"))?;
+  let path_str = file
+    .to_str()
+    .ok_or_else(|| Error::other("Path is not valid UTF-8"))?;
 
-  let is_file_exist = image_repo::check_is_file_exists(db, file_path)
+  let exists = image_repo::check_is_file_exists(db, path_str)
     .await
-    .map_err(|_| Error::other("Something went wrong!"))?;
+    .map_err(|e| Error::other(format!("DB Check failed: {}", e)))?;
 
-  if is_file_exist {
+  if exists {
     return Ok(ProcessStatus::Skipped);
   }
 
-  let image_file = match scanner::build_image_file_from_path(file) {
-    Ok(image_file) => image_file,
-    // TODO: Handle error
-    Err(_) => ImageFile {
-      file_path: file_path.to_string(),
-      ..Default::default()
-    },
-  };
+  let image_file = scanner::build_image_file_from_path(file)
+    .map_err(|e| Error::other(format!("Metadata extraction failed: {}", e)))?;
 
   image_repo::save_image_file(db, &image_file)
     .await
-    .map_err(|_| Error::other("Something went wrong!"))?;
+    .map_err(|e| Error::other(format!("DB Insert failed: {}", e)))?;
 
   Ok(ProcessStatus::Processed)
 }
 
 /// Process a list of image files in parallel
-async fn process_images_async<I, P>(db: &Db, files: I) -> Result<ImportCounters, Error>
-where
-  I: IntoIterator<Item = P>,
-  P: AsRef<Path>,
-{
+async fn process_images_async(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, Error> {
   let counters = Arc::new(ImportCounters::default());
 
   stream::iter(files)
-    .for_each_concurrent(50, |file| {
+    .for_each_concurrent(10, |path| {
       let counters = counters.clone();
+      let db = db.clone();
 
       async move {
-        let file = file.as_ref();
-
         counters.scanned.fetch_add(1, Ordering::Relaxed);
-
-        match process_image(db, file).await {
+        match process_image(&db, &path).await {
           Ok(ProcessStatus::Processed) => {
             counters.imported.fetch_add(1, Ordering::Relaxed);
           }
@@ -63,28 +52,32 @@ where
           }
           Err(err) => {
             counters.failed.fetch_add(1, Ordering::Relaxed);
-            // TODO: Add error handling
-            eprintln!("Failed to process {}: {}", file.display(), err);
+            eprintln!("Failed to process {:?}: {}", path, err);
           }
         }
       }
     })
     .await;
-  let final_counters = Arc::try_unwrap(counters).unwrap_or_default();
-
-  Ok(final_counters)
+  Ok(counters.into())
 }
 
-/// Process list of paths and import images
 pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
-  let files: Vec<PathBuf> = paths
-    .into_iter()
-    .flat_map(|p| scanner::scan_for_image_files(&p))
-    .collect();
+  let mut all_images = Vec::new();
+  let mut total_scanned = 0;
+  let mut set = tokio::task::JoinSet::new();
 
-  let total_files = files.len();
-  let mut summary: ImportSummary = process_images_async(db, files).await?.into();
-  summary.total = total_files;
+  for path in paths {
+    set.spawn_blocking(move || scanner::perform_file_scan(path));
+  }
+
+  while let Some(res) = set.join_next().await {
+    let (images, count) = res.map_err(|_| Error::other("Something went wrong!"))?;
+    all_images.extend(images);
+    total_scanned += count;
+  }
+
+  let mut summary: ImportSummary = process_images_async(db, all_images).await?;
+  summary.total = total_scanned;
 
   Ok(summary)
 }

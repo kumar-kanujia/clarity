@@ -14,7 +14,7 @@ import { ImageGrid } from "@/features/gallery/components/image-grid";
 import { ImageModal } from "@/features/scanner/components/image-modal";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Index
 });
 
 const BATCH_SIZE = 50;
@@ -25,7 +25,7 @@ function Index() {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(
-    null,
+    null
   );
   const [previewImage, setPreviewImage] = useState<Image | null>(null);
 
@@ -60,7 +60,7 @@ function Index() {
         setIsLoading(false);
       }
     },
-    [offset, isLoading],
+    [offset, isLoading]
   );
 
   // Initial load
@@ -111,7 +111,7 @@ function Index() {
   const handleNextImage = async () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.path === previewImage.path,
+      (img) => img.path === previewImage.path
     );
 
     // If next image exists, go to it
@@ -130,7 +130,7 @@ function Index() {
   const handlePrevImage = () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.path === previewImage.path,
+      (img) => img.path === previewImage.path
     );
     if (currentIndex > 0) {
       setPreviewImage(images[currentIndex - 1]);
@@ -166,6 +166,10 @@ function Index() {
                       {importSummary.total}
                     </span>{" "}
                     total selected,{" "}
+                    <span className="text-foreground">
+                      {importSummary.scanned}
+                    </span>{" "}
+                    scanned,{" "}
                     <span className="text-foreground">
                       {importSummary.imported}
                     </span>{" "}

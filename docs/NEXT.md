@@ -19,8 +19,8 @@ Focus only on **paths you already execute**.
 
 - [x] Handle unreadable files explicitly (permission, locked files)
 - [x] Handle broken symlinks or invalid paths
-- [ ] Skip unsupported image formats with a clear reason
-- [ ] Ensure one bad file does not fail a full scan
+- [x] Skip unsupported image formats with a clear reason
+- [x] Ensure one bad file does not fail a full scan
 
 #### Metadata Extraction
 

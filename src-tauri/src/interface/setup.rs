@@ -29,7 +29,7 @@ pub async fn setup_db(app: &App) -> Result<SqlitePool, sqlx::Error> {
     .foreign_keys(true);
 
   let pool = SqlitePoolOptions::new()
-    .max_connections(4)
+    .max_connections(5)
     .acquire_timeout(std::time::Duration::from_secs(10))
     .after_connect(|conn, _| {
       Box::pin(async move {
