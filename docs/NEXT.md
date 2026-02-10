@@ -24,24 +24,24 @@ Focus only on **paths you already execute**.
 
 #### Metadata Extraction
 
-- [ ] Handle image decode failures safely
-- [ ] Ensure partial metadata does not crash DB writes
-- [ ] Store “metadata unavailable” state instead of failing
+- [x] Handle image decode failures safely
+- [x] Ensure partial metadata does not crash DB writes
+- [!] ~~Store “metadata unavailable” state instead of failing~~ Will do later state setup
 
 #### Database
 
-- [ ] Handle DB insert/update failures explicitly
-- [ ] Ensure partial batch inserts are visible (not silent)
-- [ ] Prevent crashes on malformed records
+- [x] Handle DB insert/update failures explicitly
+- [x] Ensure partial batch inserts are visible (not silent)
+- [x] Prevent crashes on malformed records
 
 ---
 
 ### 2. Overhead & Performance Guardrails (Minimal)
 
-- [ ] Ensure scans are streaming / iterative (not all in memory)
-- [ ] Ensure batch size is enforced everywhere
-- [ ] Avoid decoding full images when extracting metadata
-- [ ] Guard against extremely large folders (timeouts or chunking)
+- [x] Ensure scans are streaming / iterative (not all in memory)
+- [x] Ensure batch size is enforced everywhere
+- [x] Avoid decoding full images when extracting metadata
+- [x] Guard against extremely large folders (timeouts or chunking)
 
 ---
 

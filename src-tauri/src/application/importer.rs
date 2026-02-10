@@ -22,8 +22,10 @@ async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
     return Ok(ProcessStatus::Skipped);
   }
 
-  let image_file = scanner::build_image_file_from_path(file)
-    .map_err(|e| Error::other(format!("Metadata extraction failed: {}", e)))?;
+  let image_file = scanner::build_image_file_with_metadata(file).unwrap_or_else(|e| {
+    eprintln!("Metadata extraction failed: {}", e);
+    scanner::build_image_file_witout_metadata(file)
+  });
 
   image_repo::save_image_file(db, &image_file)
     .await
