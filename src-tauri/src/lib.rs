@@ -5,7 +5,7 @@ mod interface;
 mod old;
 mod state;
 
-use interface::commands::{get_saved_images, load_saved_images_in_batch, save_images};
+use interface::commands::{load_saved_images_in_batch, save_images};
 use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
 use tauri::Manager;
@@ -23,7 +23,6 @@ pub fn run() {
       scan_dir_for_images,
       move_to_trash,
       save_images,
-      get_saved_images,
       load_saved_images_in_batch
     ])
     .setup(|app| {
