@@ -1,4 +1,4 @@
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 use crate::domain::imagefile::ImageFile;
 
@@ -23,16 +23,17 @@ pub fn is_image_file(path: &Path) -> bool {
 
 pub fn scan_for_image_files(path: &Path) -> Vec<PathBuf> {
   if path.is_file() {
-    return is_image_file(path)
-      .then(|| vec![path.to_path_buf()])
-      .unwrap_or_default();
+    if is_image_file(path) {
+      return vec![path.to_path_buf()];
+    }
+    return vec![];
   }
 
   WalkDir::new(path)
     .into_iter()
     .filter_map(Result::ok)
     .filter(|e| e.file_type().is_file())
-    .map(|e| e.into_path())
+    .map(DirEntry::into_path)
     .filter(|path| is_image_file(path))
     .collect()
 }
@@ -40,7 +41,7 @@ pub fn scan_for_image_files(path: &Path) -> Vec<PathBuf> {
 pub fn build_image_file_from_path(path: &Path) -> Result<ImageFile, Error> {
   let file_path = path.to_string_lossy().to_string();
 
-  let file_size = fs::metadata(path)?.len() as i64;
+  let file_size = fs::metadata(path)?.len().cast_signed();
 
   let (width, height) = image::image_dimensions(path).unwrap_or((0, 0));
 

@@ -1,3 +1,4 @@
+#[allow(clippy::needless_raw_strings)]
 use crate::{domain::imagefile::ImageFile, state::Db};
 
 pub async fn get_in_batch(db: &Db, offset: i64, limit: i64) -> Result<Vec<ImageFile>, sqlx::Error> {

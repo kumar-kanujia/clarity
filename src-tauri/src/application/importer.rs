@@ -73,6 +73,7 @@ pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<Imp
     .into_iter()
     .flat_map(|p| scanner::scan_for_image_files(&p))
     .collect();
+
   let total_files = files.len();
   let mut summary: ImportSummary = process_images_async(db, files).await?.into();
   summary.total = total_files;

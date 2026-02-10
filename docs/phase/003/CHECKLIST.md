@@ -11,20 +11,20 @@
 
 ### File Import
 
-- [ ] Allow user to select one or more image files
-- [ ] Register selected files in the database
-- [ ] Do not copy, move, or mutate user files
+- [x] Allow user to select one or more image files
+- [x] Register selected files in the database
+- [x] Do not copy, move, or mutate user files
 - [ ] Validate files are readable at import time
-- [ ] Reject unsupported image formats explicitly
+- [x] Reject unsupported image formats explicitly
 
 ---
 
 ### Image Identity
 
-- [ ] Assign a stable internal image ID
-- [ ] Ensure DB records use internal ID as primary reference
-- [ ] Ensure identity survives restarts
-- [ ] Allow DB entries to exist even if file becomes unavailable later
+- [x] Assign a stable internal image ID
+- [x] Ensure DB records use internal ID as primary reference
+- [x] Ensure identity survives restarts
+- [x] Allow DB entries to exist even if file becomes unavailable later
 
 ---
 
@@ -32,10 +32,10 @@
 
 ### Metadata Collection
 
-- [ ] Extract basic image metadata on import
-- [ ] Store image dimensions
-- [ ] Store file size
-- [ ] Store image format
+- [x] Extract basic image metadata on import
+- [x] Store image dimensions
+- [x] Store file size
+- [x] Store image format
 - [ ] Capture filesystem timestamps (best-effort)
 
 ---
@@ -53,17 +53,17 @@
 ### Database as Source of Truth
 
 - [ ] Persist image records and metadata reliably
-- [ ] Ensure one DB row per image ID
-- [ ] Ensure updates do not touch filesystem
-- [ ] Verify DB state survives restarts
+- [x] Ensure one DB row per image ID
+- [x] Ensure updates do not touch filesystem
+- [x] Verify DB state survives restarts
 
 ---
 
 ### Data Integrity
 
-- [ ] Metadata remains intact if files move or disappear
-- [ ] DB records are never implicitly deleted
-- [ ] Old storage-based code can be removed safely
+- [x] Metadata remains intact if files move or disappear
+- [x] DB records are never implicitly deleted
+- [x] Old storage-based code can be removed safely
 
 ---
 
@@ -71,16 +71,16 @@
 
 ### Image Retrieval
 
-- [ ] Retrieve images from DB in batches
-- [ ] Implement deterministic ordering
-- [ ] Ensure UI does not request full dataset
-- [ ] Support large image collections
+- [x] Retrieve images from DB in batches
+- [x] Implement deterministic ordering
+- [x] Ensure UI does not request full dataset
+- [x] Support large image collections
 
 ---
 
 ### Image Viewing
 
-- [ ] Load images from original file paths
+- [x] Load images from original file paths
 - [ ] Check file availability at view time
 - [ ] Fail explicitly if file is missing or unreadable
 - [ ] Missing files do not break browsing

@@ -4,7 +4,7 @@ use crate::domain::dto::{Image, ImportSummary};
 use crate::state::AppState;
 
 use std::path::PathBuf;
-use tauri::{AppHandle, State};
+use tauri::State;
 
 #[tauri::command]
 pub async fn save_images(
