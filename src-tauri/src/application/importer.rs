@@ -1,6 +1,6 @@
-use crate::domain::dto::{ImportCounters, ImportStatus, ImportSummary};
-use crate::infrastructure::fs::{ops, scanner};
-use crate::infrastructure::media::hashing;
+use crate::domain::dto::{ImportCounters, ImportSummary, ProcessStatus};
+use crate::domain::imagefile::ImageFile;
+use crate::infrastructure::fs::scanner;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
 
@@ -10,41 +10,35 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-/// Process a single image file
-async fn process_image(file: &Path, app_dir: &Path, db: &Db) -> Result<ImportStatus, Error> {
-  let file_id = hashing::generate_file_id(file)?;
+async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
+  let file_path = file.to_str().ok_or(Error::other("Invalid file path"))?;
 
-  let is_exists = image_repo::check_if_exists(db, &file_id)
+  let is_file_exist = image_repo::check_is_file_exists(db, file_path)
     .await
     .map_err(|_| Error::other("Something went wrong!"))?;
 
-  if is_exists {
-    return Ok(ImportStatus::Skipped);
+  if is_file_exist {
+    return Ok(ProcessStatus::Skipped);
   }
 
-  let image_file = scanner::build_image_file_from_path(file, &file_id)?;
+  let image_file = match scanner::build_image_file_from_path(file) {
+    Ok(image_file) => image_file,
+    // TODO: Handle error
+    Err(_) => ImageFile {
+      file_path: file_path.to_string(),
+      ..Default::default()
+    },
+  };
 
-  let target_dir = ops::get_file_dir(app_dir, &file_id);
-
-  ops::ensure_dir(&target_dir)?;
-
-  let target_path = target_dir.join(image_file.storage_file_name());
-
-  ops::copy_file_async(file, &target_path).await?;
-
-  image_repo::save(db, &image_file)
+  image_repo::save_image_file(db, &image_file)
     .await
     .map_err(|_| Error::other("Something went wrong!"))?;
 
-  Ok(ImportStatus::Imported)
+  Ok(ProcessStatus::Processed)
 }
 
 /// Process a list of image files in parallel
-async fn process_images_async<I, P>(
-  files: I,
-  app_dir: &Path,
-  db: &Db,
-) -> Result<ImportCounters, Error>
+async fn process_images_async<I, P>(db: &Db, files: I) -> Result<ImportCounters, Error>
 where
   I: IntoIterator<Item = P>,
   P: AsRef<Path>,
@@ -53,24 +47,24 @@ where
 
   stream::iter(files)
     .for_each_concurrent(50, |file| {
-      let app_dir = app_dir.to_path_buf();
       let counters = counters.clone();
 
       async move {
-        let path = file.as_ref();
+        let file = file.as_ref();
 
         counters.scanned.fetch_add(1, Ordering::Relaxed);
 
-        match process_image(path, &app_dir, db).await {
-          Ok(ImportStatus::Imported) => {
+        match process_image(db, file).await {
+          Ok(ProcessStatus::Processed) => {
             counters.imported.fetch_add(1, Ordering::Relaxed);
           }
-          Ok(ImportStatus::Skipped) => {
+          Ok(ProcessStatus::Skipped) => {
             counters.skipped.fetch_add(1, Ordering::Relaxed);
           }
           Err(err) => {
             counters.failed.fetch_add(1, Ordering::Relaxed);
-            eprintln!("Failed to process {}: {}", path.display(), err);
+            // TODO: Add error handling
+            eprintln!("Failed to process {}: {}", file.display(), err);
           }
         }
       }
@@ -82,17 +76,14 @@ where
 }
 
 /// Process list of paths and import images
-pub async fn import_images(
-  paths: Vec<PathBuf>,
-  app_dir: &Path,
-  db: &Db,
-) -> Result<ImportSummary, Error> {
+pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
   let files: Vec<PathBuf> = paths
     .into_iter()
     .flat_map(|p| scanner::scan_for_image_files(&p))
     .collect();
+
   let total_files = files.len();
-  let mut summary: ImportSummary = process_images_async(files, app_dir, db).await?.into();
+  let mut summary: ImportSummary = process_images_async(db, files).await?.into();
   summary.total = total_files;
 
   Ok(summary)

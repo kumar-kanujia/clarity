@@ -16,16 +16,16 @@ pub struct Image {
 impl From<ImageFile> for Image {
   fn from(file: ImageFile) -> Self {
     Self {
-      path: format!("{}.{}", file.file_id, file.image_extension),
+      path: file.file_path.clone(),
       size: file.size_string(),
       resolution: file.dimensions_string(),
-      filename: file.filename,
+      filename: file.file_path.split('/').next_back().unwrap().to_string(),
     }
   }
 }
 
-pub enum ImportStatus {
-  Imported,
+pub enum ProcessStatus {
+  Processed,
   Skipped,
 }
 
@@ -37,15 +37,15 @@ pub struct ImportCounters {
   pub failed: AtomicUsize,
 }
 
-impl Into<ImportSummary> for ImportCounters {
-  fn into(self) -> ImportSummary {
+impl From<ImportCounters> for ImportSummary {
+  fn from(val: ImportCounters) -> Self {
     ImportSummary {
       // TODO: Improve this
       total: 0,
-      scanned: self.scanned.load(Ordering::Relaxed),
-      imported: self.imported.load(Ordering::Relaxed),
-      skipped: self.skipped.load(Ordering::Relaxed),
-      failed: self.failed.load(Ordering::Relaxed),
+      scanned: val.scanned.load(Ordering::Relaxed),
+      imported: val.imported.load(Ordering::Relaxed),
+      skipped: val.skipped.load(Ordering::Relaxed),
+      failed: val.failed.load(Ordering::Relaxed),
     }
   }
 }

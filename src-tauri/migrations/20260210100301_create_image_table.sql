@@ -1,10 +1,9 @@
+-- Add migration script here
 CREATE TABLE IF NOT EXISTS image_file (
     seq_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_id TEXT NOT NULL UNIQUE,
-    filename TEXT NOT NULL,
-    size INTEGER NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER,
     dimension_x INTEGER,
     dimension_y INTEGER,
-    image_extension TEXT,
-    original_path TEXT
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

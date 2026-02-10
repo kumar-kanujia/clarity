@@ -6,6 +6,7 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
+#[allow(dead_code)]
 pub fn generate_file_id(path: &Path) -> Result<String, Error> {
   let mut file = File::open(path)?;
   let mut hasher = Sha256::new();
