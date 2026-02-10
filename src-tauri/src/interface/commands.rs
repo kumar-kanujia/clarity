@@ -1,5 +1,5 @@
+use crate::application::gallery;
 use crate::application::importer::scan_and_process_images;
-use crate::application::library;
 use crate::domain::dto::{Image, ImportSummary};
 use crate::state::AppState;
 
@@ -24,7 +24,7 @@ pub async fn load_saved_images_in_batch(
   offset: i64,
   limit: i64,
 ) -> Result<Vec<Image>, String> {
-  let result = library::get_image_files_in_batch(&state.db, offset, limit)
+  let result = gallery::get_image_files_in_batch(&state.db, offset, limit)
     .await
     .map_err(|e| e.to_string())?;
 

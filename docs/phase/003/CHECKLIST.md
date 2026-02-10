@@ -14,7 +14,7 @@
 - [x] Allow user to select one or more image files
 - [x] Register selected files in the database
 - [x] Do not copy, move, or mutate user files
-- [ ] Validate files are readable at import time
+- [x] Validate files are readable at import time
 - [x] Reject unsupported image formats explicitly
 
 ---
@@ -36,7 +36,7 @@
 - [x] Store image dimensions
 - [x] Store file size
 - [x] Store image format
-- [ ] Capture filesystem timestamps (best-effort)
+- [x] Capture filesystem timestamps (best-effort)
 
 ---
 
@@ -81,18 +81,18 @@
 ### Image Viewing
 
 - [x] Load images from original file paths
-- [ ] Check file availability at view time
-- [ ] Fail explicitly if file is missing or unreadable
-- [ ] Missing files do not break browsing
+- [x] Check file availability at view time
+- [x] Fail explicitly if file is missing or unreadable
+- [x] Missing files do not break browsing
 
 ---
 
 ## Phase 3 Completion Check
 
-- [ ] Images can be imported
-- [ ] Metadata can be extracted
-- [ ] Metadata is stored in the database
-- [ ] Images can be retrieved and viewed
-- [ ] Legacy app-managed storage code has been removed
+- [x] Images can be imported
+- [x] Metadata can be extracted
+- [x] Metadata is stored in the database
+- [x] Images can be retrieved and viewed
+- [x] Legacy app-managed storage code has been removed
 
 ---

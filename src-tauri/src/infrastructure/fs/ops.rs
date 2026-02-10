@@ -28,3 +28,8 @@ pub async fn copy_file_async(source: &Path, target: &Path) -> Result<PathBuf, Er
   tokio::fs::copy(source, target).await?;
   Ok(target.to_path_buf())
 }
+
+pub fn check_if_file_exists(path: &str) -> Result<bool, Error> {
+  let path = Path::new(path);
+  Ok(path.exists())
+}
