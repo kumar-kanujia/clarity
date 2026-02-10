@@ -9,6 +9,7 @@ pub fn ensure_dir(path: &Path) -> Result<(), Error> {
   Ok(())
 }
 
+#[allow(dead_code)]
 pub fn get_file_dir(app_dir: &Path, file_id: &str) -> PathBuf {
   app_dir
     .join(IMAGE_DIR)
@@ -22,6 +23,7 @@ pub fn copy_file(source: &Path, target: &Path) -> Result<PathBuf, Error> {
   Ok(target.to_path_buf())
 }
 
+#[allow(dead_code)]
 pub async fn copy_file_async(source: &Path, target: &Path) -> Result<PathBuf, Error> {
   tokio::fs::copy(source, target).await?;
   Ok(target.to_path_buf())

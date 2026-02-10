@@ -16,16 +16,16 @@ pub struct Image {
 impl From<ImageFile> for Image {
   fn from(file: ImageFile) -> Self {
     Self {
-      path: format!("{}.{}", file.file_id, file.image_extension),
+      path: file.file_path.clone(),
       size: file.size_string(),
       resolution: file.dimensions_string(),
-      filename: file.filename,
+      filename: file.file_path.split('/').last().unwrap().to_string(),
     }
   }
 }
 
-pub enum ImportStatus {
-  Imported,
+pub enum ProcessStatus {
+  Processed,
   Skipped,
 }
 
