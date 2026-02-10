@@ -4,9 +4,9 @@
   "version": "0.0.1",
   "identifier": "org.clarity",
   "build": {
-    "beforeDevCommand": "bun run dev",
+    "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
+    "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -21,10 +21,7 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost",
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "*",
-          "**/images/**"
-        ]
+        "scope": ["*", "**/images/**"]
       }
     }
   },
