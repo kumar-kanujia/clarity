@@ -37,18 +37,26 @@ pub async fn save_image_file(db: &Db, image_file: &ImageFile) -> Result<i64, sql
   let result = sqlx::query(
     r#"
         INSERT INTO image_file (
+            file_name,
             file_path,
+            thumbnail_path,
             file_size,
             dimension_x,
-            dimension_y
+            dimension_y,
+            created_at,
+            modified_at
         )
-        VALUES (?1, ?2, ?3, ?4)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
         "#,
   )
+  .bind(&image_file.file_name)
   .bind(&image_file.file_path)
+  .bind(&image_file.thumbnail_path)
   .bind(image_file.file_size)
   .bind(image_file.dimension_x)
   .bind(image_file.dimension_y)
+  .bind(image_file.created_at)
+  .bind(image_file.modified_at)
   .execute(db)
   .await?;
 

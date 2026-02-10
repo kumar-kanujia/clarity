@@ -1,9 +1,5 @@
 use walkdir::WalkDir;
 
-use crate::domain::imagefile::ImageFile;
-
-use std::fs;
-use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
@@ -38,32 +34,4 @@ pub fn perform_file_scan(path: PathBuf) -> (Vec<PathBuf>, usize) {
     .collect();
 
   (images, total_files)
-}
-
-pub fn build_image_file_with_metadata(path: &Path) -> Result<ImageFile, Error> {
-  let file_path = path.to_string_lossy().to_string();
-
-  let file_size = fs::metadata(path)?.len().cast_signed();
-
-  let (width, height) =
-    image::image_dimensions(path).map_err(|e| Error::other(format!("Metadata error: {}", e)))?;
-
-  Ok(ImageFile {
-    seq_id: 0,
-    file_path,
-    file_size,
-    dimension_x: width,
-    dimension_y: height,
-  })
-}
-
-pub fn build_image_file_witout_metadata(path: &Path) -> ImageFile {
-  let file_path = path.to_string_lossy().to_string();
-  ImageFile {
-    seq_id: 0,
-    file_path,
-    file_size: 0,
-    dimension_x: 0,
-    dimension_y: 0,
-  }
 }

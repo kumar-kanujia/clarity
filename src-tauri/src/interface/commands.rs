@@ -4,17 +4,23 @@ use crate::domain::dto::{Image, ImportSummary};
 use crate::state::AppState;
 
 use std::path::PathBuf;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub async fn save_images(
+  app: AppHandle,
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummary, String> {
   log::info!("Save command called");
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-  scan_and_process_images(&state.db, paths)
+  let cache_dir = app.path().cache_dir().map_err(|err| {
+    log::error!("Failed to load cache dir: {}", err);
+    err.to_string()
+  })?;
+
+  scan_and_process_images(&state.db, &cache_dir, paths)
     .await
     .map_err(|e| e.to_string())
 }

@@ -10,19 +10,21 @@ use serde::Serialize;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Image {
+  pub file_name: String,
   pub path: String,
-  pub filename: String,
-  pub size: String,
-  pub resolution: String,
+  pub thumbnail_path: String,
+  pub file_size: String,
+  pub dimension: String,
 }
 
 impl From<ImageFile> for Image {
   fn from(file: ImageFile) -> Self {
     Self {
-      path: file.file_path.clone(),
-      size: file.size_string(),
-      resolution: file.dimensions_string(),
-      filename: file.file_path.split('/').next_back().unwrap().to_string(),
+      file_size: file.size_string(),
+      dimension: file.dimensions_string(),
+      file_name: file.file_name,
+      path: file.file_path,
+      thumbnail_path: file.thumbnail_path,
     }
   }
 }

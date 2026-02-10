@@ -72,8 +72,8 @@ Logging is for **you**, not users (yet).
 
 Keep this intentionally simple.
 
-- [ ] Decide one thumbnail size (single constant)
-- [ ] Extract thumbnail only when needed
+- [x] Decide one thumbnail size (single constant)
+- [x] Extract thumbnail only when needed
 - [ ] Do not block scanning or DB operations
 - [ ] Handle extraction failure without retries
 - [ ] Associate thumbnail with image ID
