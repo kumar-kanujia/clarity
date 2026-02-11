@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-use crate::domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata};
+use crate::domain::filemetadata::FileMetadata;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default, Clone)]
 pub struct ImageFile {
@@ -39,24 +39,5 @@ impl ImageFile {
     };
 
     format!("{value:.2} {unit}")
-  }
-}
-
-impl From<FileMetadata> for ImageFile {
-  fn from(meta: FileMetadata) -> Self {
-    Self {
-      seq_id: 0,
-      file_name: meta.file_name,
-      file_path: meta.file_path,
-      ctx: meta.ctx.cast_signed(),
-      mtx: meta.mtx.cast_signed(),
-      file_size: meta.file_size.cast_signed(),
-      thumbnail_path: "".to_string(),
-
-      dim_x: 0,
-      dim_y: 0,
-      imported_at: 0,
-      is_processed: 0,
-    }
   }
 }

@@ -11,6 +11,7 @@ use sqlx::{
 
 pub const DB_DIR: &str = "db";
 pub const DB_FILE: &str = "clarity.sqlite3";
+pub const MAX_POOL_SIZE: u32 = 5;
 
 pub async fn setup_db(app: &App) -> Result<SqlitePool, Error> {
   log::info!("Setting up database");
@@ -32,11 +33,13 @@ pub async fn setup_db(app: &App) -> Result<SqlitePool, Error> {
     .foreign_keys(true);
 
   let pool = SqlitePoolOptions::new()
-    .max_connections(4)
+    .max_connections(MAX_POOL_SIZE)
     .acquire_timeout(std::time::Duration::from_secs(10))
     .after_connect(|conn, _| {
       Box::pin(async move {
         let pragmas = [
+          "PRAGMA journal_mode = WAL;",
+          "PRAGMA synchronous = NORMAL;",
           "PRAGMA busy_timeout = 5000;",
           "PRAGMA temp_store = MEMORY;",
           "PRAGMA cache_size = -40000;", // ~40MB

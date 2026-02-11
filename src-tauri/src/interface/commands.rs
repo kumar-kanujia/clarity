@@ -1,5 +1,5 @@
 use crate::application::gallery;
-use crate::application::importer::scan_and_process_images;
+use crate::application::importer::scan_and_import_images;
 use crate::domain::dto::{Image, ImportSummary};
 use crate::state::AppState;
 
@@ -14,7 +14,7 @@ pub async fn save_images(
   log::info!("Save command called");
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-  scan_and_process_images(&state.db, paths)
+  scan_and_import_images(&state.db, paths)
     .await
     .map_err(|e| e.to_string())
 }

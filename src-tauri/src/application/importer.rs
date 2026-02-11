@@ -1,4 +1,5 @@
-use crate::domain::dto::{ImportCounters, ImportSummary, ProcessStatus};
+use crate::domain::dto::ImportSummary;
+use crate::domain::filemetadata::FileMetadata;
 use crate::infrastructure::fs::scanner;
 use crate::infrastructure::media::metadata::generate_file_metadata;
 use crate::infrastructure::repo::image_repo;
@@ -6,93 +7,92 @@ use crate::state::Db;
 
 use futures::stream::{self, StreamExt};
 use std::io::Error;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::path::PathBuf;
 use std::time::Instant;
 
-async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
-  let file_meta = generate_file_metadata(file)
-    .map_err(|err| Error::other(format!("Failed to generate metadata: {}", err)))?;
+use tokio::task;
 
-  let exists = image_repo::check_is_file_exists(db, &file_meta.file_path)
-    .await
-    .map_err(|e| Error::other(format!("DB Check failed: {}", e)))?;
+const CHUNK_SIZE: usize = 50;
 
-  if exists {
-    return Ok(ProcessStatus::Skipped);
-  }
-
-  image_repo::save_image_file(db, &file_meta.into())
-    .await
-    .map_err(|e| Error::other(format!("DB Insert failed: {}", e)))?;
-
-  Ok(ProcessStatus::Processed)
-}
-
-/// Process a list of image files in parallel
-async fn process_images_async(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, Error> {
-  let counters = Arc::new(ImportCounters::default());
-
+async fn extract_metadata_parallel(files: Vec<PathBuf>) -> Vec<FileMetadata> {
+  let concurrency = (num_cpus::get() * 2).min(32);
   stream::iter(files)
-    .for_each_concurrent(2, |path| {
-      let counters = counters.clone();
-      let db = db.clone();
-
-      async move {
-        counters.scanned.fetch_add(1, Ordering::Relaxed);
-        match process_image(&db, &path).await {
-          Ok(ProcessStatus::Processed) => {
-            counters.imported.fetch_add(1, Ordering::Relaxed);
-          }
-          Ok(ProcessStatus::Skipped) => {
-            counters.skipped.fetch_add(1, Ordering::Relaxed);
-            log::info!("Skipped {:?}", path);
-          }
-          Err(err) => {
-            counters.failed.fetch_add(1, Ordering::Relaxed);
-            log::error!("Failed to process {:?}: {}", path, err);
-          }
+    .map(|path| task::spawn_blocking(move || generate_file_metadata(&path)))
+    .buffer_unordered(concurrency)
+    .filter_map(|res| async {
+      match res {
+        Ok(Ok(meta)) => Some(meta),
+        Ok(Err(e)) => {
+          log::error!("Metadata error: {}", e);
+          None
+        }
+        Err(e) => {
+          log::error!("Join error: {}", e);
+          None
         }
       }
     })
-    .await;
-  Ok(counters.into())
+    .collect()
+    .await
 }
 
-pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
-  let t0 = Instant::now();
-  log::info!("Scanning and processing images started");
+async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, Error> {
+  let mut imported = 0;
 
-  let mut all_images = Vec::new();
-  let mut total_scanned = 0;
-  let mut set = tokio::task::JoinSet::new();
+  for chunk in image_files.chunks(CHUNK_SIZE) {
+    imported += image_repo::bulk_insert_image(db, chunk)
+      .await
+      .map_err(|e| Error::other(format!("Bulk insert failed: {}", e)))?;
+  }
+
+  Ok(imported)
+}
+
+async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, Error> {
+  let total = files.len();
+  log::info!("Processing {} files", total);
+
+  let metadata = extract_metadata_parallel(files).await;
+  let scanned = metadata.len();
+  let failed = total - scanned;
+
+  let image_files: Vec<FileMetadata> = metadata.into_iter().collect();
+
+  let imported = persist_images(db, &image_files).await?;
+  let skipped = scanned - imported as usize;
+
+  log::info!("Imported {} files", imported);
+  log::info!("Skipped {} files", skipped);
+  log::info!("Failed {} files", failed);
+
+  Ok(ImportSummary {
+    total,
+    scanned,
+    imported: imported as usize,
+    skipped,
+    failed,
+  })
+}
+
+pub async fn scan_and_import_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
+  let t0 = Instant::now();
+  log::info!("Scan + import started");
+
+  let mut set = task::JoinSet::new();
+  let mut discovered = Vec::new();
 
   for path in paths {
-    set.spawn_blocking(move || scanner::perform_file_scan(path));
+    set.spawn_blocking(move || scanner::perform_file_scan_for_images(path));
   }
 
   while let Some(res) = set.join_next().await {
-    let (images, count) = res.map_err(|_| Error::other("Something went wrong!"))?;
-    all_images.extend(images);
-    total_scanned += count;
+    let (images, _) = res.map_err(|_| Error::other("Scan task failed"))?;
+    discovered.extend(images);
   }
 
-  let mut summary: ImportSummary = process_images_async(db, all_images).await?;
+  let summary = import_image_batch(db, discovered).await?;
 
-  let t1 = Instant::now();
-
-  summary.total = total_scanned;
-
-  log::info!("Scanning and processing images completed in {:?}", t1 - t0);
-  log::info!(
-    "Total: {:?} Scanned: {:?} Imported: {:?} Skipped: {:?} Failed: {:?}",
-    summary.total,
-    summary.scanned,
-    summary.imported,
-    summary.skipped,
-    summary.failed
-  );
+  log::info!("Scan completed in {:?}", t0.elapsed());
 
   Ok(summary)
 }

@@ -22,7 +22,7 @@ pub fn is_image_file(path: &Path) -> bool {
     .map_or(false, is_supported_image_ext)
 }
 
-pub fn perform_file_scan(path: PathBuf) -> (Vec<PathBuf>, usize) {
+pub fn perform_file_scan_for_images(path: PathBuf) -> (Vec<PathBuf>, usize) {
   let mut total_files = 0;
   let images = WalkDir::new(path)
     .into_iter()
