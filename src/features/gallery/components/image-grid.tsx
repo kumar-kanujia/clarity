@@ -1,6 +1,6 @@
 import { Image } from "@/types";
 import { getFileURI } from "@/tauri/tauri-api";
-import { Maximize2 } from "lucide-react";
+import { Maximize2, MoreHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useRef } from "react";
@@ -18,7 +18,7 @@ export const ImageGrid = ({
   isLoading,
   hasMore,
   onLoadMore,
-  onPreview
+  onPreview,
 }: ImageGridProps) => {
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +29,7 @@ export const ImageGrid = ({
           onLoadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     if (loaderRef.current) {
@@ -40,82 +40,91 @@ export const ImageGrid = ({
   }, [isLoading, hasMore, onLoadMore]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 pb-10 mt-6">
-      <AnimatePresence mode="popLayout">
-        {images.map((image, idx) => (
-          <div key={image.filePath + idx} className="flex flex-col group">
+    <div className="pb-20 mt-6 px-4">
+      {/* Standard Grid Layout for Performance */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+        <AnimatePresence mode="popLayout">
+          {images.map((image, idx) => (
             <motion.div
               layout
-              initial={{ opacity: 0, scale: 0.8 }}
+              key={image.filePath + idx}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 25,
-                mass: 0.5,
-                delay: 0.02
+                duration: 0.2,
+                delay: Math.min(idx * 0.02, 0.3), // Cap delay to prevent long staggers on large lists
               }}
-              className="relative rounded-3xl overflow-hidden border border-white/5 bg-secondary/10 aspect-square shadow-md transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-2 group-hover:rotate-1"
+              className="group relative aspect-square"
             >
-              <img
-                src={getFileURI(image.filePath)}
-                alt={image.fileName}
-                className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 opacity-95 group-hover:opacity-100"
-                loading="lazy"
-              />
+              <div className="relative w-full h-full rounded-xl overflow-hidden bg-secondary/20 shadow-sm hover:shadow-xl transition-all duration-300 dark:bg-zinc-900/50">
+                <img
+                  src={getFileURI(
+                    image.isProcessed ? image.thumbnailPath : image.filePath,
+                  )}
+                  alt={image.fileName}
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  loading="lazy"
+                  style={{ display: "block" }}
+                />
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                {/* Overlay gradient */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
 
-              {/* Hover Actions */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPreview(image);
-                }}
-                className="absolute top-4 right-4 bg-white/10 backdrop-blur-xl text-white p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 hover:bg-primary hover:scale-110 z-10 border border-white/20 shadow-2xl cursor-pointer"
-                title="View Full Size"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </motion.div>
-            {/* Details below image */}
-            <div className="mt-4 px-2 space-y-1 transition-all duration-500 group-hover:translate-x-1">
-              <p className="text-xs font-black text-foreground truncate tracking-tight">
-                {image.fileName}
-              </p>
-              <div className="flex items-center gap-2">
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                  {image.fileSize}
-                </p>
-                <div className="w-1 h-1 bg-muted-foreground/20 rounded-full" />
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                  {image.resolution || "Unknown"}
-                </p>
+                {/* Hover Quick Actions */}
+                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 translate-y-2 group-hover:translate-y-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPreview(image);
+                    }}
+                    className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-white hover:text-black transition-colors shadow-lg"
+                    title="Maximize"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-white hover:text-black transition-colors shadow-lg"
+                    title="More"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Image Info on Hover */}
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-linear-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-white text-xs font-medium truncate">
+                    {image.fileName}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-white/70 uppercase tracking-wider">
+                      {image.resolution}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-[10px] text-white/70 uppercase tracking-wider">
+                      {image.fileSize}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </AnimatePresence>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       {/* Loading Skeletons */}
-      {isLoading &&
-        Array.from({ length: 6 }).map((_, i) => (
-          <div key={`skeleton-${i}`} className="flex flex-col space-y-4">
-            <Skeleton className="aspect-square rounded-3xl" />
-            <div className="space-y-2 px-2">
-              <Skeleton className="h-3 w-3/4 rounded-full" />
-              <div className="flex gap-2">
-                <Skeleton className="h-2 w-8 rounded-full" />
-                <Skeleton className="h-2 w-8 rounded-full" />
-              </div>
+      {isLoading && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 mt-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="aspect-square">
+              <Skeleton className="w-full h-full rounded-xl" />
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      )}
 
       {/* Sentinel for Intersection Observer */}
-      <div ref={loaderRef} className="col-span-full h-10 w-full" />
+      <div ref={loaderRef} className="h-20 w-full" />
     </div>
   );
 };

@@ -83,20 +83,20 @@ Keep this intentionally simple.
 
 This is not a “photo app UI” yet — it’s a **visual index**.
 
-- [ ] Display thumbnails in a grid
-- [ ] Load thumbnails lazily as they appear
-- [ ] Respect batch retrieval
-- [ ] Handle missing thumbnails gracefully
-- [ ] Keep layout simple and predictable
+- [x] Display thumbnails in a grid
+- [x] Load thumbnails lazily as they appear
+- [x] Respect batch retrieval
+- [x] Handle missing thumbnails gracefully
+- [x] Keep layout simple and predictable
 
 ---
 
 ### Completion Check (Part 2)
 
-- [ ] Gallery loads quickly for large sets
-- [ ] Scrolling does not degrade
-- [ ] Thumbnail failures don’t break layout
-- [ ] Code remains delete-friendly
+- [x] Gallery loads quickly for large sets
+- [x] Scrolling does not degrade
+- [x] Thumbnail failures don’t break layout
+- [x] Code remains delete-friendly
 
 ---
 
@@ -104,10 +104,10 @@ This is not a “photo app UI” yet — it’s a **visual index**.
 
 ### 1. Navigation (Concrete)
 
-- [ ] Open image from gallery
-- [ ] Navigate next / previous using current ordering
-- [ ] Navigation respects batch boundaries
-- [ ] Missing file shows explicit error state
+- [x] Open image from gallery
+- [x] Navigate next / previous using current ordering
+- [x] Navigation respects batch boundaries
+- [x] Missing file shows explicit error state
 
 ---
 
@@ -115,18 +115,18 @@ This is not a “photo app UI” yet — it’s a **visual index**.
 
 Notifications exist to **explain failures**, not celebrate success.
 
-- [ ] Surface scan/import failures
-- [ ] Surface missing-file errors when viewing
-- [ ] Ensure notifications are dismissible
-- [ ] Avoid modal dialogs unless blocking
+- [x] Surface scan/import failures
+- [x] Surface missing-file errors when viewing
+- [x] Ensure notifications are dismissible
+- [x] Avoid modal dialogs unless blocking
 
 ---
 
 ### Completion Check (Part 3)
 
-- [ ] Navigation feels predictable
-- [ ] Errors are visible but not annoying
-- [ ] No critical failures are silent
+- [x] Navigation feels predictable
+- [x] Errors are visible but not annoying
+- [x] No critical failures are silent
 
 ---
 

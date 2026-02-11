@@ -1,8 +1,10 @@
 import { getFileURI } from "@/tauri/tauri-api";
 import { Image } from "@/types";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface ImageModalProps {
   image: Image | null;
@@ -19,9 +21,9 @@ export const ImageModal = ({
   onNext,
   onPrev,
   hasNext,
-  hasPrev
+  hasPrev,
 }: ImageModalProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -29,11 +31,14 @@ export const ImageModal = ({
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight" && onNext && hasNext) onNext();
       if (e.key === "ArrowLeft" && onPrev && hasPrev) onPrev();
+      if (e.key === "i") setShowInfo((prev) => !prev);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [image, onClose, onNext, onPrev, hasNext, hasPrev]);
+
+  if (!image) return null;
 
   return (
     <AnimatePresence>
@@ -43,75 +48,124 @@ export const ImageModal = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl"
           onClick={onClose}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative max-w-full max-h-full flex flex-col items-center justify-center w-full h-full"
-            onClick={(e) => e.stopPropagation()}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
           >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Info Toggle */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowInfo(!showInfo);
+            }}
+            className={cn(
+              "absolute top-4 right-16 z-50 p-2 rounded-full transition-colors",
+              showInfo
+                ? "bg-white text-black"
+                : "bg-white/10 hover:bg-white/20 text-white",
+            )}
+          >
+            <Info className="w-6 h-6" />
+          </button>
+
+          {/* Navigation */}
+          {hasPrev && (
             <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-white/10 text-white/70 hover:text-white p-2 rounded-full transition-all border border-white/5 backdrop-blur-sm cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrev?.();
+              }}
+              className="absolute left-4 z-50 p-4 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors hover:scale-110 active:scale-95"
             >
-              <X className="w-6 h-6" />
+              <ChevronLeft className="w-8 h-8" />
             </button>
+          )}
 
-            {/* Navigation Buttons */}
-            {hasPrev && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrev?.();
-                }}
-                className="absolute left-4 z-50 bg-black/50 hover:bg-white/10 text-white/70 hover:text-white p-3 rounded-full transition-all border border-white/5 backdrop-blur-sm cursor-pointer hover:scale-110"
-              >
-                <ChevronLeft className="w-8 h-8" />
-              </button>
-            )}
+          {hasNext && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onNext?.();
+              }}
+              className="absolute right-4 z-50 p-4 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors hover:scale-110 active:scale-95"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+          )}
 
-            {hasNext && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNext?.();
-                }}
-                className="absolute right-4 z-50 bg-black/50 hover:bg-white/10 text-white/70 hover:text-white p-3 rounded-full transition-all border border-white/5 backdrop-blur-sm cursor-pointer hover:scale-110"
-              >
-                <ChevronRight className="w-8 h-8" />
-              </button>
-            )}
-
+          {/* Main Content */}
+          <div className="relative w-full h-full flex items-center justify-center p-4">
             <motion.img
-              key={image.fileName}
-              //   initial={{ x: 20, opacity: 0 }}
-              //   animate={{ x: 0, opacity: 1 }}
-              //   transition={{ duration: 0.2 }}
+              key={image.filePath}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               src={getFileURI(image.filePath)}
-              className="max-h-[85vh] w-auto object-contain rounded-lg shadow-2xl ring-1 ring-white/10"
               alt={image.fileName}
+              className="max-h-full max-w-full object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             />
 
-            {/* Bottom Details Bar - Only visible on hover or if explicitly desired */}
-            <div
-              className={`absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-full text-white transition-all duration-300 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <p className="font-semibold text-sm">{image.fileName}</p>
-                <div className="flex items-center gap-2 text-xs text-zinc-400">
-                  <span>{image.resolution}</span>
-                  <span className="w-1 h-1 bg-zinc-600 rounded-full" />
-                  <span>{image.fileSize}</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+            {/* Info Panel */}
+            <AnimatePresence>
+              {showInfo && (
+                <motion.div
+                  initial={{ x: "100%", opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: "100%", opacity: 0 }}
+                  className="absolute right-0 top-0 bottom-0 w-80 bg-black/80 backdrop-blur-2xl border-l border-white/10 p-6 shadow-2xl overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h2 className="text-2xl font-bold text-white mb-6 break-words">
+                    {image.fileName}
+                  </h2>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                        Dimensions
+                      </h3>
+                      <p className="text-white font-mono">{image.resolution}</p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                        Size
+                      </h3>
+                      <p className="text-white font-mono">{image.fileSize}</p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                        Created
+                      </h3>
+                      <p className="text-white font-mono">
+                        {/* @ts-ignore */}
+                        {format(new Date(image.createdAt * 1000), "PPP p")}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                        Path
+                      </h3>
+                      <p className="text-white/70 text-xs font-mono break-all">
+                        {image.filePath}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
