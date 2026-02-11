@@ -1,15 +1,16 @@
-use crate::application::dto::ImportSummary;
-use crate::domain::filemetadata::FileMetadata;
-use crate::error::AppError;
-use crate::infrastructure::fs::scanner;
-use crate::infrastructure::media::metadata::{self, MetadataStats};
-use crate::infrastructure::repo::error::DatabaseError;
-use crate::infrastructure::repo::image_repo;
-use crate::state::Db;
+use crate::{
+  application::dto::ImportSummary,
+  domain::filemetadata::FileMetadata,
+  error::AppError,
+  infrastructure::{
+    fs::scanner,
+    media::metadata::{self, MetadataStats},
+    repo::{error::DatabaseError, image_repo},
+  },
+  state::{CHUNK_SIZE, Db},
+};
 
 use std::path::PathBuf;
-
-const CHUNK_SIZE: usize = 50;
 
 async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, DatabaseError> {
   let mut imported = 0;
@@ -22,7 +23,7 @@ async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, Da
 }
 
 async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, AppError> {
-  let total = files.len();
+  let discovered = files.len();
 
   let MetadataStats {
     metadata,
@@ -31,23 +32,22 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
     io_errors,
   } = metadata::extract_metadata_parallel(files).await;
 
-  let scanned = metadata.len();
+  let processed = metadata.len();
 
-  let image_files: Vec<FileMetadata> = metadata.into_iter().collect();
+  let imported = persist_images(db, &metadata).await?;
 
-  let imported = persist_images(db, &image_files)
-    .await
-    .map_err(|e| AppError::Database(format!("Persist failed: {e}")))?;
-
-  let skipped = scanned - imported as usize;
+  let skipped = processed - imported as usize;
 
   Ok(ImportSummary {
-    total,
-    scanned,
+    discovered,
+    processed,
     imported: imported as usize,
     skipped,
-    failed: not_found + permission_denied + io_errors,
-    ..ImportSummary::default()
+    not_found,
+    permission_denied,
+    io_errors,
+    selected: 0,
+    walk_errors: 0,
   })
 }
 
@@ -65,9 +65,9 @@ pub async fn scan_and_import_images(
   }
 
   while let Some(res) = set.join_next().await {
-    let inner = res.map_err(|e| AppError::Scan(format!("Scan task join failure: {e}")))?;
-
-    let scan_result = inner.map_err(|e| AppError::Scan(format!("Scan failed: {e}")))?;
+    let scan_result = res
+      .map_err(|e| AppError::Join(e.to_string()))?
+      .map_err(AppError::from)?;
 
     total_files += scan_result.total_files;
     walk_errors += scan_result.walk_errors;
@@ -76,7 +76,7 @@ pub async fn scan_and_import_images(
 
   let mut summary = import_image_batch(db, discovered).await?;
 
-  summary.total = total_files;
+  summary.selected = total_files;
   summary.walk_errors = walk_errors;
   Ok(summary)
 }

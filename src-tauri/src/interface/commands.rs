@@ -1,6 +1,7 @@
 use crate::application::dto::{Image, ImportSummary};
 use crate::application::gallery;
 use crate::application::importer::scan_and_import_images;
+use crate::error::user_friendly_message;
 use crate::state::AppState;
 
 use std::path::PathBuf;
@@ -11,12 +12,15 @@ pub async fn save_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummary, String> {
-  log::info!("Save command called");
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-  scan_and_import_images(&state.db, paths)
-    .await
-    .map_err(|e| e.to_string())
+  match scan_and_import_images(&state.db, paths).await {
+    Ok(summary) => Ok(summary),
+    Err(err) => {
+      log::error!("Import failed: {:?}", err);
+      Err(user_friendly_message(&err))
+    }
+  }
 }
 
 #[tauri::command]
