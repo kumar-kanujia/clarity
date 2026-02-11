@@ -80,7 +80,7 @@ export const getSavedImages = async () => {
 
 export const getSavedImagesBatch = async (offset: number, limit: number) => {
   try {
-    const loadedFiles = await invoke<Image[]>("load_saved_images_in_batch", {
+    const loadedFiles = await invoke<Image[]>("load_saved_images", {
       offset,
       limit
     });

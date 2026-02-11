@@ -5,11 +5,6 @@ use crate::domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata};
 const THUMBNAIL_SIZE: u32 = 256;
 
 fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), Error> {
-  log::info!(
-    "Generating thumbnail for {} at {}",
-    source.display(),
-    target.display()
-  );
   let img = image::open(source).map_err(|err| {
     Error::other(format!(
       "Failed to open image: {} {}",
@@ -30,15 +25,15 @@ fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), E
   Ok((height, width))
 }
 
-pub fn generate_image_metadata(
-  file: &Path,
-  thumnail_target: &Path,
-) -> Result<ImageMetadata, Error> {
+pub fn create_image_metadata(file: &Path, thumnail_target: &Path) -> Result<ImageMetadata, Error> {
   let uuid = uuid::Uuid::new_v4();
   let thumbnail_path = thumnail_target
     .join(uuid.to_string())
     .with_extension("webp");
-  let (height, width) = generate_thumbnail_file(file, &thumbnail_path)?;
+  let (height, width) = generate_thumbnail_file(file, &thumbnail_path).map_err(|err| {
+    log::error!("Failed to generate thumbnail: {}", err);
+    Error::other(format!("Failed to generate thumbnail: {}", err))
+  })?;
   Ok(ImageMetadata {
     thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
     dim_x: width,
@@ -46,7 +41,7 @@ pub fn generate_image_metadata(
   })
 }
 
-pub fn generate_file_metadata(file: &Path) -> Result<FileMetadata, Error> {
+pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, Error> {
   let metadata = fs::metadata(file)?;
 
   let file_path = file.to_string_lossy().to_string();

@@ -2,7 +2,7 @@ use std::io::Error;
 
 use crate::infrastructure::fs::ops;
 
-use tauri::{App, Manager};
+use tauri::{AppHandle, Manager};
 
 use sqlx::{
   SqlitePool, migrate,
@@ -13,7 +13,7 @@ pub const DB_DIR: &str = "db";
 pub const DB_FILE: &str = "clarity.sqlite3";
 pub const MAX_POOL_SIZE: u32 = 5;
 
-pub async fn setup_db(app: &App) -> Result<SqlitePool, Error> {
+pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, Error> {
   log::info!("Setting up database");
 
   let app_data = app

@@ -6,13 +6,13 @@ use crate::{
 
 use std::io::Error;
 
-pub async fn get_image_files_in_batch(
+pub async fn load_saved_images_in_batch(
   db: &Db,
   offset: i64,
   limit: i64,
 ) -> Result<Vec<Image>, Error> {
   log::info!("Get image files in batch called");
-  let files = image_repo::get_in_batch(db, offset, limit)
+  let files = image_repo::get_images_batch(db, offset, limit)
     .await
     .map_err(|err| {
       log::error!("DB Error: {}", err);

@@ -6,8 +6,9 @@ mod old;
 mod state;
 
 use crate::{
+  application::background::ThumbnailWorker,
   interface::{
-    commands::{load_saved_images_in_batch, save_images},
+    commands::{load_saved_images, save_images},
     dbsetup::setup_db,
     logsetup::{LOG_LEVEL, get_log_target},
   },
@@ -36,17 +37,21 @@ pub fn run() {
       scan_dir_for_images,
       move_to_trash,
       save_images,
-      load_saved_images_in_batch
+      load_saved_images
     ])
     .setup(|app| {
+      let app_handle = app.handle();
+
       tauri::async_runtime::block_on(async move {
-        if let Ok(db) = setup_db(app)
-          .await
-          .map_err(|err| log::error!("DB Error: {}", err))
-        {
-          app.manage(AppState { db });
+        match setup_db(app_handle).await {
+          Ok(db) => {
+            app_handle.manage(AppState { db: db.clone() });
+            ThumbnailWorker::spawn(&app_handle.clone(), db.clone());
+          }
+          Err(err) => log::error!("DB Error: {}", err),
         }
       });
+
       Ok(())
     })
     .run(tauri::generate_context!())

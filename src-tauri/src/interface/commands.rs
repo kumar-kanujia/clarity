@@ -20,15 +20,18 @@ pub async fn save_images(
 }
 
 #[tauri::command]
-pub async fn load_saved_images_in_batch(
+pub async fn load_saved_images(
   state: State<'_, AppState>,
   offset: i64,
   limit: i64,
 ) -> Result<Vec<Image>, String> {
   log::info!("Load command called");
-  let result = gallery::get_image_files_in_batch(&state.db, offset, limit)
+  let result = gallery::load_saved_images_in_batch(&state.db, offset, limit)
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+      log::error!("Failed to load images: {}", e);
+      e.to_string()
+    })?;
 
   Ok(result)
 }

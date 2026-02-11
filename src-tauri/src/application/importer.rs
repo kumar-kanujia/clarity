@@ -1,7 +1,7 @@
 use crate::domain::dto::ImportSummary;
 use crate::domain::filemetadata::FileMetadata;
 use crate::infrastructure::fs::scanner;
-use crate::infrastructure::media::metadata::generate_file_metadata;
+use crate::infrastructure::media::metadata::create_file_metadata;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
 
@@ -17,7 +17,7 @@ const CHUNK_SIZE: usize = 50;
 async fn extract_metadata_parallel(files: Vec<PathBuf>) -> Vec<FileMetadata> {
   let concurrency = (num_cpus::get() * 2).min(32);
   stream::iter(files)
-    .map(|path| task::spawn_blocking(move || generate_file_metadata(&path)))
+    .map(|path| task::spawn_blocking(move || create_file_metadata(&path)))
     .buffer_unordered(concurrency)
     .filter_map(|res| async {
       match res {

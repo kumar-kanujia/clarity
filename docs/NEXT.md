@@ -74,10 +74,10 @@ Keep this intentionally simple.
 
 - [x] Decide one thumbnail size (single constant)
 - [x] Extract thumbnail only when needed
-- [ ] Do not block scanning or DB operations
-- [ ] Handle extraction failure without retries
-- [ ] Associate thumbnail with image ID
-- [ ] Store thumbnails in cache
+- [x] Do not block scanning or DB operations
+- [x] Handle extraction failure without retries
+- [x] Associate thumbnail with image ID
+- [x] Store thumbnails in cache
 
 ### 2. Gallery View (Minimal Viable)
 

@@ -1,7 +1,16 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use sqlx::{FromRow, prelude::Type};
 
-use crate::domain::filemetadata::FileMetadata;
+use crate::domain::imagemetadata::ImageMetadata;
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Type, Default)]
+#[repr(i32)]
+pub enum ProcessStatus {
+  #[default]
+  Pending = 0,
+  Complete = 1,
+  Error = 2,
+}
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default, Clone)]
 pub struct ImageFile {
@@ -15,7 +24,7 @@ pub struct ImageFile {
   pub ctx: i64,
   pub mtx: i64,
   pub imported_at: i64,
-  pub is_processed: i64,
+  pub process_status: ProcessStatus,
 }
 
 impl ImageFile {
@@ -39,5 +48,16 @@ impl ImageFile {
     };
 
     format!("{value:.2} {unit}")
+  }
+
+  pub fn update_metadata(&mut self, metadata: ImageMetadata) {
+    self.thumbnail_path = metadata.thumbnail_path;
+    self.dim_x = metadata.dim_x;
+    self.dim_y = metadata.dim_y;
+    self.process_status = ProcessStatus::Complete;
+  }
+
+  pub fn mark_error(&mut self) {
+    self.process_status = ProcessStatus::Error;
   }
 }

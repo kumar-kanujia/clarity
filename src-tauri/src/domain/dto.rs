@@ -1,10 +1,5 @@
 use crate::domain::imagefile::ImageFile;
 
-use std::sync::{
-  Arc,
-  atomic::{AtomicUsize, Ordering},
-};
-
 use serde::Serialize;
 
 #[derive(Serialize)]
