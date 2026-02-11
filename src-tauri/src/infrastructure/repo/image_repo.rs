@@ -50,7 +50,7 @@ pub async fn get_pending_image_file(db: &Db, limit: i64) -> Result<Vec<ImageFile
     r#"
         SELECT *
         FROM image_file
-        WHERE process_status = 0
+        WHERE process_status = 0 or process_status = 2
         ORDER BY imported_at
         LIMIT ?1
         "#,
