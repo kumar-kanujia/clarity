@@ -19,7 +19,7 @@ export const ImageModal = ({
   onNext,
   onPrev,
   hasNext,
-  hasPrev,
+  hasPrev
 }: ImageModalProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -89,13 +89,13 @@ export const ImageModal = ({
             )}
 
             <motion.img
-              key={image.path}
+              key={image.fileName}
               //   initial={{ x: 20, opacity: 0 }}
               //   animate={{ x: 0, opacity: 1 }}
               //   transition={{ duration: 0.2 }}
-              src={getFileURI(image.path)}
+              src={getFileURI(image.filePath)}
               className="max-h-[85vh] w-auto object-contain rounded-lg shadow-2xl ring-1 ring-white/10"
-              alt={image.filename}
+              alt={image.fileName}
             />
 
             {/* Bottom Details Bar - Only visible on hover or if explicitly desired */}
@@ -103,11 +103,11 @@ export const ImageModal = ({
               className={`absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-full text-white transition-all duration-300 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
             >
               <div className="flex flex-col items-center gap-0.5">
-                <p className="font-semibold text-sm">{image.filename}</p>
+                <p className="font-semibold text-sm">{image.fileName}</p>
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                   <span>{image.resolution}</span>
                   <span className="w-1 h-1 bg-zinc-600 rounded-full" />
-                  <span>{image.size}</span>
+                  <span>{image.fileSize}</span>
                 </div>
               </div>
             </div>

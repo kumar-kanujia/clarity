@@ -84,7 +84,7 @@ export const ScanPreview = ({ handleRunScan, images }: ScanPreviewProps) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8 pb-10">
               <AnimatePresence mode="popLayout">
                 {images.map((photo, idx) => (
-                  <div key={photo.path} className="flex flex-col group">
+                  <div key={photo.fileName} className="flex flex-col group">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -92,15 +92,15 @@ export const ScanPreview = ({ handleRunScan, images }: ScanPreviewProps) => {
                       transition={{
                         duration: 0.4,
                         delay: Math.min(idx * 0.02, 0.4),
-                        ease: "easeOut",
+                        ease: "easeOut"
                       }}
                       className="relative rounded-3xl overflow-hidden border border-white/5 bg-secondary/10 aspect-square shadow-md transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-1"
                     >
                       <img
-                        src={getFileURI(photo.path)}
+                        src={getFileURI(photo.filePath)}
                         loading="lazy"
                         className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 opacity-95 group-hover:opacity-100"
-                        alt={photo.filename}
+                        alt={photo.fileName}
                       />
 
                       {/* Simple overlay gradient */}
@@ -122,11 +122,11 @@ export const ScanPreview = ({ handleRunScan, images }: ScanPreviewProps) => {
                     {/* Details below image - Refined Styling */}
                     <div className="mt-4 px-2 space-y-1 transition-all duration-500 group-hover:translate-x-1">
                       <p className="text-xs font-black text-foreground truncate tracking-tight">
-                        {photo.filename}
+                        {photo.fileName}
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                          {photo.size}
+                          {photo.fileSize}
                         </p>
                         <div className="w-1 h-1 bg-muted-foreground/20 rounded-full" />
                         <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">

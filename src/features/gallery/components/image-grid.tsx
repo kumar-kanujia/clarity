@@ -18,7 +18,7 @@ export const ImageGrid = ({
   isLoading,
   hasMore,
   onLoadMore,
-  onPreview,
+  onPreview
 }: ImageGridProps) => {
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +29,7 @@ export const ImageGrid = ({
           onLoadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" },
+      { threshold: 0.1, rootMargin: "100px" }
     );
 
     if (loaderRef.current) {
@@ -43,7 +43,7 @@ export const ImageGrid = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 pb-10 mt-6">
       <AnimatePresence mode="popLayout">
         {images.map((image, idx) => (
-          <div key={image.path + idx} className="flex flex-col group">
+          <div key={image.filePath + idx} className="flex flex-col group">
             <motion.div
               layout
               initial={{ opacity: 0, scale: 0.8 }}
@@ -54,13 +54,13 @@ export const ImageGrid = ({
                 stiffness: 300,
                 damping: 25,
                 mass: 0.5,
-                delay: 0.02,
+                delay: 0.02
               }}
               className="relative rounded-3xl overflow-hidden border border-white/5 bg-secondary/10 aspect-square shadow-md transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-2 group-hover:rotate-1"
             >
               <img
-                src={getFileURI(image.path)}
-                alt={image.filename}
+                src={getFileURI(image.filePath)}
+                alt={image.fileName}
                 className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 opacity-95 group-hover:opacity-100"
                 loading="lazy"
               />
@@ -83,11 +83,11 @@ export const ImageGrid = ({
             {/* Details below image */}
             <div className="mt-4 px-2 space-y-1 transition-all duration-500 group-hover:translate-x-1">
               <p className="text-xs font-black text-foreground truncate tracking-tight">
-                {image.filename}
+                {image.fileName}
               </p>
               <div className="flex items-center gap-2">
                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                  {image.size}
+                  {image.fileSize}
                 </p>
                 <div className="w-1 h-1 bg-muted-foreground/20 rounded-full" />
                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">

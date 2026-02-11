@@ -111,7 +111,7 @@ function Index() {
   const handleNextImage = async () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.path === previewImage.path
+      (img) => img.filePath === previewImage.filePath
     );
 
     // If next image exists, go to it
@@ -130,7 +130,7 @@ function Index() {
   const handlePrevImage = () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.path === previewImage.path
+      (img) => img.filePath === previewImage.filePath
     );
     if (currentIndex > 0) {
       setPreviewImage(images[currentIndex - 1]);
@@ -222,13 +222,13 @@ function Index() {
         onPrev={handlePrevImage}
         hasNext={
           (!!previewImage &&
-            images.findIndex((img) => img.path === previewImage.path) <
+            images.findIndex((img) => img.filePath === previewImage.filePath) <
               images.length - 1) ||
           hasMore
         }
         hasPrev={
           !!previewImage &&
-          images.findIndex((img) => img.path === previewImage.path) > 0
+          images.findIndex((img) => img.filePath === previewImage.filePath) > 0
         }
       />
     </div>
