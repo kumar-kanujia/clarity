@@ -1,6 +1,6 @@
 use sqlx::Result;
 
-use crate::domain::filemetadata::FileMetadata;
+use crate::{domain::filemetadata::FileMetadata, infrastructure::repo::error::DatabaseError};
 #[allow(clippy::needless_raw_strings)]
 use crate::{domain::imagefile::ImageFile, state::Db};
 
@@ -23,7 +23,7 @@ pub async fn get_images_batch(
   .await
 }
 
-pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64> {
+pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, DatabaseError> {
   if files.is_empty() {
     return Ok(0);
   }
@@ -36,8 +36,8 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64> {
     b.push_bind(&file.file_name)
       .push_bind(&file.file_path)
       .push_bind(file.file_size.cast_signed())
-      .push_bind(file.ctx.unwrap().cast_signed())
-      .push_bind(file.mtx.unwrap().cast_signed());
+      .push_bind(file.ctx.map(|v| v.cast_signed()))
+      .push_bind(file.mtx.map(|v| v.cast_signed()));
   });
 
   let result = query_builder.build().execute(db).await?;

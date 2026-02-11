@@ -3,21 +3,19 @@ use crate::domain::filemetadata::FileMetadata;
 use crate::error::AppError;
 use crate::infrastructure::fs::scanner;
 use crate::infrastructure::media::metadata::{self, MetadataStats};
+use crate::infrastructure::repo::error::DatabaseError;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
 
-use std::io::Error;
 use std::path::PathBuf;
 
 const CHUNK_SIZE: usize = 50;
 
-async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, Error> {
+async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, DatabaseError> {
   let mut imported = 0;
 
   for chunk in image_files.chunks(CHUNK_SIZE) {
-    imported += image_repo::bulk_insert_image(db, chunk)
-      .await
-      .map_err(|e| Error::other(format!("Bulk insert failed: {}", e)))?;
+    imported += image_repo::bulk_insert_image(db, chunk).await?;
   }
 
   Ok(imported)
