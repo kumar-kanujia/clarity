@@ -39,31 +39,42 @@
 
 ---
 
-## Not Yet Implemented (Planned)
+### Thumbnail Generation & Caching
 
-### Photo Viewing
+**Status:** ✅ Implemented (Testing-Level UI)
 
-**Status:** ⏳ Planned
-
-- Display images from original file paths
-- Navigate images reliably
-- Handle missing or unreadable files explicitly
+- Single deterministic thumbnail size
+- Thumbnails generated on demand
+- Thumbnail extraction does not block scanning or DB operations
+- Thumbnails associated with image IDs
+- Thumbnails cached locally
+- Extraction failures handled safely without retries
 
 ---
+
+### Basic Gallery & Navigation (Testing Harness)
+
+**Status:** ⚠️ Temporary / Testing Surface
+
+- Grid-based thumbnail display
+- Lazy loading aligned with batch retrieval
+- Open image from gallery
+- Next / previous navigation using deterministic ordering
+- Missing-file states surfaced explicitly
+
+Note: Current UI exists primarily as a testing harness for backend validation and is expected to be redesigned.
+
+---
+
+## Not Yet Implemented (Planned)
 
 ### Duplicate Detection
 
-**Status:** ⏳ Planned
-
-- Identify duplicate images
+- Identify duplicate images deterministically
 - Make duplicate behavior explicit and predictable
 - Avoid ambiguous or silent handling
 
----
-
 ### Tagging & Organization
-
-**Status:** ⏳ Planned
 
 - Allow users to tag images
 - Persist tags in the database
@@ -85,5 +96,3 @@
 - Anything listed under **Implemented Capabilities** must work end-to-end.
 - Planned capabilities are intentionally high-level and may change.
 - This document should be updated only when a capability becomes real.
-
----

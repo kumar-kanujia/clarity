@@ -10,17 +10,27 @@ Clarity does not copy, move, or modify user files. The database acts as the auth
 
 ---
 
+## Current Development State
+
+The current UI is intentionally treated as a testing harness. It exists to validate backend behavior such as scanning, metadata persistence, batch retrieval, thumbnail extraction, and navigation.
+
+The UI is expected to be redesigned once core capabilities and domain behavior are considered stable. No long-term architectural assumptions should be derived from the current interface implementation.
+
+Backend reliability, determinism, and explicit failure handling are considered the primary development focus at this stage.
+
+---
+
 ## Direction
 
-Clarity is intended to grow into a **reliable photo viewing and organization tool**, with a strong focus on transparency and predictability.
+Clarity is intended to grow into a reliable photo viewing and organization tool, with a strong focus on transparency and predictability.
 
-Near-term goals include:
+Near-term evolution should prioritize:
 
 - A fast and dependable photo viewing experience
-- Explicit and trustworthy duplicate detection
+- Explicit and trustworthy duplicate detection (deterministic first)
 - Simple, user-controlled tagging and organization
 
-The project prioritizes **feature usefulness and correctness** over file ownership or automation.
+The project prioritizes feature usefulness and correctness over visual polish or automation.
 
 ---
 
@@ -59,7 +69,4 @@ Clarity is not intended to be:
 
 ## Notes
 
-This document defines what the project **is**, not a complete feature list.
-Capabilities will evolve incrementally, but these principles should remain stable.
-
----
+This document defines what the project is, not a complete feature list. Capabilities will evolve incrementally, but these principles should remain stable.
