@@ -26,7 +26,7 @@ Focus only on **paths you already execute**.
 
 - [x] Handle image decode failures safely
 - [x] Ensure partial metadata does not crash DB writes
-- [!] ~~Store “metadata unavailable” state instead of failing~~ Will do later state setup
+- [x] Store “metadata unavailable” state instead of failing
 
 #### Database
 

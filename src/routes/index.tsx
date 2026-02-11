@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
   component: Index
 });
 
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 20;
 
 function Index() {
   const [images, setImages] = useState<Image[]>([]);

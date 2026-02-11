@@ -3,7 +3,7 @@ use sqlx::{FromRow, prelude::Type};
 
 use crate::domain::imagemetadata::ImageMetadata;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Type, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Type, Default, PartialEq, Eq)]
 #[repr(i32)]
 pub enum ProcessStatus {
   #[default]
