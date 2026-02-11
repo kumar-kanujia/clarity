@@ -11,7 +11,7 @@ use serde::Serialize;
 #[serde(rename_all = "camelCase")]
 pub struct Image {
   pub file_name: String,
-  pub path: String,
+  pub file_path: String,
   pub thumbnail_path: String,
   pub file_size: String,
   pub dimension: String,
@@ -23,7 +23,7 @@ impl From<ImageFile> for Image {
       file_size: file.size_string(),
       dimension: file.dimensions_string(),
       file_name: file.file_name,
-      path: file.file_path,
+      file_path: file.file_path,
       thumbnail_path: file.thumbnail_path,
     }
   }

@@ -1,5 +1,6 @@
 use crate::domain::dto::{ImportCounters, ImportSummary, ProcessStatus};
 use crate::infrastructure::fs::scanner;
+use crate::infrastructure::media::metadata::generate_file_metadata;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
 
@@ -11,11 +12,10 @@ use std::sync::atomic::Ordering;
 use std::time::Instant;
 
 async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
-  let file_path = file
-    .to_str()
-    .ok_or_else(|| Error::other("Path is not valid UTF-8"))?;
+  let file_meta = generate_file_metadata(file)
+    .map_err(|err| Error::other(format!("Failed to generate metadata: {}", err)))?;
 
-  let exists = image_repo::check_is_file_exists(db, file_path)
+  let exists = image_repo::check_is_file_exists(db, &file_meta.file_path)
     .await
     .map_err(|e| Error::other(format!("DB Check failed: {}", e)))?;
 
@@ -23,12 +23,7 @@ async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
     return Ok(ProcessStatus::Skipped);
   }
 
-  let file_name = file
-    .file_name()
-    .map(|n| n.to_string_lossy().to_string())
-    .unwrap_or_else(|| "unknown".to_string());
-
-  image_repo::save_image_path(db, &file_name, file_path)
+  image_repo::save_image_file(db, &file_meta.into())
     .await
     .map_err(|e| Error::other(format!("DB Insert failed: {}", e)))?;
 

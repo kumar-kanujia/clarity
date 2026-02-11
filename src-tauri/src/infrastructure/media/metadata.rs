@@ -1,6 +1,6 @@
 use std::{fs, io::Error, path::Path, time::UNIX_EPOCH};
 
-use crate::domain::imagemetadata::{FileMetadata, ImageMetadata};
+use crate::domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata};
 
 const THUMBNAIL_SIZE: u32 = 256;
 
@@ -30,8 +30,31 @@ fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), E
   Ok((height, width))
 }
 
-fn file_metadata(file: &Path) -> Result<FileMetadata, Error> {
+pub fn generate_image_metadata(
+  file: &Path,
+  thumnail_target: &Path,
+) -> Result<ImageMetadata, Error> {
+  let uuid = uuid::Uuid::new_v4();
+  let thumbnail_path = thumnail_target
+    .join(uuid.to_string())
+    .with_extension("webp");
+  let (height, width) = generate_thumbnail_file(file, &thumbnail_path)?;
+  Ok(ImageMetadata {
+    thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
+    dim_x: width,
+    dim_y: height,
+  })
+}
+
+pub fn generate_file_metadata(file: &Path) -> Result<FileMetadata, Error> {
   let metadata = fs::metadata(file)?;
+
+  let file_path = file.to_string_lossy().to_string();
+
+  let file_name = file
+    .file_name()
+    .map(|n| n.to_string_lossy().to_string())
+    .unwrap_or_else(|| "unknown".to_string());
 
   let file_size = metadata.len();
 
@@ -47,35 +70,11 @@ fn file_metadata(file: &Path) -> Result<FileMetadata, Error> {
     .unwrap()
     .as_secs();
 
-  let file_name = file
-    .file_name()
-    .map(|n| n.to_string_lossy().to_string())
-    .unwrap_or_else(|| "unknown".to_string());
-
   Ok(FileMetadata {
+    file_path,
     file_name,
     file_size,
     ctx,
     mtx,
-  })
-}
-
-pub fn generate_image_metadata(
-  file: &Path,
-  thumnail_target: &Path,
-) -> Result<ImageMetadata, Error> {
-  let file_meta = file_metadata(file)?;
-
-  let uuid = uuid::Uuid::new_v4();
-  let thumbnail_path = thumnail_target
-    .join(uuid.to_string())
-    .with_extension("webp");
-  let (height, width) = generate_thumbnail_file(file, &thumbnail_path)?;
-  Ok(ImageMetadata {
-    file_meta,
-    file_path: file.to_string_lossy().to_string(),
-    thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
-    dim_x: width,
-    dim_y: height,
   })
 }
