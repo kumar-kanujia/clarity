@@ -35,13 +35,13 @@ fn file_metadata(file: &Path) -> Result<FileMetadata, Error> {
 
   let file_size = metadata.len();
 
-  let modified_at = metadata
+  let mtx = metadata
     .modified()?
     .duration_since(UNIX_EPOCH)
     .unwrap()
     .as_secs();
 
-  let created_at = metadata
+  let ctx = metadata
     .created()?
     .duration_since(UNIX_EPOCH)
     .unwrap()
@@ -55,8 +55,8 @@ fn file_metadata(file: &Path) -> Result<FileMetadata, Error> {
   Ok(FileMetadata {
     file_name,
     file_size,
-    created_at,
-    modified_at,
+    ctx,
+    mtx,
   })
 }
 
@@ -75,7 +75,7 @@ pub fn generate_image_metadata(
     file_meta,
     file_path: file.to_string_lossy().to_string(),
     thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
-    dimension_x: width,
-    dimension_y: height,
+    dim_x: width,
+    dim_y: height,
   })
 }

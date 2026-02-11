@@ -10,7 +10,7 @@ use sqlx::{
 };
 
 pub const DB_DIR: &str = "db";
-pub const DB_FILE: &str = "clarity.db";
+pub const DB_FILE: &str = "clarity.sqlite3";
 
 pub async fn setup_db(app: &App) -> Result<SqlitePool, Error> {
   log::info!("Setting up database");

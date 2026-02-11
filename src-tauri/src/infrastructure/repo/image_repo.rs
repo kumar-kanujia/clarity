@@ -33,30 +33,19 @@ pub async fn check_is_file_exists(db: &Db, file_path: &str) -> Result<bool, sqlx
   Ok(exists)
 }
 
-pub async fn save_image_file(db: &Db, image_file: &ImageFile) -> Result<i64, sqlx::Error> {
+pub async fn save_image_path(
+  db: &Db,
+  file_name: &str,
+  file_path: &str,
+) -> Result<i64, sqlx::Error> {
   let result = sqlx::query(
     r#"
-        INSERT INTO image_file (
-            file_name,
-            file_path,
-            thumbnail_path,
-            file_size,
-            dimension_x,
-            dimension_y,
-            created_at,
-            modified_at
-        )
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        INSERT INTO image_file (file_name, file_path)
+        VALUES (?1, ?2)
         "#,
   )
-  .bind(&image_file.file_name)
-  .bind(&image_file.file_path)
-  .bind(&image_file.thumbnail_path)
-  .bind(image_file.file_size)
-  .bind(image_file.dimension_x)
-  .bind(image_file.dimension_y)
-  .bind(image_file.created_at)
-  .bind(image_file.modified_at)
+  .bind(&file_name)
+  .bind(&file_path)
   .execute(db)
   .await?;
 

@@ -10,15 +10,17 @@ pub struct ImageFile {
   pub file_path: String,
   pub thumbnail_path: String,
   pub file_size: i64,
-  pub dimension_x: u32,
-  pub dimension_y: u32,
-  pub created_at: i64,
-  pub modified_at: i64,
+  pub dim_x: u32,
+  pub dim_y: u32,
+  pub ctx: i64,
+  pub mtx: i64,
+  pub imported_at: i64,
+  pub is_processed: i64,
 }
 
 impl ImageFile {
   pub fn dimensions_string(&self) -> String {
-    format!("{}x{}", self.dimension_x, self.dimension_y)
+    format!("{}x{}", self.dim_x, self.dim_y)
   }
 
   pub fn size_string(&self) -> String {
@@ -48,10 +50,12 @@ impl From<ImageMetadata> for ImageFile {
       file_path: meta.file_path,
       thumbnail_path: meta.thumbnail_path,
       file_size: meta.file_meta.file_size.cast_signed(),
-      dimension_x: meta.dimension_x,
-      dimension_y: meta.dimension_y,
-      created_at: meta.file_meta.created_at.cast_signed(),
-      modified_at: meta.file_meta.modified_at.cast_signed(),
+      dim_x: meta.dim_x,
+      dim_y: meta.dim_y,
+      ctx: meta.file_meta.ctx.cast_signed(),
+      mtx: meta.file_meta.mtx.cast_signed(),
+      imported_at: 0,
+      is_processed: 1,
     }
   }
 }

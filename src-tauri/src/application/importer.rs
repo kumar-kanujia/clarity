@@ -1,7 +1,5 @@
 use crate::domain::dto::{ImportCounters, ImportSummary, ProcessStatus};
-use crate::domain::imagemetadata::ImageMetadata;
-use crate::infrastructure::fs::{ops, scanner};
-use crate::infrastructure::media::metadata;
+use crate::infrastructure::fs::scanner;
 use crate::infrastructure::repo::image_repo;
 use crate::state::Db;
 
@@ -12,16 +10,12 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
 
-async fn process_image(
-  db: &Db,
-  thumbnail_target: &Path,
-  file: &Path,
-) -> Result<ProcessStatus, Error> {
-  let path_str = file
+async fn process_image(db: &Db, file: &Path) -> Result<ProcessStatus, Error> {
+  let file_path = file
     .to_str()
     .ok_or_else(|| Error::other("Path is not valid UTF-8"))?;
 
-  let exists = image_repo::check_is_file_exists(db, path_str)
+  let exists = image_repo::check_is_file_exists(db, file_path)
     .await
     .map_err(|e| Error::other(format!("DB Check failed: {}", e)))?;
 
@@ -29,17 +23,12 @@ async fn process_image(
     return Ok(ProcessStatus::Skipped);
   }
 
-  let image_file = metadata::generate_image_metadata(file, thumbnail_target)
-    .unwrap_or_else(|e| {
-      log::error!("Metadata extraction failed: {}", e);
-      ImageMetadata {
-        file_path: file.to_string_lossy().to_string(),
-        ..Default::default()
-      }
-    })
-    .into();
+  let file_name = file
+    .file_name()
+    .map(|n| n.to_string_lossy().to_string())
+    .unwrap_or_else(|| "unknown".to_string());
 
-  image_repo::save_image_file(db, &image_file)
+  image_repo::save_image_path(db, &file_name, file_path)
     .await
     .map_err(|e| Error::other(format!("DB Insert failed: {}", e)))?;
 
@@ -47,11 +36,7 @@ async fn process_image(
 }
 
 /// Process a list of image files in parallel
-async fn process_images_async(
-  db: &Db,
-  thumnail_target: &Path,
-  files: Vec<PathBuf>,
-) -> Result<ImportSummary, Error> {
+async fn process_images_async(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, Error> {
   let counters = Arc::new(ImportCounters::default());
 
   stream::iter(files)
@@ -61,7 +46,7 @@ async fn process_images_async(
 
       async move {
         counters.scanned.fetch_add(1, Ordering::Relaxed);
-        match process_image(&db, thumnail_target, &path).await {
+        match process_image(&db, &path).await {
           Ok(ProcessStatus::Processed) => {
             counters.imported.fetch_add(1, Ordering::Relaxed);
           }
@@ -80,17 +65,9 @@ async fn process_images_async(
   Ok(counters.into())
 }
 
-pub async fn scan_and_process_images(
-  db: &Db,
-  cache_dir: &Path,
-  paths: Vec<PathBuf>,
-) -> Result<ImportSummary, Error> {
+pub async fn scan_and_process_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
   let t0 = Instant::now();
   log::info!("Scanning and processing images started");
-
-  let thumnail_target = cache_dir.join("org.clarity").join(".thumbnails");
-
-  ops::ensure_dir(&thumnail_target)?;
 
   let mut all_images = Vec::new();
   let mut total_scanned = 0;
@@ -106,7 +83,7 @@ pub async fn scan_and_process_images(
     total_scanned += count;
   }
 
-  let mut summary: ImportSummary = process_images_async(db, &thumnail_target, all_images).await?;
+  let mut summary: ImportSummary = process_images_async(db, all_images).await?;
 
   let t1 = Instant::now();
 
