@@ -1,5 +1,5 @@
 use crate::{
-  domain::dto::Image,
+  application::dto::Image,
   infrastructure::{fs::ops, repo::image_repo},
   state::Db,
 };

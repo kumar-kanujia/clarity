@@ -1,7 +1,15 @@
+use crate::infrastructure::fs::error::ScanError;
+
 use walkdir::WalkDir;
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+
+pub struct ScanResult {
+  pub images: Vec<PathBuf>,
+  pub total_files: usize,
+  pub walk_errors: usize,
+}
 
 static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
@@ -22,16 +30,38 @@ pub fn is_image_file(path: &Path) -> bool {
     .map_or(false, is_supported_image_ext)
 }
 
-pub fn perform_file_scan_for_images(path: PathBuf) -> (Vec<PathBuf>, usize) {
-  let mut total_files = 0;
-  let images = WalkDir::new(path)
-    .into_iter()
-    .filter_map(Result::ok)
-    .filter(|e| e.file_type().is_file())
-    .inspect(|_| total_files += 1)
-    .map(|e| e.into_path())
-    .filter(|p| is_image_file(p))
-    .collect();
+pub fn perform_file_scan_for_images(path: PathBuf) -> Result<ScanResult, ScanError> {
+  if !path.exists() {
+    return Err(ScanError::InvalidRoot(path.display().to_string()));
+  }
 
-  (images, total_files)
+  let mut total_files = 0;
+  let mut images = Vec::new();
+  let mut walk_errors = 0;
+
+  for entry in WalkDir::new(&path) {
+    match entry {
+      Ok(entry) => {
+        if entry.file_type().is_file() {
+          total_files += 1;
+
+          let path = entry.into_path();
+
+          if is_image_file(&path) {
+            images.push(path);
+          }
+        }
+      }
+      Err(_) => {
+        walk_errors += 1;
+        continue;
+      }
+    }
+  }
+
+  Ok(ScanResult {
+    images,
+    total_files,
+    walk_errors,
+  })
 }

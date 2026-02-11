@@ -30,9 +30,16 @@ impl From<ImageFile> for Image {
 
 #[derive(Debug, Default, Serialize)]
 pub struct ImportSummary {
+  /// Total files discovered by scanner
   pub total: usize,
+  /// Files processed in import pipeline
   pub scanned: usize,
+  /// Successfully imported
   pub imported: usize,
+  /// Filtered out (not image, duplicate, etc.)
   pub skipped: usize,
+  /// Pipeline failures (hash, thumbnail, DB)
   pub failed: usize,
+  /// Filesystem traversal errors
+  pub walk_errors: usize,
 }

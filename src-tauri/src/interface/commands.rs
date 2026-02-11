@@ -1,6 +1,6 @@
+use crate::application::dto::{Image, ImportSummary};
 use crate::application::gallery;
 use crate::application::importer::scan_and_import_images;
-use crate::domain::dto::{Image, ImportSummary};
 use crate::state::AppState;
 
 use std::path::PathBuf;

@@ -1,8 +1,24 @@
-use std::{fs, io::Error, path::Path, time::UNIX_EPOCH};
+use crate::{
+  domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata},
+  infrastructure::media::error::MetadataError,
+  state::THUMBNAIL_SIZE,
+};
 
-use crate::domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata};
+use std::{
+  fs,
+  io::Error,
+  path::{Path, PathBuf},
+  time::UNIX_EPOCH,
+};
 
-const THUMBNAIL_SIZE: u32 = 256;
+use futures::stream::StreamExt;
+
+pub struct MetadataStats {
+  pub metadata: Vec<FileMetadata>,
+  pub not_found: usize,
+  pub permission_denied: usize,
+  pub io_errors: usize,
+}
 
 fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), Error> {
   let img = image::open(source).map_err(|err| {
@@ -41,8 +57,14 @@ pub fn create_image_metadata(file: &Path, thumnail_target: &Path) -> Result<Imag
   })
 }
 
-pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, Error> {
-  let metadata = fs::metadata(file)?;
+pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> {
+  let metadata = fs::metadata(file).map_err(|e| match e.kind() {
+    std::io::ErrorKind::NotFound => MetadataError::NotFound(file.display().to_string()),
+    std::io::ErrorKind::PermissionDenied => {
+      MetadataError::PermissionDenied(file.display().to_string())
+    }
+    _ => MetadataError::Io(e.to_string()),
+  })?;
 
   let file_path = file.to_string_lossy().to_string();
 
@@ -54,16 +76,16 @@ pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, Error> {
   let file_size = metadata.len();
 
   let mtx = metadata
-    .modified()?
-    .duration_since(UNIX_EPOCH)
-    .unwrap()
-    .as_secs();
+    .modified()
+    .ok()
+    .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+    .map(|d| d.as_secs());
 
   let ctx = metadata
-    .created()?
-    .duration_since(UNIX_EPOCH)
-    .unwrap()
-    .as_secs();
+    .created()
+    .ok()
+    .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+    .map(|d| d.as_secs());
 
   Ok(FileMetadata {
     file_path,
@@ -72,4 +94,39 @@ pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, Error> {
     ctx,
     mtx,
   })
+}
+
+pub async fn extract_metadata_parallel(files: Vec<PathBuf>) -> MetadataStats {
+  let concurrency = (num_cpus::get() * 2).min(32);
+
+  let results = futures::stream::iter(files)
+    .map(|path| tokio::task::spawn_blocking(move || create_file_metadata(&path)))
+    .buffer_unordered(concurrency)
+    .collect::<Vec<_>>()
+    .await;
+
+  let mut metadata = Vec::new();
+
+  let mut not_found = 0;
+  let mut permission_denied = 0;
+  let mut io_errors = 0;
+
+  for res in results {
+    match res {
+      Ok(Ok(meta)) => metadata.push(meta),
+      Ok(Err(err)) => match err {
+        MetadataError::NotFound(_) => not_found += 1,
+        MetadataError::PermissionDenied(_) => permission_denied += 1,
+        MetadataError::Io(_) => io_errors += 1,
+      },
+      Err(_) => io_errors += 1,
+    }
+  }
+
+  MetadataStats {
+    metadata,
+    not_found,
+    permission_denied,
+    io_errors,
+  }
 }

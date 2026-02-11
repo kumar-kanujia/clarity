@@ -36,8 +36,8 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64> {
     b.push_bind(&file.file_name)
       .push_bind(&file.file_path)
       .push_bind(file.file_size.cast_signed())
-      .push_bind(file.ctx.cast_signed())
-      .push_bind(file.mtx.cast_signed());
+      .push_bind(file.ctx.unwrap().cast_signed())
+      .push_bind(file.mtx.unwrap().cast_signed());
   });
 
   let result = query_builder.build().execute(db).await?;
