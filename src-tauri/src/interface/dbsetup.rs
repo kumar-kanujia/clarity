@@ -1,6 +1,8 @@
+use std::io::Error;
+
 use crate::infrastructure::fs::ops;
 
-use tauri::{App, Manager};
+use tauri::{AppHandle, Manager};
 
 use sqlx::{
   SqlitePool, migrate,
@@ -8,18 +10,20 @@ use sqlx::{
 };
 
 pub const DB_DIR: &str = "db";
-pub const DB_FILE: &str = "clarity.db";
+pub const DB_FILE: &str = "clarity.sqlite3";
+pub const MAX_POOL_SIZE: u32 = 5;
 
-pub async fn setup_db(app: &App) -> Result<SqlitePool, sqlx::Error> {
-  println!("Setting up database");
+pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, Error> {
+  log::info!("Setting up database");
 
   let app_data = app
     .path()
     .app_data_dir()
-    .map_err(|_| sqlx::Error::Configuration("missing app data dir".into()))?;
+    .map_err(|err| Error::other(format!("Missing app data dir: {}", err)))?;
 
   let db_dir = app_data.join(DB_DIR);
-  ops::ensure_dir(&db_dir).map_err(|e| sqlx::Error::Configuration(e.to_string().into()))?;
+  ops::ensure_dir(&db_dir)
+    .map_err(|err| Error::other(format!("Failed to create DB dir: {}", err)))?;
 
   let db_path: std::path::PathBuf = db_dir.join(DB_FILE);
 
@@ -29,11 +33,13 @@ pub async fn setup_db(app: &App) -> Result<SqlitePool, sqlx::Error> {
     .foreign_keys(true);
 
   let pool = SqlitePoolOptions::new()
-    .max_connections(4)
+    .max_connections(MAX_POOL_SIZE)
     .acquire_timeout(std::time::Duration::from_secs(10))
     .after_connect(|conn, _| {
       Box::pin(async move {
         let pragmas = [
+          "PRAGMA journal_mode = WAL;",
+          "PRAGMA synchronous = NORMAL;",
           "PRAGMA busy_timeout = 5000;",
           "PRAGMA temp_store = MEMORY;",
           "PRAGMA cache_size = -40000;", // ~40MB
@@ -49,13 +55,20 @@ pub async fn setup_db(app: &App) -> Result<SqlitePool, sqlx::Error> {
       })
     })
     .connect_with(db_opts)
-    .await?;
+    .await
+    .map_err(|err| Error::other(format!("Failed to connect to DB: {}", err)))?;
 
-  migrate!("./migrations").run(&pool).await?;
+  migrate!("./migrations")
+    .run(&pool)
+    .await
+    .map_err(|err| Error::other(format!("Failed to migrate DB: {}", err)))?;
 
-  sqlx::query("PRAGMA optimize;").execute(&pool).await?;
+  sqlx::query("PRAGMA optimize;")
+    .execute(&pool)
+    .await
+    .map_err(|err| Error::other(format!("DB optimization Error: {}", err)))?;
 
-  println!("Database setup complete");
+  log::info!("Database setup complete");
 
   Ok(pool)
 }

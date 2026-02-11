@@ -24,7 +24,7 @@ export const ImageCard = ({
   isSelected,
   canToggle,
   onToggle,
-  onPreview,
+  onPreview
 }: ImageCardProps) => {
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,7 +44,7 @@ export const ImageCard = ({
             ? "border-red-500 bg-red-500/5 scale-[0.98]"
             : isBest
               ? "border-green-500/40 shadow-green-500/5 hover:border-green-500"
-              : "border-white/5 bg-secondary/20 hover:border-white/20",
+              : "border-white/5 bg-secondary/20 hover:border-white/20"
         )}
         onClick={handleToggle}
       >
@@ -55,7 +55,7 @@ export const ImageCard = ({
               "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300",
               isSelected
                 ? "bg-red-500 border-red-500"
-                : "bg-black/20 border-white/40 backdrop-blur-md",
+                : "bg-black/20 border-white/40 backdrop-blur-md"
             )}
           >
             {isSelected && <CircleX className="w-4 h-4 text-white" />}
@@ -72,12 +72,12 @@ export const ImageCard = ({
         {/* Image Display - Fully Visible as requested */}
         <div className="aspect-square w-full overflow-hidden bg-black/5 flex items-center justify-center p-2 relative group-hover:p-0 transition-all duration-500">
           <img
-            src={getFileURI(image.path)}
+            src={getFileURI(image.fileName)}
             className={cn(
               "w-full h-full object-contain transition-all duration-700",
-              isSelected ? "opacity-40 grayscale-50" : "group-hover:scale-105",
+              isSelected ? "opacity-40 grayscale-50" : "group-hover:scale-105"
             )}
-            alt={image.filename}
+            alt={image.fileName}
           />
 
           {/* Simple hover overlay */}
@@ -90,7 +90,7 @@ export const ImageCard = ({
               onPreview();
             }}
             className={cn(
-              "absolute top-4 right-4 bg-primary/40 backdrop-blur-xl text-white p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 hover:bg-primary hover:scale-110 z-30 border border-white/20 shadow-2xl",
+              "absolute top-4 right-4 bg-primary/40 backdrop-blur-xl text-white p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 hover:bg-primary hover:scale-110 z-30 border border-white/20 shadow-2xl"
             )}
             title="View Full Size"
           >
@@ -122,14 +122,14 @@ export const ImageCard = ({
         <p
           className={cn(
             "text-xs font-black text-foreground truncate tracking-tight",
-            isSelected && "text-red-500",
+            isSelected && "text-red-500"
           )}
         >
-          {image.filename}
+          {image.fileName}
         </p>
         <div className="flex items-center gap-2 mt-2">
           <p className="text-[12px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-            {image.size}
+            {image.fileSize}
           </p>
           <div className="w-1 h-1 bg-muted-foreground/20 rounded-full" />
           <p className="text-[12px] font-black text-muted-foreground uppercase tracking-widest opacity-40">

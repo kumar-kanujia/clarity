@@ -19,7 +19,7 @@ export const ScanResult = () => {
     selectedImages,
     setAppState,
     toggleImageSelection,
-    deleteImages,
+    deleteImages
   } = useGetScannerStore();
 
   const [isDeleting, setIsDeleting] = useState(false);
@@ -37,9 +37,9 @@ export const ScanResult = () => {
 
     groups.forEach((group) => {
       group.forEach((img) => {
-        if (selectedImages.has(img.path)) {
+        if (selectedImages.has(img.filePath)) {
           imagesToDelete.push(img);
-          deletedPaths.push(img.path);
+          deletedPaths.push(img.filePath);
         }
       });
     });
@@ -48,12 +48,12 @@ export const ScanResult = () => {
       await moveToTrash(imagesToDelete);
       deleteImages(deletedPaths);
       toast.success(
-        `Successfully moved ${deletedPaths.length} images to trash`,
+        `Successfully moved ${deletedPaths.length} images to trash`
       );
     } catch (error) {
       console.error("Failed to delete images:", error);
       toast.error(
-        "Failed to delete some images. They may be in use by another program.",
+        "Failed to delete some images. They may be in use by another program."
       );
     } finally {
       setIsDeleting(false);

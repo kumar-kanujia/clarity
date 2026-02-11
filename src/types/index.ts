@@ -1,8 +1,11 @@
 export type Image = {
-  path: string;
-  filename: string;
-  size: string;
+  filePath: string;
+  fileName: string;
+  fileSize: string;
   resolution: string;
+  thumbnailPath: string;
+  createdAt: Number;
+  isProcessed: boolean;
 };
 
 export type AppState = "INIT" | "PREVIEW" | "SCANNING" | "RESULTS";

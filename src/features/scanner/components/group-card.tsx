@@ -21,7 +21,7 @@ export const GroupCard = ({
   groupIdx,
   selectedImages,
   onToggleSelection,
-  onPreview,
+  onPreview
 }: GroupCardProps) => {
   if (group.length < 2) return null;
 
@@ -55,16 +55,16 @@ export const GroupCard = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {group.map((image, idx) => (
           <ImageCard
-            key={image.path}
+            key={image.fileName}
             image={image}
             isBest={idx === 0}
-            isSelected={selectedImages.has(image.path)}
+            isSelected={selectedImages.has(image.filePath)}
             canToggle={
-              selectedImages.has(image.path) ||
-              group.filter((img) => selectedImages.has(img.path)).length <
+              selectedImages.has(image.filePath) ||
+              group.filter((img) => selectedImages.has(img.filePath)).length <
                 group.length - 1
             }
-            onToggle={() => onToggleSelection(image.path)}
+            onToggle={() => onToggleSelection(image.filePath)}
             onPreview={() => onPreview(image)}
           />
         ))}

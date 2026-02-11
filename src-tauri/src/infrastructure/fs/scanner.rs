@@ -1,15 +1,16 @@
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
-use crate::domain::imagefile::ImageFile;
-
-use std::fs;
-use std::io::Error;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
-const IMAGE_EXTENSIONS: [&str; 7] = ["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"];
+static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
-fn is_supported_image_ext(ext: &str) -> bool {
-  IMAGE_EXTENSIONS
+fn get_extensions() -> &'static [&'static str] {
+  IMAGE_EXTENSIONS.get_or_init(|| vec!["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"])
+}
+
+pub fn is_supported_image_ext(ext: &str) -> bool {
+  get_extensions()
     .iter()
     .any(|&e| ext.eq_ignore_ascii_case(e))
 }
@@ -18,38 +19,19 @@ pub fn is_image_file(path: &Path) -> bool {
   path
     .extension()
     .and_then(|e| e.to_str())
-    .is_some_and(is_supported_image_ext)
+    .map_or(false, is_supported_image_ext)
 }
 
-pub fn scan_for_image_files(path: &Path) -> Vec<PathBuf> {
-  if path.is_file() {
-    if is_image_file(path) {
-      return vec![path.to_path_buf()];
-    }
-    return vec![];
-  }
-
-  WalkDir::new(path)
+pub fn perform_file_scan_for_images(path: PathBuf) -> (Vec<PathBuf>, usize) {
+  let mut total_files = 0;
+  let images = WalkDir::new(path)
     .into_iter()
     .filter_map(Result::ok)
     .filter(|e| e.file_type().is_file())
-    .map(DirEntry::into_path)
-    .filter(|path| is_image_file(path))
-    .collect()
-}
+    .inspect(|_| total_files += 1)
+    .map(|e| e.into_path())
+    .filter(|p| is_image_file(p))
+    .collect();
 
-pub fn build_image_file_from_path(path: &Path) -> Result<ImageFile, Error> {
-  let file_path = path.to_string_lossy().to_string();
-
-  let file_size = fs::metadata(path)?.len().cast_signed();
-
-  let (width, height) = image::image_dimensions(path).unwrap_or((0, 0));
-
-  Ok(ImageFile {
-    seq_id: 0,
-    file_path,
-    file_size,
-    dimension_x: width,
-    dimension_y: height,
-  })
+  (images, total_files)
 }

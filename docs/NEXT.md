@@ -1,141 +1,172 @@
-# NEXT.md
-
-## Immediate Work Queue (Execution-Oriented)
+## NEXT — Backend Hardening & Deterministic Expansion
 
 > Rule:
-> Work **top to bottom**.
-> Do not start Part 2 until Part 1 is complete.
-> This file reflects _current implementation reality_, not future architecture.
+> Work top to bottom.
+> Do not start Part 2 before Part 1 is complete.
+> Do not start Part 3 before Part 2 is complete.
+> UI changes are out of scope unless required for backend validation.
 
 ---
 
-## Part 1 — Error Handling, Overhead Control & Logging
+# Part 1 — Structured Error Handling & Logging 2.0
 
-### 1. Error Handling (Concrete, Not Abstract)
+Goal: Every failure is classifiable, observable, and reproducible.
 
-Focus only on **paths you already execute**.
+## 1. Error Taxonomy
 
-#### Import / Scan
+- [ ] Introduce explicit error categories (enum or constants):
+  - SCAN_ERROR
+  - METADATA_ERROR
+  - THUMBNAIL_ERROR
+  - DB_WRITE_ERROR
+  - FILE_MISSING
+  - FILE_PERMISSION_DENIED
+  - CORRUPTED_IMAGE
+  - UNSUPPORTED_FORMAT
 
-- [ ] Handle unreadable files explicitly (permission, locked files)
-- [ ] Handle broken symlinks or invalid paths
-- [ ] Skip unsupported image formats with a clear reason
-- [ ] Ensure one bad file does not fail a full scan
-
-#### Metadata Extraction
-
-- [ ] Handle image decode failures safely
-- [ ] Ensure partial metadata does not crash DB writes
-- [ ] Store “metadata unavailable” state instead of failing
-
-#### Database
-
-- [ ] Handle DB insert/update failures explicitly
-- [ ] Ensure partial batch inserts are visible (not silent)
-- [ ] Prevent crashes on malformed records
+- [ ] Ensure all existing error paths map to one of these categories
+- [ ] Remove ad-hoc string-based error logging
 
 ---
 
-### 2. Overhead & Performance Guardrails (Minimal)
+## 2. Structured Error Context
 
-- [ ] Ensure scans are streaming / iterative (not all in memory)
-- [ ] Ensure batch size is enforced everywhere
-- [ ] Avoid decoding full images when extracting metadata
-- [ ] Guard against extremely large folders (timeouts or chunking)
+Every logged error must include:
 
----
+- [ ] Image ID (if known)
 
-### 3. Logging (Developer-Focused)
+- [ ] File path
 
-Logging is for **you**, not users (yet).
+- [ ] Operation stage (scan / metadata / thumbnail / db / view)
 
-- [ ] Introduce log levels: info / warn / error
-- [ ] Log scan start + completion (counts only)
-- [ ] Log skipped files with reason
-- [ ] Log fatal failures with enough context to reproduce
+- [ ] Exception type
+
+- [ ] Timestamp
+
+- [ ] Standardize log format (structured object or consistent pattern)
+
 - [ ] Ensure logs never include raw image data
+
+---
+
+## 3. Recoverable vs Fatal Semantics
+
+- [ ] Define what qualifies as recoverable
+- [ ] Define what qualifies as fatal
+- [ ] Ensure recoverable errors never abort full scans
+- [ ] Ensure fatal errors terminate cleanly with clear logging
+
+---
+
+## 4. Operation Summary Metrics
+
+At the end of every scan:
+
+- [ ] Log total files visited
+- [ ] Log valid images indexed
+- [ ] Log skipped files (with count by category)
+- [ ] Log metadata failures
+- [ ] Log DB failures
+- [ ] Log total duration
+
+System health must be visible from logs alone.
 
 ---
 
 ### Completion Check (Part 1)
 
-- [ ] App never crashes on bad files
-- [ ] Failures are visible in logs
-- [ ] Large scans feel predictable
-- [ ] You trust the system to keep running
+- [ ] All errors fall into explicit categories
+- [ ] Logs are structured and consistent
+- [ ] Scan results are diagnosable without reproducing manually
+- [ ] No silent failures remain
 
 ---
 
-## Part 2 — Thumbnails & Gallery View
+# Part 2 — Deterministic Duplicate Detection (Hash-Based)
 
-### 1. Thumbnail Extraction (Incremental)
+Goal: Explicit, predictable duplicate identification.
 
-Keep this intentionally simple.
+## 1. Hashing Infrastructure
 
-- [ ] Decide one thumbnail size (single constant)
-- [ ] Extract thumbnail only when needed
-- [ ] Do not block scanning or DB operations
-- [ ] Handle extraction failure without retries
-- [ ] Associate thumbnail with image ID
-- [ ] Store thumbnails in cache
+- [ ] Choose hashing algorithm (e.g., SHA-256)
+- [ ] Compute hash from file content (streamed, not full memory load)
+- [ ] Store hash in database
+- [ ] Ensure hashing failures are logged with proper category
 
-### 2. Gallery View (Minimal Viable)
+---
 
-This is not a “photo app UI” yet — it’s a **visual index**.
+## 2. Database Changes
 
-- [ ] Display thumbnails in a grid
-- [ ] Load thumbnails lazily as they appear
-- [ ] Respect batch retrieval
-- [ ] Handle missing thumbnails gracefully
-- [ ] Keep layout simple and predictable
+- [ ] Add hash column to image table
+- [ ] Backfill hash for existing records
+- [ ] Ensure deterministic behavior on re-scan
+- [ ] Validate performance impact on large datasets
+
+---
+
+## 3. Duplicate Query Capability
+
+- [ ] Query images grouped by identical hash
+- [ ] Expose duplicate detection at repository/service layer
+- [ ] Ensure no silent merging or auto-resolution
+- [ ] Log duplicate counts during scan (optional but visible)
 
 ---
 
 ### Completion Check (Part 2)
 
-- [ ] Gallery loads quickly for large sets
-- [ ] Scrolling does not degrade
-- [ ] Thumbnail failures don’t break layout
-- [ ] Code remains delete-friendly
+- [ ] Identical files are reliably detected
+- [ ] No probabilistic matching involved
+- [ ] Duplicate behavior is explicit and reversible
 
 ---
 
-## Part 3 — Navigation & Notifications
+# Part 3 — Minimal Tagging Backend
 
-### 1. Navigation (Concrete)
+Goal: Introduce deterministic organization primitives.
 
-- [ ] Open image from gallery
-- [ ] Navigate next / previous using current ordering
-- [ ] Navigation respects batch boundaries
-- [ ] Missing file shows explicit error state
+## 1. Schema Design
+
+- [ ] Create tags table
+- [ ] Create image_tags join table (many-to-many)
+- [ ] Enforce referential integrity
+- [ ] Add necessary indexes
 
 ---
 
-### 2. Notifications (Minimal & Honest)
+## 2. Tag Operations (Backend Only)
 
-Notifications exist to **explain failures**, not celebrate success.
+- [ ] Create tag
+- [ ] Delete tag
+- [ ] Attach tag to image
+- [ ] Detach tag from image
+- [ ] Prevent duplicate tag assignments
 
-- [ ] Surface scan/import failures
-- [ ] Surface missing-file errors when viewing
-- [ ] Ensure notifications are dismissible
-- [ ] Avoid modal dialogs unless blocking
+---
+
+## 3. Query Capability
+
+- [ ] Retrieve images by tag
+- [ ] Support batch retrieval with tag filter
+- [ ] Ensure deterministic ordering remains intact
 
 ---
 
 ### Completion Check (Part 3)
 
-- [ ] Navigation feels predictable
-- [ ] Errors are visible but not annoying
-- [ ] No critical failures are silent
+- [ ] Tags persist across restarts
+- [ ] No UI assumptions baked into schema
+- [ ] Tag queries scale with batch retrieval
 
 ---
 
-## Exit Rule
+# Exit Rule
 
-When **all three parts** are complete:
+When all three parts are complete:
 
-1. Delete this file
-2. Update `CAPABILITIES.md`
-3. Create a **new, smaller `NEXT.md`**
+1. Update CAPABILITIES.md
+2. Update PROJECT_CONTEXT.md if direction has evolved
+3. Create a smaller NEXT.md focused on refinement or UI redesign
+4. Delete this file
 
----
+The system must remain deterministic, local-first, and explicit at every stage.
