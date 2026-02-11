@@ -11,26 +11,19 @@ use crate::{
   interface::{
     commands::{load_saved_images, save_images},
     dbsetup::setup_db,
-    logsetup::{LOG_LEVEL, get_log_target},
+    tracesetup,
   },
   state::AppState,
 };
 use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
 use tauri::Manager;
-use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  tracesetup::init_tracing();
   tauri::Builder::default()
-    .plugin(
-      tauri_plugin_log::Builder::new()
-        .level(LOG_LEVEL)
-        .target(get_log_target())
-        .with_colors(ColoredLevelConfig::default())
-        .build(),
-    )
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![

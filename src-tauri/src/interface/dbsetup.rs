@@ -14,7 +14,7 @@ pub const DB_FILE: &str = "clarity.sqlite3";
 pub const MAX_POOL_SIZE: u32 = 5;
 
 pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, Error> {
-  log::info!("Setting up database");
+  tracing::info!("Setting up database");
 
   let app_data = app
     .path()
@@ -68,7 +68,7 @@ pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, Error> {
     .await
     .map_err(|err| Error::other(format!("DB optimization Error: {}", err)))?;
 
-  log::info!("Database setup complete");
+  tracing::info!("Database setup complete");
 
   Ok(pool)
 }

@@ -34,7 +34,7 @@ impl ThumbnailWorker {
 
     let thumbnail_target = Self::get_thumbnail_target(app);
 
-    log::info!(
+    tracing::info!(
       "Spawning thumbnail worker with max batch size {}",
       batch_size
     );
@@ -49,7 +49,7 @@ impl ThumbnailWorker {
           continue;
         }
 
-        log::info!("Got {} files to thumbnail", files.len());
+        tracing::info!("Got {} files to thumbnail", files.len());
 
         let mut tasks = Vec::new();
 
@@ -74,7 +74,7 @@ impl ThumbnailWorker {
                 file.update_metadata(image_metadata);
               }
               Err(_) => {
-                log::error!("Failed to create metadata for {}", file.file_path);
+                tracing::error!("Failed to create metadata for {}", file.file_path);
                 file.mark_error();
               }
             }
@@ -84,7 +84,7 @@ impl ThumbnailWorker {
 
         bulk_update_image_files(&db, &updated_files).await.unwrap();
 
-        log::info!(
+        tracing::info!(
           "Finished thumbnail worker in {:?}",
           t0.elapsed().as_secs_f32()
         );

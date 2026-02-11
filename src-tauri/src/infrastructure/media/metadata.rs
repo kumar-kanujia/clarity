@@ -47,7 +47,7 @@ pub fn create_image_metadata(file: &Path, thumnail_target: &Path) -> Result<Imag
     .join(uuid.to_string())
     .with_extension("webp");
   let (height, width) = generate_thumbnail_file(file, &thumbnail_path).map_err(|err| {
-    log::error!("Failed to generate thumbnail: {}", err);
+    tracing::error!("Failed to generate thumbnail: {}", err);
     Error::other(format!("Failed to generate thumbnail: {}", err))
   })?;
   Ok(ImageMetadata {
