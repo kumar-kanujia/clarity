@@ -7,19 +7,44 @@ use crate::{
 
 pub async fn list_images_paginated(
   db: &Db,
+  last_max_tx: i64,
   last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<ImageFile>, DatabaseError> {
   let result = sqlx::query_as::<_, ImageFile>(
     r#"
-        SELECT *
+        SELECT 
+          seq_id, file_path, file_size, thumbnail_path, 
+          dim_x, dim_y, process_status, ctx, mtx, updated_at
         FROM image_file
-        WHERE seq_id > ?1
-        ORDER BY seq_id ASC
-        LIMIT ?2
+        WHERE (max_tx, seq_id) < (?1, ?2)
+        ORDER BY max_tx DESC, seq_id DESC
+        LIMIT ?3
         "#,
   )
+  .bind(last_max_tx)
   .bind(last_seq_id)
+  .bind(last_seq_id)
+  .bind(limit)
+  .fetch_all(db)
+  .await?;
+  Ok(result)
+}
+
+pub async fn list_pending_process_image_file(
+  db: &Db,
+  limit: i64,
+) -> Result<Vec<ImageFile>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageFile>(
+    r#"
+        SELECT 
+          seq_id, file_path, file_size, thumbnail_path, 
+          dim_x, dim_y, process_status, ctx, mtx, updated_at
+        FROM image_file
+        WHERE process_status = 1
+        LIMIT ?1
+        "#,
+  )
   .bind(limit)
   .fetch_all(db)
   .await?;
@@ -31,13 +56,11 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, D
     return Ok(0);
   }
 
-  let mut query_builder = sqlx::QueryBuilder::new(
-    "INSERT OR IGNORE INTO image_file (file_name, file_path, file_size, ctx, mtx) ",
-  );
+  let mut query_builder =
+    sqlx::QueryBuilder::new("INSERT OR IGNORE INTO image_file (file_path, file_size, ctx, mtx) ");
 
   query_builder.push_values(files, |mut b, file| {
-    b.push_bind(&file.file_name)
-      .push_bind(&file.file_path)
+    b.push_bind(&file.file_path)
       .push_bind(file.file_size.cast_signed())
       .push_bind(file.ctx.map(u64::cast_signed))
       .push_bind(file.mtx.map(u64::cast_signed));
@@ -46,25 +69,6 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, D
   let result = query_builder.build().execute(db).await?;
 
   Ok(result.rows_affected())
-}
-
-pub async fn list_pending_process_image_file(
-  db: &Db,
-  limit: i64,
-) -> Result<Vec<ImageFile>, DatabaseError> {
-  let result = sqlx::query_as::<_, ImageFile>(
-    r#"
-        SELECT *
-        FROM image_file
-        WHERE process_status = 0
-        ORDER BY imported_at
-        LIMIT ?1
-        "#,
-  )
-  .bind(limit)
-  .fetch_all(db)
-  .await?;
-  Ok(result)
 }
 
 pub async fn bulk_update_image_metadata(

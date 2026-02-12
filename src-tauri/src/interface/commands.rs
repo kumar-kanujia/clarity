@@ -51,6 +51,7 @@ pub async fn save_images(
 #[tauri::command]
 pub async fn fetch_scanned_images(
   state: State<'_, AppState>,
+  last_max_tx: i64,
   last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<Image>, String> {
@@ -61,7 +62,7 @@ pub async fn fetch_scanned_images(
   );
   let _enter = span.enter();
 
-  match library::list_scanned_images(&state.db, last_seq_id, limit).await {
+  match library::list_scanned_images(&state.db, last_max_tx, last_seq_id, limit).await {
     Ok(images) => {
       tracing::info!(images = images.len(), "Fetch scanned images completed");
       Ok(images)

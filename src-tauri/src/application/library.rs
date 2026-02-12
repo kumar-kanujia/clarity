@@ -7,10 +7,11 @@ use crate::{
 
 pub async fn list_scanned_images(
   db: &Db,
+  last_max_tx: i64,
   last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<Image>, AppError> {
-  let files = image_repo::list_images_paginated(db, last_seq_id, limit).await?;
+  let files = image_repo::list_images_paginated(db, last_max_tx, last_seq_id, limit).await?;
 
   let mut unreadable_count = 0;
 

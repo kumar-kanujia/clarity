@@ -65,9 +65,15 @@ export const saveImages = async (paths: string[]): Promise<ImportSummary> => {
   }
 };
 
-export const getSavedImagesBatch = async (lastSeqId: number, limit: number) => {
+// Fetch Images from now
+export const getSavedImagesBatch = async (
+  createdAt: number,
+  lastSeqId: number,
+  limit: number
+) => {
   try {
     const loadedFiles = await invoke<Image[]>("fetch_scanned_images", {
+      lastMxTx: createdAt,
       lastSeqId,
       limit
     });

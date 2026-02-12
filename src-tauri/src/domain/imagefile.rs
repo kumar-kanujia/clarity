@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, prelude::Type};
 
@@ -8,22 +10,22 @@ use crate::domain::imagemetadata::ImageMetadata;
 pub enum ProcessStatus {
   #[default]
   Pending = 0,
-  Complete = 1,
-  Error = 2,
+  Hashed = 1,
+  Complete = 2,
+  Error = 3,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default, Clone)]
 pub struct ImageFile {
   pub seq_id: i64,
-  pub file_name: String,
   pub file_path: String,
-  pub thumbnail_path: String,
   pub file_size: i64,
+  pub thumbnail_path: String,
   pub dim_x: u32,
   pub dim_y: u32,
   pub ctx: i64,
   pub mtx: i64,
-  pub imported_at: i64,
+  pub updated_at: i64,
   pub process_status: ProcessStatus,
 }
 
@@ -49,6 +51,14 @@ impl ImageFile {
     };
 
     format!("{value:.2} {unit}")
+  }
+
+  pub fn file_name(&self) -> String {
+    Path::new(&self.file_path)
+      .file_name()
+      .and_then(|os_str| os_str.to_str())
+      .unwrap_or("unknown")
+      .to_string()
   }
 
   pub fn update_metadata(&mut self, metadata: ImageMetadata) {

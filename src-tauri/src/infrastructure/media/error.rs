@@ -10,6 +10,9 @@ pub enum MetadataError {
 
   #[error("IO error: {0}")]
   Io(String),
+
+  #[error("Empty file: {0}")]
+  EmptyFile(String),
 }
 
 #[derive(Debug, Error)]

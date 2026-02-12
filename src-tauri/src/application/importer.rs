@@ -33,7 +33,7 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
     not_found,
     permission_denied,
     io_errors,
-  } = metadata::extract_metadata_parallel(files).await;
+  } = metadata::extract_files_metadata_concurrent(files).await;
 
   let processed = metadata.len();
 

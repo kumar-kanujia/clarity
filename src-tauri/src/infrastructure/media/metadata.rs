@@ -58,7 +58,7 @@ pub fn create_image_metadata(
   })
 }
 
-pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> {
+pub fn extract_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> {
   let metadata = fs::metadata(file).map_err(|e| match e.kind() {
     std::io::ErrorKind::NotFound => MetadataError::NotFound(file.display().to_string()),
     std::io::ErrorKind::PermissionDenied => {
@@ -69,12 +69,11 @@ pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> 
 
   let file_path = file.to_string_lossy().to_string();
 
-  let file_name = file.file_name().map_or_else(
-    || "unknown".to_string(),
-    |n| n.to_string_lossy().to_string(),
-  );
-
   let file_size = metadata.len();
+
+  if file_size == 0 {
+    return Err(MetadataError::EmptyFile(file_path));
+  }
 
   let mtx = metadata
     .modified()
@@ -90,18 +89,17 @@ pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> 
 
   Ok(FileMetadata {
     file_path,
-    file_name,
     file_size,
     ctx,
     mtx,
   })
 }
 
-pub async fn extract_metadata_parallel(files: Vec<PathBuf>) -> MetadataStats {
+pub async fn extract_files_metadata_concurrent(files: Vec<PathBuf>) -> MetadataStats {
   let concurrency = (num_cpus::get() * 2).min(32);
 
   let results = futures::stream::iter(files)
-    .map(|path| tokio::task::spawn_blocking(move || create_file_metadata(&path)))
+    .map(|path| tokio::task::spawn_blocking(move || extract_file_metadata(&path)))
     .buffer_unordered(concurrency)
     .collect::<Vec<_>>()
     .await;
@@ -118,6 +116,7 @@ pub async fn extract_metadata_parallel(files: Vec<PathBuf>) -> MetadataStats {
       Ok(Err(err)) => match err {
         MetadataError::NotFound(_) => not_found += 1,
         MetadataError::PermissionDenied(_) => permission_denied += 1,
+        MetadataError::EmptyFile(_) => io_errors += 1,
         MetadataError::Io(_) => io_errors += 1,
       },
       Err(_) => io_errors += 1,
