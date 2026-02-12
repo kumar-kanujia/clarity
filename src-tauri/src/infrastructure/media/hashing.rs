@@ -1,17 +1,23 @@
-use std::{
-  fs::File,
-  io::{self, Error},
-  path::Path,
-};
+use std::{fs::File, io::Error, path::Path};
 
-use sha2::{Digest, Sha256};
+const PARALLEL_THRESHOLD: u64 = 1024 * 1024;
 
-#[allow(dead_code)]
-pub fn generate_file_id(path: &Path) -> Result<String, Error> {
-  let mut file = File::open(path)?;
-  let mut hasher = Sha256::new();
+pub fn generate_file_hash<P: AsRef<Path>>(path: P, file_size: u64) -> Result<String, Error> {
+  if file_size > PARALLEL_THRESHOLD {
+    let mut hasher = blake3::Hasher::new();
 
-  io::copy(&mut file, &mut hasher)?;
+    hasher.update_mmap_rayon(&path)?;
 
-  Ok(hex::encode(hasher.finalize()))
+    let hash = hasher.finalize();
+
+    Ok(hash.to_hex().to_string())
+  } else {
+    let mut file = File::open(path)?;
+
+    let mut hasher = blake3::Hasher::new();
+
+    std::io::copy(&mut file, &mut hasher)?;
+
+    Ok(hasher.finalize().to_hex().to_string())
+  }
 }
