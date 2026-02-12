@@ -1,7 +1,8 @@
 use std::fs::{self, File};
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
+use crate::infrastructure::fs::error::FileAccessError;
 use crate::state::IMAGE_DIR;
 
 pub fn ensure_dir(path: &Path) -> Result<(), Error> {
@@ -29,12 +30,13 @@ pub async fn copy_file_async(source: &Path, target: &Path) -> Result<PathBuf, Er
   Ok(target.to_path_buf())
 }
 
-pub fn verify_file_readbilty(path: &str) -> Result<bool, Error> {
+pub fn is_file_readable(path: &str) -> Result<(), FileAccessError> {
   match File::open(path) {
-    Ok(_) => Ok(true),
+    Ok(_) => Ok(()),
     Err(e) => match e.kind() {
-      std::io::ErrorKind::NotFound => Ok(false),
-      _ => Err(e),
+      ErrorKind::NotFound => Err(FileAccessError::FileNotFound(path.to_string())),
+      ErrorKind::PermissionDenied => Err(FileAccessError::PermissionDenied(path.to_string())),
+      _ => Err(FileAccessError::Io(e)),
     },
   }
 }

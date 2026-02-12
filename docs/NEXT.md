@@ -14,15 +14,11 @@ Goal: Every failure is classifiable, observable, and reproducible.
 
 ## 1. Error Taxonomy
 
-- [ ] Introduce explicit error categories (enum or constants):
+- [x] Introduce explicit error categories (enum or constants):
   - SCAN_ERROR
-  - METADATA_ERROR
+  - JOIN_ERROR
   - THUMBNAIL_ERROR
-  - DB_WRITE_ERROR
-  - FILE_MISSING
-  - FILE_PERMISSION_DENIED
-  - CORRUPTED_IMAGE
-  - UNSUPPORTED_FORMAT
+  - DATABASE_ERROR
 
 - [ ] Ensure all existing error paths map to one of these categories
 - [ ] Remove ad-hoc string-based error logging

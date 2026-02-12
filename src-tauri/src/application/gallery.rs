@@ -1,29 +1,38 @@
 use crate::{
   application::dto::Image,
+  error::AppError,
   infrastructure::{fs::ops, repo::image_repo},
   state::Db,
 };
 
-use std::io::Error;
-
-pub async fn load_saved_images_in_batch(
+pub async fn list_scanned_images(
   db: &Db,
-  offset: i64,
+  last_seq_id: i64,
   limit: i64,
-) -> Result<Vec<Image>, Error> {
-  tracing::info!("Get image files in batch called");
-  let files = image_repo::get_images_batch(db, offset, limit)
-    .await
-    .map_err(|err| {
-      tracing::error!("DB Error: {}", err);
-      Error::other(format!("DB Error: {}", err))
-    })?;
+) -> Result<Vec<Image>, AppError> {
+  let files = image_repo::list_images_paginated(db, last_seq_id, limit).await?;
+
+  let mut unreadable_count = 0;
 
   let images = files
     .into_iter()
-    .filter(|file| ops::verify_file_readbilty(&file.file_path).unwrap_or(false))
+    .filter(|file| match ops::is_file_readable(&file.file_path) {
+      Ok(_) => true,
+      Err(err) => {
+        tracing::info!("Unreadable image: {:?}", err);
+        unreadable_count += 1;
+        false
+      }
+    })
     .map(Image::from)
     .collect();
-  tracing::info!("Get image files in batch completed");
+
+  if unreadable_count > 0 {
+    tracing::warn!(
+      unreadable = unreadable_count,
+      "Unreadable images skipped during pagination"
+    );
+  }
+
   Ok(images)
 }

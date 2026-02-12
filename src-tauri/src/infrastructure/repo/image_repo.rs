@@ -1,26 +1,31 @@
+#[allow(clippy::needless_raw_strings)]
 use sqlx::Result;
 
-use crate::{domain::filemetadata::FileMetadata, infrastructure::repo::error::DatabaseError};
-#[allow(clippy::needless_raw_strings)]
-use crate::{domain::imagefile::ImageFile, state::Db};
+use crate::{
+  domain::{filemetadata::FileMetadata, imagefile::ImageFile},
+  infrastructure::repo::error::DatabaseError,
+  state::Db,
+};
 
-pub async fn get_images_batch(
+pub async fn list_images_paginated(
   db: &Db,
-  offset: i64,
+  last_seq_id: i64,
   limit: i64,
-) -> Result<Vec<ImageFile>, sqlx::Error> {
-  sqlx::query_as::<_, ImageFile>(
+) -> Result<Vec<ImageFile>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageFile>(
     r#"
         SELECT *
         FROM image_file
-        ORDER BY seq_id
-        LIMIT ?1 OFFSET ?2
+        WHERE seq_id > ?1
+        ORDER BY seq_id ASC
+        LIMIT ?2
         "#,
   )
+  .bind(last_seq_id)
   .bind(limit)
-  .bind(offset)
   .fetch_all(db)
-  .await
+  .await?;
+  return Ok(result);
 }
 
 pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, DatabaseError> {

@@ -13,7 +13,9 @@ pub async fn save_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummary, String> {
-  tracing::info!("Save command called");
+  let span = tracing::info_span!("save_image ", paths = paths.len());
+  let _enter = span.enter();
+
   let t0 = Instant::now();
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
@@ -44,18 +46,29 @@ pub async fn save_images(
 }
 
 #[tauri::command]
-pub async fn load_saved_images(
+pub async fn fetch_scanned_images(
   state: State<'_, AppState>,
-  offset: i64,
+  last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<Image>, String> {
-  tracing::info!("Load command called");
-  let result = gallery::load_saved_images_in_batch(&state.db, offset, limit)
-    .await
-    .map_err(|e| {
-      tracing::error!("Failed to load images: {}", e);
-      e.to_string()
-    })?;
+  let span = tracing::info_span!(
+    "fetch_scanned_images",
+    last_seq_id = last_seq_id,
+    limit = limit
+  );
+  let _enter = span.enter();
 
-  Ok(result)
+  match gallery::list_scanned_images(&state.db, last_seq_id, limit).await {
+    Ok(images) => {
+      tracing::info!(
+        images = images.len(),
+        "Fetch scanned images completed"
+      );
+      Ok(images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "Load failed");
+      Err(user_friendly_message(&err))
+    }
+  }
 }

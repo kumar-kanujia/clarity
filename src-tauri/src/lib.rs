@@ -9,7 +9,7 @@ mod state;
 use crate::{
   application::background::ThumbnailWorker,
   interface::{
-    commands::{load_saved_images, save_images},
+    commands::{fetch_scanned_images, save_images},
     dbsetup::setup_db,
     tracesetup,
   },
@@ -31,7 +31,7 @@ pub fn run() {
       scan_dir_for_images,
       move_to_trash,
       save_images,
-      load_saved_images
+      fetch_scanned_images
     ])
     .setup(|app| {
       let app_handle = app.handle();
@@ -42,7 +42,7 @@ pub fn run() {
             app_handle.manage(AppState { db: db.clone() });
             ThumbnailWorker::spawn(&app_handle.clone(), db.clone());
           }
-          Err(err) => log::error!("DB Error: {}", err),
+          Err(err) => tracing::error!("DB Error: {}", err),
         }
       });
 
