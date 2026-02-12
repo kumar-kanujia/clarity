@@ -17,7 +17,7 @@ pub async fn list_scanned_images(
   let images = files
     .into_iter()
     .filter(|file| match ops::is_file_readable(&file.file_path) {
-      Ok(_) => true,
+      Ok(()) => true,
       Err(err) => {
         tracing::info!("Unreadable image: {:?}", err);
         unreadable_count += 1;

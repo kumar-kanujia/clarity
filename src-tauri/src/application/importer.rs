@@ -34,14 +34,14 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
 
   let processed = metadata.len();
 
-  let imported = persist_images(db, &metadata).await?;
+  let imported = persist_images(db, &metadata).await? as usize;
 
-  let skipped = processed - imported as usize;
+  let skipped = processed - imported;
 
   Ok(ImportSummary {
     discovered,
     processed,
-    imported: imported as usize,
+    imported,
     skipped,
     not_found,
     permission_denied,
@@ -61,7 +61,7 @@ pub async fn scan_and_import_images(
   let mut walk_errors = 0;
 
   for path in paths {
-    set.spawn_blocking(move || scanner::perform_file_scan_for_images(path));
+    set.spawn_blocking(move || scanner::perform_file_scan_for_images(&path));
   }
 
   while let Some(res) = set.join_next().await {
