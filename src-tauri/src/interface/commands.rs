@@ -1,8 +1,11 @@
-use crate::application::dto::{Image, ImportSummary};
-use crate::application::gallery;
-use crate::application::importer::scan_and_import_images;
-use crate::error::user_friendly_message;
-use crate::state::AppState;
+use crate::{
+  application::{
+    dto::{Image, ImportSummary},
+    gallery, importer,
+  },
+  error,
+  setup::state::AppState,
+};
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -19,7 +22,7 @@ pub async fn save_images(
   let t0 = Instant::now();
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-  match scan_and_import_images(&state.db, paths).await {
+  match importer::scan_and_import_images(&state.db, paths).await {
     Ok(summary) => {
       tracing::info!("Import completed in {:?}", t0.elapsed());
       tracing::info!(
@@ -40,7 +43,7 @@ pub async fn save_images(
           error = ?err,
           "Import failed"
       );
-      Err(user_friendly_message(&err))
+      Err(error::user_friendly_message(&err))
     }
   }
 }
@@ -60,15 +63,12 @@ pub async fn fetch_scanned_images(
 
   match gallery::list_scanned_images(&state.db, last_seq_id, limit).await {
     Ok(images) => {
-      tracing::info!(
-        images = images.len(),
-        "Fetch scanned images completed"
-      );
+      tracing::info!(images = images.len(), "Fetch scanned images completed");
       Ok(images)
     }
     Err(err) => {
       tracing::error!(error = ?err, "Load failed");
-      Err(user_friendly_message(&err))
+      Err(error::user_friendly_message(&err))
     }
   }
 }

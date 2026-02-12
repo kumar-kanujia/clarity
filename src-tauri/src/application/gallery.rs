@@ -2,7 +2,7 @@ use crate::{
   application::dto::Image,
   error::AppError,
   infrastructure::{fs::ops, repo::image_repo},
-  state::Db,
+  setup::state::Db,
 };
 
 pub async fn list_scanned_images(

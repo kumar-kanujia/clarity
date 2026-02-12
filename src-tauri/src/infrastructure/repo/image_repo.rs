@@ -1,8 +1,8 @@
+use crate::setup::state::Db;
 #[allow(clippy::needless_raw_strings)]
 use crate::{
   domain::{filemetadata::FileMetadata, imagefile::ImageFile},
   infrastructure::repo::error::DatabaseError,
-  state::Db,
 };
 
 pub async fn list_images_paginated(

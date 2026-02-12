@@ -1,7 +1,6 @@
 use crate::{
   domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata},
   infrastructure::media::error::{ImageMetadataError, MetadataError, ThumbnailError},
-  state::THUMBNAIL_SIZE,
 };
 
 use std::{
@@ -11,6 +10,9 @@ use std::{
 };
 
 use futures::stream::StreamExt;
+
+/// Thumbnail size in pixels
+pub const THUMBNAIL_SIZE: u32 = 256;
 
 pub struct MetadataStats {
   pub metadata: Vec<FileMetadata>,

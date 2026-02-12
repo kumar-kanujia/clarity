@@ -4,20 +4,19 @@ mod error;
 mod infrastructure;
 mod interface;
 mod old;
-mod state;
+mod setup;
 
 use crate::{
-  application::background::ThumbnailWorker,
   interface::{
     commands::{fetch_scanned_images, save_images},
-    dbsetup::setup_db,
     tracesetup,
   },
-  state::AppState,
+  setup::setup_app,
 };
+
 use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
-use tauri::Manager;
+pub static IMAGE_DIR: &str = "images";
 
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -33,21 +32,7 @@ pub fn run() {
       save_images,
       fetch_scanned_images
     ])
-    .setup(|app| {
-      let app_handle = app.handle();
-
-      tauri::async_runtime::block_on(async move {
-        match setup_db(app_handle).await {
-          Ok(db) => {
-            app_handle.manage(AppState { db: db.clone() });
-            ThumbnailWorker::spawn(&app_handle.clone(), db.clone());
-          }
-          Err(err) => tracing::error!("DB Error: {}", err),
-        }
-      });
-
-      Ok(())
-    })
+    .setup(setup_app)
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

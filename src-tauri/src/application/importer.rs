@@ -7,10 +7,13 @@ use crate::{
     media::metadata::{self, MetadataStats},
     repo::{error::DatabaseError, image_repo},
   },
-  state::{CHUNK_SIZE, Db},
+  setup::state::Db,
 };
 
 use std::path::PathBuf;
+
+/// Batch size for image save operations
+pub const CHUNK_SIZE: usize = 50;
 
 async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, DatabaseError> {
   let mut imported = 0;

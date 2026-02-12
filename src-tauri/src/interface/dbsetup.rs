@@ -1,6 +1,4 @@
-use std::io::Error;
-
-use crate::infrastructure::fs::ops;
+use crate::{infrastructure::fs::ops, interface::error::DbInitError};
 
 use tauri::{AppHandle, Manager};
 
@@ -13,19 +11,17 @@ pub const DB_DIR: &str = "db";
 pub const DB_FILE: &str = "clarity.sqlite3";
 pub const MAX_POOL_SIZE: u32 = 5;
 
-pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, Error> {
-  tracing::info!("Setting up database");
-
+pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DbInitError> {
   let app_data = app
     .path()
     .app_data_dir()
-    .map_err(|err| Error::other(format!("Missing app data dir: {}", err)))?;
+    .map_err(|_| DbInitError::MissingAppDataDir)?;
 
   let db_dir = app_data.join(DB_DIR);
-  ops::ensure_dir(&db_dir)
-    .map_err(|err| Error::other(format!("Failed to create DB dir: {}", err)))?;
 
-  let db_path: std::path::PathBuf = db_dir.join(DB_FILE);
+  ops::ensure_dir(&db_dir)?;
+
+  let db_path = db_dir.join(DB_FILE);
 
   let db_opts = SqliteConnectOptions::new()
     .filename(&db_path)
@@ -56,19 +52,17 @@ pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, Error> {
     })
     .connect_with(db_opts)
     .await
-    .map_err(|err| Error::other(format!("Failed to connect to DB: {}", err)))?;
+    .map_err(DbInitError::Connect)?;
 
   migrate!("./migrations")
     .run(&pool)
     .await
-    .map_err(|err| Error::other(format!("Failed to migrate DB: {}", err)))?;
+    .map_err(|err| DbInitError::Migration(err))?;
 
   sqlx::query("PRAGMA optimize;")
     .execute(&pool)
     .await
-    .map_err(|err| Error::other(format!("DB optimization Error: {}", err)))?;
-
-  tracing::info!("Database setup complete");
+    .map_err(DbInitError::Optimize)?;
 
   Ok(pool)
 }
