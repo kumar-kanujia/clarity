@@ -1,6 +1,4 @@
 #[allow(clippy::needless_raw_strings)]
-use sqlx::Result;
-
 use crate::{
   domain::{filemetadata::FileMetadata, imagefile::ImageFile},
   infrastructure::repo::error::DatabaseError,
@@ -25,7 +23,7 @@ pub async fn list_images_paginated(
   .bind(limit)
   .fetch_all(db)
   .await?;
-  return Ok(result);
+  Ok(result)
 }
 
 pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, DatabaseError> {
@@ -41,8 +39,8 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, D
     b.push_bind(&file.file_name)
       .push_bind(&file.file_path)
       .push_bind(file.file_size.cast_signed())
-      .push_bind(file.ctx.map(|v| v.cast_signed()))
-      .push_bind(file.mtx.map(|v| v.cast_signed()));
+      .push_bind(file.ctx.map(u64::cast_signed))
+      .push_bind(file.mtx.map(u64::cast_signed));
   });
 
   let result = query_builder.build().execute(db).await?;
@@ -50,22 +48,29 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, D
   Ok(result.rows_affected())
 }
 
-pub async fn get_pending_image_file(db: &Db, limit: i64) -> Result<Vec<ImageFile>> {
-  sqlx::query_as::<_, ImageFile>(
+pub async fn list_pending_process_image_file(
+  db: &Db,
+  limit: i64,
+) -> Result<Vec<ImageFile>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageFile>(
     r#"
         SELECT *
         FROM image_file
-        WHERE process_status = 0 or process_status = 2
+        WHERE process_status = 0
         ORDER BY imported_at
         LIMIT ?1
         "#,
   )
   .bind(limit)
   .fetch_all(db)
-  .await
+  .await?;
+  Ok(result)
 }
 
-pub async fn bulk_update_image_files(pool: &Db, images: &[ImageFile]) -> Result<u64> {
+pub async fn bulk_update_image_metadata(
+  pool: &Db,
+  images: &[ImageFile],
+) -> Result<u64, DatabaseError> {
   let mut tx = pool.begin().await?;
 
   let mut total_rows = 0;

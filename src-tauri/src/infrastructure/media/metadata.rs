@@ -1,12 +1,11 @@
 use crate::{
   domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata},
-  infrastructure::media::error::MetadataError,
+  infrastructure::media::error::{ImageMetadataError, MetadataError, ThumbnailError},
   state::THUMBNAIL_SIZE,
 };
 
 use std::{
   fs,
-  io::Error,
   path::{Path, PathBuf},
   time::UNIX_EPOCH,
 };
@@ -20,36 +19,36 @@ pub struct MetadataStats {
   pub io_errors: usize,
 }
 
-fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), Error> {
-  let img = image::open(source).map_err(|err| {
-    Error::other(format!(
-      "Failed to open image: {} {}",
-      source.display(),
-      err
-    ))
+fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), ThumbnailError> {
+  let img = image::open(source).map_err(|err| ThumbnailError::Open {
+    path: source.display().to_string(),
+    source: err,
   })?;
 
   let thumbnail = img.thumbnail(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
-  thumbnail
-    .save(target)
-    .map_err(|err| Error::other(format!("Failed to save thumbnail: {}", err)))?;
+  thumbnail.save(target).map_err(|err| ThumbnailError::Save {
+    path: target.display().to_string(),
+    source: err,
+  })?;
 
   let width = img.width();
   let height = img.height();
 
-  Ok((height, width))
+  Ok((width, height))
 }
 
-pub fn create_image_metadata(file: &Path, thumnail_target: &Path) -> Result<ImageMetadata, Error> {
+pub fn create_image_metadata(
+  file: &Path,
+  thumnail_target: &Path,
+) -> Result<ImageMetadata, ImageMetadataError> {
   let uuid = uuid::Uuid::new_v4();
   let thumbnail_path = thumnail_target
     .join(uuid.to_string())
     .with_extension("webp");
-  let (height, width) = generate_thumbnail_file(file, &thumbnail_path).map_err(|err| {
-    tracing::error!("Failed to generate thumbnail: {}", err);
-    Error::other(format!("Failed to generate thumbnail: {}", err))
-  })?;
+
+  let (height, width) = generate_thumbnail_file(file, &thumbnail_path)?;
+
   Ok(ImageMetadata {
     thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
     dim_x: width,
@@ -68,10 +67,10 @@ pub fn create_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> 
 
   let file_path = file.to_string_lossy().to_string();
 
-  let file_name = file
-    .file_name()
-    .map(|n| n.to_string_lossy().to_string())
-    .unwrap_or_else(|| "unknown".to_string());
+  let file_name = file.file_name().map_or_else(
+    || "unknown".to_string(),
+    |n| n.to_string_lossy().to_string(),
+  );
 
   let file_size = metadata.len();
 

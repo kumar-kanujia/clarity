@@ -1,4 +1,7 @@
-use crate::infrastructure::{fs::error::ScanError, repo::error::DatabaseError};
+use crate::infrastructure::{
+  fs::error::{FileAccessError, ScanError},
+  repo::error::DatabaseError,
+};
 
 use thiserror::Error;
 
@@ -10,21 +13,26 @@ pub enum AppError {
   #[error("Parllel join error: {0}")]
   Join(String),
 
-  #[error("Thumbnail error: {0}")]
-  Thumbnail(String),
-
   #[error("Database error: {0}")]
   Database(#[from] DatabaseError),
+
+  #[error("Internal error: {0}")]
+  InternalError(String),
+
+  #[error("File access error: {0}")]
+  FileAccessError(#[from] FileAccessError),
 }
 
 pub fn user_friendly_message(err: &AppError) -> String {
   match err {
-    AppError::Join(_) => "Internal scan task failed.".into(),
-
     AppError::Scan(_) => "Scan failed due to filesystem error.".into(),
+
+    AppError::Join(_) => "Internal scan task failed.".into(),
 
     AppError::Database(_) => "Database operation failed.".into(),
 
-    AppError::Thumbnail(_) => "Thumbnail generation failed.".into(),
+    AppError::InternalError(_) => "Internal error.".into(),
+
+    AppError::FileAccessError(_) => "File access error.".into(),
   }
 }

@@ -11,3 +11,26 @@ pub enum MetadataError {
   #[error("IO error: {0}")]
   Io(String),
 }
+
+#[derive(Debug, Error)]
+pub enum ImageMetadataError {
+  #[error("Thumbnail generation failed")]
+  Thumbnail(#[from] ThumbnailError),
+}
+
+#[derive(Debug, Error)]
+pub enum ThumbnailError {
+  #[error("Failed to open image {path}: {source}")]
+  Open {
+    path: String,
+    #[source]
+    source: image::ImageError,
+  },
+
+  #[error("Failed to save thumbnail to {path}: {source}")]
+  Save {
+    path: String,
+    #[source]
+    source: image::ImageError,
+  },
+}

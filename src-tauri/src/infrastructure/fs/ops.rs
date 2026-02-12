@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use crate::infrastructure::fs::error::FileAccessError;
 use crate::state::IMAGE_DIR;
 
-pub fn ensure_dir(path: &Path) -> Result<(), Error> {
+pub fn ensure_dir(path: &Path) -> Result<(), FileAccessError> {
   fs::create_dir_all(path)?;
   Ok(())
 }
