@@ -57,6 +57,7 @@ pub async fn fetch_scanned_images(
 ) -> Result<Vec<Image>, String> {
   let span = tracing::info_span!(
     "fetch_scanned_images",
+    last_max_tx = last_max_tx,
     last_seq_id = last_seq_id,
     limit = limit
   );

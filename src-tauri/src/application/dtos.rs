@@ -7,6 +7,7 @@ use serde::Serialize;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Image {
+  pub seq_id: i64,
   pub file_name: String,
   pub file_path: String,
   pub thumbnail_path: String,
@@ -19,6 +20,7 @@ pub struct Image {
 impl From<ImageFile> for Image {
   fn from(file: ImageFile) -> Self {
     Self {
+      seq_id: file.seq_id,
       file_size: file.size_string(),
       resolution: file.dimensions_string(),
       file_name: file.file_name(),
