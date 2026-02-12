@@ -65,15 +65,15 @@ export const saveImages = async (paths: string[]): Promise<ImportSummary> => {
   }
 };
 
-export const getSavedImagesBatch = async (offset: number, limit: number) => {
+export const getSavedImagesBatch = async (lastSeqId: number, limit: number) => {
   try {
-    const loadedFiles = await invoke<Image[]>("load_saved_images", {
-      offset,
+    const loadedFiles = await invoke<Image[]>("fetch_scanned_images", {
+      lastSeqId,
       limit
     });
-    console.log(loadedFiles);
     return loadedFiles;
-  } catch (_) {
+  } catch (err) {
+    console.error("errr", err);
     throw new Error("Failed to get loaded files");
   }
 };

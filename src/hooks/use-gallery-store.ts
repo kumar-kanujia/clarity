@@ -44,7 +44,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
           images: updatedImages,
           offset: isReset ? BATCH_SIZE : state.offset + BATCH_SIZE,
           hasMore,
-          isLoading: false,
+          isLoading: false
         };
       });
     } catch (error) {
@@ -90,5 +90,5 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
     }
   },
 
-  clearImportSummary: () => set({ importSummary: null }),
+  clearImportSummary: () => set({ importSummary: null })
 }));

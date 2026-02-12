@@ -1,9 +1,14 @@
-use crate::application::gallery;
-use crate::application::importer::scan_and_import_images;
-use crate::domain::dto::{Image, ImportSummary};
-use crate::state::AppState;
+use crate::{
+  application::{
+    dto::{Image, ImportSummary},
+    gallery, importer,
+  },
+  error,
+  setup::state::AppState,
+};
 
 use std::path::PathBuf;
+use std::time::Instant;
 use tauri::State;
 
 #[tauri::command]
@@ -11,27 +16,59 @@ pub async fn save_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummary, String> {
-  log::info!("Save command called");
+  let span = tracing::info_span!("save_image ", paths = paths.len());
+  let _enter = span.enter();
+
+  let t0 = Instant::now();
   let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-  scan_and_import_images(&state.db, paths)
-    .await
-    .map_err(|e| e.to_string())
+  match importer::scan_and_import_images(&state.db, paths).await {
+    Ok(summary) => {
+      tracing::info!("Import completed in {:?}", t0.elapsed());
+      tracing::info!(
+        discovered = summary.discovered,
+        processed = summary.processed,
+        imported = summary.imported,
+        skipped = summary.skipped,
+        metadata_not_found = summary.not_found,
+        metadata_permission_denied = summary.permission_denied,
+        metadata_io_errors = summary.io_errors,
+        walk_errors = summary.walk_errors,
+        "Import completed"
+      );
+      Ok(summary)
+    }
+    Err(err) => {
+      tracing::error!(
+          error = ?err,
+          "Import failed"
+      );
+      Err(error::user_friendly_message(&err))
+    }
+  }
 }
 
 #[tauri::command]
-pub async fn load_saved_images(
+pub async fn fetch_scanned_images(
   state: State<'_, AppState>,
-  offset: i64,
+  last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<Image>, String> {
-  log::info!("Load command called");
-  let result = gallery::load_saved_images_in_batch(&state.db, offset, limit)
-    .await
-    .map_err(|e| {
-      log::error!("Failed to load images: {}", e);
-      e.to_string()
-    })?;
+  let span = tracing::info_span!(
+    "fetch_scanned_images",
+    last_seq_id = last_seq_id,
+    limit = limit
+  );
+  let _enter = span.enter();
 
-  Ok(result)
+  match gallery::list_scanned_images(&state.db, last_seq_id, limit).await {
+    Ok(images) => {
+      tracing::info!(images = images.len(), "Fetch scanned images completed");
+      Ok(images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "Load failed");
+      Err(error::user_friendly_message(&err))
+    }
+  }
 }

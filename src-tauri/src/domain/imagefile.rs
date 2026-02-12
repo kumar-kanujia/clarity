@@ -37,6 +37,7 @@ impl ImageFile {
     const MB: f64 = 1_000_000.0;
     const GB: f64 = 1_000_000_000.0;
 
+    #[allow(clippy::cast_precision_loss)]
     let bytes = self.file_size as f64;
 
     let (value, unit) = if bytes < MB {

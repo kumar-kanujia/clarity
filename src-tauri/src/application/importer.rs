@@ -1,98 +1,85 @@
-use crate::domain::dto::ImportSummary;
-use crate::domain::filemetadata::FileMetadata;
-use crate::infrastructure::fs::scanner;
-use crate::infrastructure::media::metadata::create_file_metadata;
-use crate::infrastructure::repo::image_repo;
-use crate::state::Db;
+use crate::{
+  application::dto::ImportSummary,
+  domain::filemetadata::FileMetadata,
+  error::AppError,
+  infrastructure::{
+    fs::scanner,
+    media::metadata::{self, MetadataStats},
+    repo::{error::DatabaseError, image_repo},
+  },
+  setup::state::Db,
+};
 
-use futures::stream::{self, StreamExt};
-use std::io::Error;
 use std::path::PathBuf;
-use std::time::Instant;
 
-use tokio::task;
+/// Batch size for image save operations
+pub const CHUNK_SIZE: usize = 50;
 
-const CHUNK_SIZE: usize = 50;
-
-async fn extract_metadata_parallel(files: Vec<PathBuf>) -> Vec<FileMetadata> {
-  let concurrency = (num_cpus::get() * 2).min(32);
-  stream::iter(files)
-    .map(|path| task::spawn_blocking(move || create_file_metadata(&path)))
-    .buffer_unordered(concurrency)
-    .filter_map(|res| async {
-      match res {
-        Ok(Ok(meta)) => Some(meta),
-        Ok(Err(e)) => {
-          log::error!("Metadata error: {}", e);
-          None
-        }
-        Err(e) => {
-          log::error!("Join error: {}", e);
-          None
-        }
-      }
-    })
-    .collect()
-    .await
-}
-
-async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, Error> {
+async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, DatabaseError> {
   let mut imported = 0;
 
   for chunk in image_files.chunks(CHUNK_SIZE) {
-    imported += image_repo::bulk_insert_image(db, chunk)
-      .await
-      .map_err(|e| Error::other(format!("Bulk insert failed: {}", e)))?;
+    imported += image_repo::bulk_insert_image(db, chunk).await?;
   }
 
   Ok(imported)
 }
 
-async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, Error> {
-  let total = files.len();
-  log::info!("Processing {} files", total);
+async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, AppError> {
+  let discovered = files.len();
 
-  let metadata = extract_metadata_parallel(files).await;
-  let scanned = metadata.len();
-  let failed = total - scanned;
+  let MetadataStats {
+    metadata,
+    not_found,
+    permission_denied,
+    io_errors,
+  } = metadata::extract_metadata_parallel(files).await;
 
-  let image_files: Vec<FileMetadata> = metadata.into_iter().collect();
+  let processed = metadata.len();
 
-  let imported = persist_images(db, &image_files).await?;
-  let skipped = scanned - imported as usize;
+  let imported = persist_images(db, &metadata).await? as usize;
 
-  log::info!("Imported {} files", imported);
-  log::info!("Skipped {} files", skipped);
-  log::info!("Failed {} files", failed);
+  let skipped = processed - imported;
 
   Ok(ImportSummary {
-    total,
-    scanned,
-    imported: imported as usize,
+    discovered,
+    processed,
+    imported,
     skipped,
-    failed,
+    not_found,
+    permission_denied,
+    io_errors,
+    selected: 0,
+    walk_errors: 0,
   })
 }
 
-pub async fn scan_and_import_images(db: &Db, paths: Vec<PathBuf>) -> Result<ImportSummary, Error> {
-  let t0 = Instant::now();
-  log::info!("Scan + import started");
-
-  let mut set = task::JoinSet::new();
+pub async fn scan_and_import_images(
+  db: &Db,
+  paths: Vec<PathBuf>,
+) -> Result<ImportSummary, AppError> {
+  let mut set = tokio::task::JoinSet::new();
   let mut discovered = Vec::new();
+  let mut total_files = 0;
+  let mut walk_errors = 0;
 
   for path in paths {
-    set.spawn_blocking(move || scanner::perform_file_scan_for_images(path));
+    set.spawn_blocking(move || scanner::perform_file_scan_for_images(&path));
   }
 
   while let Some(res) = set.join_next().await {
-    let (images, _) = res.map_err(|_| Error::other("Scan task failed"))?;
-    discovered.extend(images);
+    let scan_result = res
+      .map_err(|e| AppError::Join(e.to_string()))?
+      .map_err(AppError::from)?;
+
+    total_files += scan_result.total_files;
+    walk_errors += scan_result.walk_errors;
+    discovered.extend(scan_result.images);
   }
 
-  let summary = import_image_batch(db, discovered).await?;
+  let mut summary = import_image_batch(db, discovered).await?;
 
-  log::info!("Scan completed in {:?}", t0.elapsed());
-
+  summary.selected = total_files;
+  summary.walk_errors = walk_errors;
   Ok(summary)
 }

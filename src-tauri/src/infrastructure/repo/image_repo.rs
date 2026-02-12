@@ -1,29 +1,32 @@
-use sqlx::Result;
-
-use crate::domain::filemetadata::FileMetadata;
+use crate::setup::state::Db;
 #[allow(clippy::needless_raw_strings)]
-use crate::{domain::imagefile::ImageFile, state::Db};
+use crate::{
+  domain::{filemetadata::FileMetadata, imagefile::ImageFile},
+  infrastructure::repo::error::DatabaseError,
+};
 
-pub async fn get_images_batch(
+pub async fn list_images_paginated(
   db: &Db,
-  offset: i64,
+  last_seq_id: i64,
   limit: i64,
-) -> Result<Vec<ImageFile>, sqlx::Error> {
-  sqlx::query_as::<_, ImageFile>(
+) -> Result<Vec<ImageFile>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageFile>(
     r#"
         SELECT *
         FROM image_file
-        ORDER BY seq_id
-        LIMIT ?1 OFFSET ?2
+        WHERE seq_id > ?1
+        ORDER BY seq_id ASC
+        LIMIT ?2
         "#,
   )
+  .bind(last_seq_id)
   .bind(limit)
-  .bind(offset)
   .fetch_all(db)
-  .await
+  .await?;
+  Ok(result)
 }
 
-pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64> {
+pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, DatabaseError> {
   if files.is_empty() {
     return Ok(0);
   }
@@ -36,8 +39,8 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64> {
     b.push_bind(&file.file_name)
       .push_bind(&file.file_path)
       .push_bind(file.file_size.cast_signed())
-      .push_bind(file.ctx.cast_signed())
-      .push_bind(file.mtx.cast_signed());
+      .push_bind(file.ctx.map(u64::cast_signed))
+      .push_bind(file.mtx.map(u64::cast_signed));
   });
 
   let result = query_builder.build().execute(db).await?;
@@ -45,22 +48,29 @@ pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64> {
   Ok(result.rows_affected())
 }
 
-pub async fn get_pending_image_file(db: &Db, limit: i64) -> Result<Vec<ImageFile>> {
-  sqlx::query_as::<_, ImageFile>(
+pub async fn list_pending_process_image_file(
+  db: &Db,
+  limit: i64,
+) -> Result<Vec<ImageFile>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageFile>(
     r#"
         SELECT *
         FROM image_file
-        WHERE process_status = 0 or process_status = 2
+        WHERE process_status = 0
         ORDER BY imported_at
         LIMIT ?1
         "#,
   )
   .bind(limit)
   .fetch_all(db)
-  .await
+  .await?;
+  Ok(result)
 }
 
-pub async fn bulk_update_image_files(pool: &Db, images: &[ImageFile]) -> Result<u64> {
+pub async fn bulk_update_image_metadata(
+  pool: &Db,
+  images: &[ImageFile],
+) -> Result<u64, DatabaseError> {
   let mut tx = pool.begin().await?;
 
   let mut total_rows = 0;

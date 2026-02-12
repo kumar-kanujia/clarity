@@ -14,18 +14,14 @@ Goal: Every failure is classifiable, observable, and reproducible.
 
 ## 1. Error Taxonomy
 
-- [ ] Introduce explicit error categories (enum or constants):
+- [x] Introduce explicit error categories (enum or constants):
   - SCAN_ERROR
-  - METADATA_ERROR
+  - JOIN_ERROR
   - THUMBNAIL_ERROR
-  - DB_WRITE_ERROR
-  - FILE_MISSING
-  - FILE_PERMISSION_DENIED
-  - CORRUPTED_IMAGE
-  - UNSUPPORTED_FORMAT
+  - DATABASE_ERROR
 
-- [ ] Ensure all existing error paths map to one of these categories
-- [ ] Remove ad-hoc string-based error logging
+- [x] Ensure all existing error paths map to one of these categories
+- [x] Remove ad-hoc string-based error logging
 
 ---
 
@@ -33,28 +29,28 @@ Goal: Every failure is classifiable, observable, and reproducible.
 
 Every logged error must include:
 
-- [ ] Image ID (if known)
+- [x] Image ID (if known)
 
-- [ ] File path
+- [x] File path
 
-- [ ] Operation stage (scan / metadata / thumbnail / db / view)
+- [x] Operation stage (scan / metadata / thumbnail / db / view)
 
-- [ ] Exception type
+- [x] Exception type
 
-- [ ] Timestamp
+- [x] Timestamp
 
-- [ ] Standardize log format (structured object or consistent pattern)
+- [x] Standardize log format (structured object or consistent pattern)
 
-- [ ] Ensure logs never include raw image data
+- [x] Ensure logs never include raw image data
 
 ---
 
 ## 3. Recoverable vs Fatal Semantics
 
-- [ ] Define what qualifies as recoverable
-- [ ] Define what qualifies as fatal
-- [ ] Ensure recoverable errors never abort full scans
-- [ ] Ensure fatal errors terminate cleanly with clear logging
+- [x] Define what qualifies as recoverable
+- [x] Define what qualifies as fatal
+- [x] Ensure recoverable errors never abort full scans
+- [x] Ensure fatal errors terminate cleanly with clear logging
 
 ---
 
@@ -62,12 +58,12 @@ Every logged error must include:
 
 At the end of every scan:
 
-- [ ] Log total files visited
-- [ ] Log valid images indexed
-- [ ] Log skipped files (with count by category)
-- [ ] Log metadata failures
-- [ ] Log DB failures
-- [ ] Log total duration
+- [x] Log total files visited
+- [x] Log valid images indexed
+- [x] Log skipped files (with count by category)
+- [x] Log metadata failures
+- [x] Log DB failures
+- [x] Log total duration
 
 System health must be visible from logs alone.
 
@@ -75,10 +71,10 @@ System health must be visible from logs alone.
 
 ### Completion Check (Part 1)
 
-- [ ] All errors fall into explicit categories
-- [ ] Logs are structured and consistent
-- [ ] Scan results are diagnosable without reproducing manually
-- [ ] No silent failures remain
+- [x] All errors fall into explicit categories
+- [x] Logs are structured and consistent
+- [x] Scan results are diagnosable without reproducing manually
+- [x] No silent failures remain
 
 ---
 
