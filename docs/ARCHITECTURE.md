@@ -4,9 +4,7 @@
 
 Clarity uses a **Clean Architecture** approach. This means the application is divided into concentric layers, with dependencies flowing **inwards**.
 
-- **Rule 1: Dependency Rule.** Source code dependencies can only point inwards. Nothing in an inner circle can know anything at all about something in an outer circle.
-- **Rule 2: Framework Independence.** The architecture does not depend on the existence of some library of feature laden software. This allows you to use such frameworks as tools, rather than having to cram your system into their limited constraints.
-- **Rule 3: Testable.** The business rules can be tested without the UI, Database, Web Server, or any other external element.
+Source code dependencies can only point inwards. Nothing in an inner circle can know anything at all about something in an outer circle.
 
 ## 2. Directory Structure
 
@@ -16,38 +14,48 @@ This structure ensures separation of concerns and prepares the app for complex f
 src/
 ├── domain/                  # THE CORE (Pure Rust, No IO)
 │   ├── mod.rs
-│   ├── imagefile.rs         # Image entity & metadata logic
-│   ├── tag.rs               # Tag entity definitions
-│   ├── rules.rs             # Core logic (e.g., hash comparison thresholds)
-│   └── dtos.rs              # Data Transfer Objects (Frontend JSON shapes)
+│   ├── imagefile.rs         # ImageFile entity, ProcessStatus enum & helpers
+│   ├── filemetadata.rs      # FileMetadata struct (path, name, size, timestamps)
+│   └── imagemetadata.rs     # ImageMetadata struct (thumbnail path, dimensions)
 │
 ├── application/             # THE ORCHESTRATOR (Use Cases)
 │   ├── mod.rs
-│   ├── importer.rs          # Pipeline: Scan -> Hash -> Thumbnail -> Save
-│   ├── library.rs           # Gallery browsing, Sorting, & Traversal logic
-│   ├── maintenance.rs       # Deduplication workflows & Safety checks
-│   └── tagging.rs           # Tag management services
+│   ├── dtos.rs              # Data Transfer Objects (Image, ImportSummary)
+│   ├── importer.rs          # Pipeline: Scan -> Extract Metadata -> Persist
+│   ├── library.rs           # Gallery browsing: paginated listing with readability filter
+│   └── background.rs        # ThumbnailWorker: background thumbnail generation loop
 │
 ├── infrastructure/          # THE TOOLS (IO, DB, FS, External Libs)
 │   ├── mod.rs
 │   ├── repo/                # Database interactions
-│   │   ├── image_repo.rs    # SQL for Images
-│   │   └── tag_repo.rs      # SQL for Tags & Relations
+│   │   ├── mod.rs
+│   │   ├── image_repo.rs    # SQL for Images (paginated list, bulk insert, bulk update)
+│   │   └── error.rs         # DatabaseError
 │   ├── fs/                  # File System interactions
-│   │   ├── scanner.rs       # Directory walking
-│   │   ├── ops.rs           # Safe Delete, Copy, Move
-│   │   └── local.rs         # Path management (App Data And External)
-│   └── media/               # Heavy Lifting
-│       ├── processing.rs    # Thumbnail generation & Resizing
-│       └── hashing.rs       # Perceptual hash calculation
+│   │   ├── mod.rs
+│   │   ├── scanner.rs       # Directory walking & image extension filtering
+│   │   ├── ops.rs           # ensure_dir, is_file_readable
+│   │   └── error.rs         # ScanError, FileAccessError
+│   └── media/               # Image Processing
+│       ├── mod.rs
+│       ├── metadata.rs      # Thumbnail generation, file metadata extraction & parallel processing
+│       ├── hashing.rs       # SHA-256 file hashing (currently unused, reserved for dedup)
+│       └── error.rs         # MetadataError, ImageMetadataError, ThumbnailError
 │
 ├── interface/               # THE GATEWAY (Tauri)
 │   ├── mod.rs
-│   └── commands.rs          # Exposes Application logic to Frontend
+│   ├── commands.rs          # Tauri commands: save_images, fetch_scanned_images
+│   └── error.rs             # DbInitError enum
 │
-├── lib.rs                   # Library root
-├── state.rs                 # Application state management
-└── main.rs                  # Application entry & Dependency wiring
+├── setup/                   # APP BOOTSTRAP
+│   ├── mod.rs               # setup_app: DB init, state management, worker spawn
+│   ├── dbsetup.rs           # SQLite pool creation, migrations, PRAGMA optimization
+│   ├── tracesetup.rs        # Tracing/logging initialization (tracing-subscriber)
+│   └── state.rs             # AppState struct & Db type alias
+│
+├── error.rs                 # Top-level AppError enum & user_friendly_message()
+├── lib.rs                   # Library root: Tauri builder, plugin registration, command wiring
+└── main.rs                  # Application entry point
 ```
 
 ---
@@ -58,55 +66,115 @@ src/
 
 - **Role:** Defines _what_ the application is.
 - **Rules:** Pure Rust. **Zero** dependencies on `sqlx`, `tauri`, or `std::fs`.
-- **Why for Clarity:**
-- **Deduplication:** Defines the "Same Image" rule (e.g., `hamming_distance < 5`). This logic is critical and must be tested in isolation from the database.
-- **Tags:** Defines the `Tag` struct.
+- **Current Contents:**
+  - **`imagefile.rs`:** The central `ImageFile` entity (DB-mapped via `sqlx::FromRow`) with `ProcessStatus` enum (`Pending`, `Complete`, `Error`). Contains pure helper methods: `dimensions_string()`, `size_string()`, `update_metadata()`, `mark_error()`.
+  - **`filemetadata.rs`:** Lightweight `FileMetadata` struct representing raw filesystem information (path, name, size, creation/modification timestamps) before database insertion.
+  - **`imagemetadata.rs`:** `ImageMetadata` struct holding post-processing data (thumbnail path, dimensions). Implements `From<ImageFile>` for easy conversion.
 
 ### **B. Application Layer (`src/application/`)**
 
 - **Role:** Coordinates the work. It tells the Infrastructure _what_ to do.
 - **Rules:** Contains business logic flows. Knows about Domain and Infrastructure interfaces.
-- **Why for Clarity:**
-- **Import Pipeline:** The `importer.rs` service centralizes the complex chain: _Scan Folder -> Calculate Hash -> Generate Thumbnail -> Save to DB_. This prevents partial imports and keeps the UI responsive.
-- **Traversal:** `library.rs` handles the logic for "Next Image" and "Previous Image" based on the user's current sort order and active filters.
-- **Deletion Safety:** `maintenance.rs` decides _if_ a file can be deleted (e.g., "Is it external? If so, warn user first").
+- **Current Contents:**
+  - **`dtos.rs`:** Frontend-facing Data Transfer Objects. `Image` converts domain `ImageFile` into camelCase JSON with human-readable `file_size` and `resolution` strings. `ImportSummary` reports detailed import statistics (discovered, processed, imported, skipped, errors).
+  - **`importer.rs`:** The import pipeline: _Scan directories → Extract metadata in parallel → Bulk insert to DB in chunks of 50_. Uses `JoinSet` for concurrent directory scanning.
+  - **`library.rs`:** Gallery browsing service. Fetches paginated images from the database and filters out unreadable files (logging warnings for skipped entries).
+  - **`background.rs`:** `ThumbnailWorker` — a long-running background task spawned at startup. Polls for `Pending` images, generates thumbnails in parallel (batch size = `num_cpus * 2`), and bulk-updates metadata back to the database.
 
 ### **C. Infrastructure Layer (`src/infrastructure/`)**
 
 - **Role:** The implementation details. Handles dirty work like Disk IO and SQL.
 - **Rules:** The only layer allowed to touch the database, file system, or external image libraries.
-- **Why for Clarity:**
-- **Thumbnails:** `media/processing.rs` isolates the heavy `image-rs` library. If you switch to a faster thumbnailer later (e.g., `ffmpeg`), you only change this file.
-- **In-Place Deletion:** `fs/ops.rs` contains specific, safe functions for `delete_internal_file` or `delete_external_file`.
-- **Persistence:** `repo/` manages SQL queries. It handles pagination for the Gallery so loading 50,000 images doesn't freeze the app.
+- **Current Contents:**
+  - **`repo/image_repo.rs`:** SQL operations for the `image_file` table — paginated listing, bulk insert (using `INSERT OR IGNORE` for dedup by path), fetching pending process images, and transactional bulk metadata updates.
+  - **`repo/error.rs`:** `DatabaseError` enum wrapping `sqlx::Error`.
+  - **`fs/scanner.rs`:** Directory walking via `walkdir`. Filters by supported image extensions (jpg, jpeg, png, webp, bmp, gif, heic). Returns `ScanResult` with image paths, total file count, and walk error count.
+  - **`fs/ops.rs`:** File system utilities — `ensure_dir` (recursive mkdir) and `is_file_readable` (open-based readability check with typed errors).
+  - **`fs/error.rs`:** `ScanError` and `FileAccessError` enums.
+  - **`media/metadata.rs`:** Heavy lifting module combining thumbnail generation (via `image-rs`, 256px, saved as `.webp`), file metadata extraction (size, timestamps), and parallel metadata extraction using `futures::stream` with bounded concurrency.
+  - **`media/hashing.rs`:** SHA-256 file hashing via `sha2`. Currently unused (`#[allow(dead_code)]`), reserved for future deduplication feature.
+  - **`media/error.rs`:** `MetadataError`, `ImageMetadataError`, and `ThumbnailError` enums with detailed error context.
 
 ### **D. Interface Layer (`src/interface/`)**
 
 - **Role:** The "Front Desk". Receives requests from Tauri/JS and hands them to the Application layer.
 - **Rules:** Thin wrappers only. No business logic allowed.
-- **Why for Clarity:**
-- **Stability:** If you change how the database works, you don't need to rewrite your Tauri commands, because the Interface layer is decoupled from the Infrastructure.
+- **Current Contents:**
+  - **`commands.rs`:** Two Tauri commands — `save_images` (triggers the import pipeline) and `fetch_scanned_images` (paginated gallery loading). Both include tracing spans and convert `AppError` to user-friendly strings.
+  - **`error.rs`:** `DbInitError` enum covering database initialization failures (missing app data dir, connection errors, migration errors, optimization errors).
+
+### **E. Setup Module (`src/setup/`)**
+
+- **Role:** Application bootstrap and dependency wiring. Runs once at startup.
+- **Current Contents:**
+  - **`mod.rs`:** `setup_app` function — called by Tauri's `.setup()` hook. Initializes the database, registers `AppState`, and spawns the `ThumbnailWorker`.
+  - **`dbsetup.rs`:** Creates the SQLite connection pool with production-tuned PRAGMAs (WAL mode, 40MB cache, memory-mapped IO). Runs migrations and optimizes.
+  - **`tracesetup.rs`:** Initializes `tracing-subscriber` with `EnvFilter` support (defaults to `info` level).
+  - **`state.rs`:** Defines `Db` type alias (`Pool<Sqlite>`) and `AppState` struct.
+
+### **F. Error Handling (`src/error.rs`)**
+
+- **Role:** Centralized application-level error type.
+- **Current Contents:** `AppError` enum unifying errors from Scan, Join, Database, Internal, and FileAccess. `user_friendly_message()` maps internal errors to safe, user-facing strings for the frontend.
 
 ---
 
-## 4. Feature Implementation Strategy (Phase 1)
+## 4. Data Flow
 
-This mapping shows exactly where code for your roadmap items will live.
+### Import Pipeline
 
-## Feature Overview
+```
+Frontend (save_images)
+  → interface/commands.rs
+    → application/importer.rs
+      → infrastructure/fs/scanner.rs      (walk directories)
+      → infrastructure/media/metadata.rs  (extract file metadata in parallel)
+      → infrastructure/repo/image_repo.rs (bulk insert in chunks of 50)
+    ← ImportSummary DTO
+  ← JSON response
+```
 
-| Feature          | Logic Location                                                                | Implementation Detail                                                                                                                                 |
-| ---------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Image Gallery    | `application/library.rs`                                                      | Fetches paginated lists from the database. Handles sorting and filtering logic.                                                                       |
-| Traversal        | `application/library.rs`                                                      | Implements **Next / Prev** navigation. Calculates the next image ID based on the current sort order.                                                  |
-| Thumbnails       | `infrastructure/media/processing.rs`                                          | Triggered during import. Stores the thumbnail path in the database. The application layer decides when to generate thumbnails (e.g., lazy vs. eager). |
-| Duplicate Detect | `domain/rules.rs` (logic) <br>`infrastructure/media/hashing.rs` (calculation) | Hash is calculated on import. `maintenance.rs` runs queries to detect hash collisions.                                                                |
-| In-Place Delete  | `infrastructure/fs/ops.rs`                                                    | Provides distinct functions: `delete_internal_file()` and `delete_external_file()`.                                                                   |
-| Tagging          | `application/tagging.rs`                                                      | Manages the many-to-many relationship logic for adding tags to images.                                                                                |
+### Thumbnail Generation (Background)
+
+```
+application/background.rs (ThumbnailWorker loop)
+  → infrastructure/repo/image_repo.rs     (fetch pending images)
+  → infrastructure/media/metadata.rs      (generate thumbnails via image-rs)
+  → infrastructure/repo/image_repo.rs     (bulk update metadata in transaction)
+```
+
+### Gallery Loading
+
+```
+Frontend (fetch_scanned_images)
+  → interface/commands.rs
+    → application/library.rs
+      → infrastructure/repo/image_repo.rs (paginated query)
+      → infrastructure/fs/ops.rs          (readability filter)
+    ← Vec<Image> DTO
+  ← JSON response
+```
 
 ---
 
-## 5. Testing Strategy
+## 5. Feature Implementation Status
+
+| Feature          | Status | Location                                                         | Notes                                                                                           |
+| ---------------- | ------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Image Import     | ✅     | `application/importer.rs`                                        | Parallel scan, metadata extraction, chunked DB insert                                           |
+| Image Gallery    | ✅     | `application/library.rs`                                         | Paginated listing with readability filter                                                       |
+| Thumbnails       | ✅     | `application/background.rs` + `infrastructure/media/metadata.rs` | Background worker generates 256px WebP thumbnails                                               |
+| File Hashing     | 🔲     | `infrastructure/media/hashing.rs`                                | SHA-256 implemented but unused. Reserved for deduplication                                      |
+| Duplicate Detect | 🔲     | —                                                                | Planned. Will use `hashing.rs` + new `domain/rules.rs` for comparison logic                     |
+| In-Place Delete  | 🔲     | —                                                                | Planned for `infrastructure/fs/ops.rs`                                                          |
+| Tagging          | 🔲     | —                                                                | Planned. Will need `domain/tag.rs`, `application/tagging.rs`, `infrastructure/repo/tag_repo.rs` |
+| Traversal        | 🔲     | —                                                                | Planned for `application/library.rs`. Next/Prev navigation based on sort order                  |
+
+**Legend:** ✅ Implemented | 🔲 Planned | ⚠️ Legacy (needs migration)
+
+---
+
+## 6. Testing Strategy
 
 The architecture supports the **Testing Pyramid**, prioritizing fast unit tests over slow end-to-end tests.
 
