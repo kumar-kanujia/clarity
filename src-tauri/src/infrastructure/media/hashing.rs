@@ -1,8 +1,8 @@
 use std::{fs::File, io::Error, path::Path};
 
-const PARALLEL_THRESHOLD: u64 = 1024 * 1024;
+const PARALLEL_THRESHOLD: i64 = 1024 * 1024;
 
-pub fn generate_file_hash<P: AsRef<Path>>(path: P, file_size: u64) -> Result<String, Error> {
+pub fn generate_file_hash<P: AsRef<Path>>(path: P, file_size: i64) -> Result<String, Error> {
   if file_size > PARALLEL_THRESHOLD {
     let mut hasher = blake3::Hasher::new();
 

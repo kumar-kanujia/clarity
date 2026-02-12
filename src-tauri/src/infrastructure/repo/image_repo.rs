@@ -1,4 +1,6 @@
-use crate::setup::state::Db;
+use crate::{
+  domain::imagefile::ProcessStatus, infrastructure::system::get_unix_timestamp, setup::state::Db,
+};
 #[allow(clippy::needless_raw_strings)]
 use crate::{
   domain::{filemetadata::FileMetadata, imagefile::ImageFile},
@@ -31,9 +33,10 @@ pub async fn list_images_paginated(
   Ok(result)
 }
 
-pub async fn list_pending_process_image_file(
+pub async fn list_image_files_by_status(
   db: &Db,
   limit: i64,
+  process_status: ProcessStatus,
 ) -> Result<Vec<ImageFile>, DatabaseError> {
   let result = sqlx::query_as::<_, ImageFile>(
     r#"
@@ -41,10 +44,11 @@ pub async fn list_pending_process_image_file(
           seq_id, file_path, file_size, thumbnail_path, 
           dim_x, dim_y, process_status, ctx, mtx, updated_at
         FROM image_file
-        WHERE process_status = 1
-        LIMIT ?1
+        WHERE process_status = ?1
+        LIMIT ?2
         "#,
   )
+  .bind(process_status as i32)
   .bind(limit)
   .fetch_all(db)
   .await?;
@@ -96,6 +100,41 @@ pub async fn bulk_update_image_metadata(
     .bind(image.dim_y)
     .bind(image.process_status)
     .bind(image.seq_id)
+    .execute(&mut *tx)
+    .await?;
+
+    total_rows += result.rows_affected();
+  }
+
+  tx.commit().await?;
+
+  Ok(total_rows)
+}
+
+pub async fn bulk_update_image_hash(
+  pool: &Db,
+  data: &[(i64, String)],
+  process_status: ProcessStatus,
+) -> Result<u64, DatabaseError> {
+  let mut tx = pool.begin().await?;
+
+  let mut total_rows = 0;
+
+  for (seq_id, file_hash) in data {
+    let result = sqlx::query(
+      r#"
+            UPDATE image_file
+            SET
+                file_hash = ?1,
+                process_status = ?2,
+                updated_at = ?3
+            WHERE seq_id = ?4
+            "#,
+    )
+    .bind(file_hash)
+    .bind(process_status as i32)
+    .bind(get_unix_timestamp())
+    .bind(seq_id)
     .execute(&mut *tx)
     .await?;
 

@@ -1,33 +1,24 @@
 use crate::{
+  application::workers::Worker,
+  domain::imagefile::ProcessStatus,
   error::AppError,
   infrastructure::{
     fs::ops,
     media::metadata::create_image_metadata,
-    repo::image_repo::{bulk_update_image_metadata, list_pending_process_image_file},
+    repo::image_repo::{bulk_update_image_metadata, list_image_files_by_status},
   },
   setup::state::Db,
 };
 
-use std::{
-  cmp,
-  path::PathBuf,
-  time::{Duration, Instant},
-};
+use std::{path::PathBuf, time::Instant};
 
 use tauri::{AppHandle, Manager};
 use tracing::Instrument;
 
+#[derive(Debug, Default)]
 pub struct ThumbnailWorker;
 
 impl ThumbnailWorker {
-  fn get_batch_size() -> i64 {
-    cmp::max(5, num_cpus::get() * 2) as i64
-  }
-
-  async fn wait_for(time: u64) {
-    tokio::time::sleep(Duration::from_secs(time)).await;
-  }
-
   fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
     let cache_dir = app.path().app_data_dir().map_err(|err| {
       tracing::error!(error = ?err, "Failed to resolve app data directory");
@@ -43,8 +34,10 @@ impl ThumbnailWorker {
 
     Ok(target_dir)
   }
+}
 
-  pub fn spawn(app: &AppHandle, db: Db) {
+impl Worker for ThumbnailWorker {
+  fn spawn(self, app: &AppHandle, db: Db) {
     let max_batch_size = Self::get_batch_size();
 
     let span = tracing::info_span!("thumbnail_worker", max_batch_size = max_batch_size);
@@ -63,14 +56,15 @@ impl ThumbnailWorker {
         loop {
           let t0 = Instant::now();
 
-          let files = match list_pending_process_image_file(&db, max_batch_size).await {
-            Ok(files) => files,
-            Err(e) => {
-              tracing::error!(error = ?e, "Failed to fetch pending images");
-              Self::wait_for(10).await;
-              continue;
-            }
-          };
+          let files =
+            match list_image_files_by_status(&db, max_batch_size, ProcessStatus::Hashed).await {
+              Ok(files) => files,
+              Err(e) => {
+                tracing::error!(error = ?e, "Failed to fetch files for thumbnail generation");
+                Self::wait_for(10).await;
+                continue;
+              }
+            };
 
           if files.is_empty() {
             tracing::debug!("No pending thumbnails");
