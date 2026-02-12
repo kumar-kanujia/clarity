@@ -1,7 +1,7 @@
 use crate::{
   application::{
-    dto::{Image, ImportSummary},
-    gallery, importer,
+    dtos::{Image, ImportSummary},
+    importer, library,
   },
   error,
   setup::state::AppState,
@@ -61,7 +61,7 @@ pub async fn fetch_scanned_images(
   );
   let _enter = span.enter();
 
-  match gallery::list_scanned_images(&state.db, last_seq_id, limit).await {
+  match library::list_scanned_images(&state.db, last_seq_id, limit).await {
     Ok(images) => {
       tracing::info!(images = images.len(), "Fetch scanned images completed");
       Ok(images)

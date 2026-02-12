@@ -1,5 +1,5 @@
 use crate::{
-  application::dto::ImportSummary,
+  application::dtos::ImportSummary,
   domain::filemetadata::FileMetadata,
   error::AppError,
   infrastructure::{

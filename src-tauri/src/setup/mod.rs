@@ -1,7 +1,10 @@
+pub mod dbsetup;
 pub mod state;
+pub mod tracesetup;
 
 use crate::{
-  application::background::ThumbnailWorker, interface::dbsetup::setup_db, setup::state::AppState,
+  application::background::ThumbnailWorker,
+  setup::{dbsetup::setup_db, state::AppState},
 };
 
 use std::error::Error;

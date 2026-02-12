@@ -1,5 +1,5 @@
 use crate::{
-  application::dto::Image,
+  application::dtos::Image,
   error::AppError,
   infrastructure::{fs::ops, repo::image_repo},
   setup::state::Db,

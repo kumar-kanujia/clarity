@@ -1,4 +1,4 @@
 pub mod background;
-pub mod dto;
-pub mod gallery;
+pub mod dtos;
 pub mod importer;
+pub mod library;
