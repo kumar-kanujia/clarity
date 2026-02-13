@@ -83,9 +83,9 @@ pub async fn fetch_images_grouped_by_hash(
   let _enter = span.enter();
 
   match library::list_images_grouped_by_hash(&state.db).await {
-    Ok(images) => {
-      tracing::info!(images = images.len(), "Fetch grouped images completed");
-      Ok(images)
+    Ok(groups) => {
+      tracing::info!(groups = groups.len(), "Fetch grouped images completed");
+      Ok(groups)
     }
     Err(err) => {
       tracing::error!(error = ?err, "Load failed");

@@ -102,18 +102,18 @@ Goal: Explicit, predictable duplicate identification.
 
 ## 3. Duplicate Query Capability
 
-- [ ] Query images grouped by identical hash
-- [ ] Expose duplicate detection at repository/service layer
-- [ ] Ensure no silent merging or auto-resolution
-- [ ] Log duplicate counts during scan (optional but visible)
+- [x] Query images grouped by identical hash
+- [x] Expose duplicate detection at repository/service layer
+- [x] Ensure no silent merging or auto-resolution
+- [x] Log duplicate counts during scan (optional but visible)
 
 ---
 
 ### Completion Check (Part 2)
 
-- [ ] Identical files are reliably detected
-- [ ] No probabilistic matching involved
-- [ ] Duplicate behavior is explicit and reversible
+- [x] Identical files are reliably detected
+- [x] No probabilistic matching involved
+- [x] Duplicate behavior is explicit and reversible
 
 ---
 
