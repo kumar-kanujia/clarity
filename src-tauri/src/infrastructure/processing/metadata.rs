@@ -1,6 +1,6 @@
 use crate::{
   domain::{filemetadata::FileMetadata, imagemetadata::ImageMetadata},
-  infrastructure::media::error::{ImageMetadataError, MetadataError, ThumbnailError},
+  infrastructure::processing::error::ProcessingError,
 };
 
 use std::{
@@ -10,6 +10,7 @@ use std::{
 };
 
 use futures::stream::StreamExt;
+use uuid::Uuid;
 
 /// Thumbnail size in pixels
 pub const THUMBNAIL_SIZE: u32 = 256;
@@ -21,18 +22,20 @@ pub struct MetadataStats {
   pub io_errors: usize,
 }
 
-fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), ThumbnailError> {
-  let img = image::open(source).map_err(|err| ThumbnailError::Open {
+fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), ProcessingError> {
+  let img = image::open(source).map_err(|err| ProcessingError::OpenImage {
     path: source.display().to_string(),
     source: err,
   })?;
 
   let thumbnail = img.thumbnail(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 
-  thumbnail.save(target).map_err(|err| ThumbnailError::Save {
-    path: target.display().to_string(),
-    source: err,
-  })?;
+  thumbnail
+    .save(target)
+    .map_err(|err| ProcessingError::SaveImage {
+      path: target.display().to_string(),
+      source: err,
+    })?;
 
   let width = img.width();
   let height = img.height();
@@ -43,8 +46,8 @@ fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), T
 pub fn create_image_metadata(
   file: &Path,
   thumnail_target: &Path,
-) -> Result<ImageMetadata, ImageMetadataError> {
-  let uuid = uuid::Uuid::new_v4();
+) -> Result<ImageMetadata, ProcessingError> {
+  let uuid = Uuid::new_v4();
   let thumbnail_path = thumnail_target
     .join(uuid.to_string())
     .with_extension("webp");
@@ -58,13 +61,13 @@ pub fn create_image_metadata(
   })
 }
 
-pub fn extract_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError> {
+pub fn extract_file_metadata(file: &Path) -> Result<FileMetadata, ProcessingError> {
   let metadata = fs::metadata(file).map_err(|e| match e.kind() {
-    std::io::ErrorKind::NotFound => MetadataError::NotFound(file.display().to_string()),
+    std::io::ErrorKind::NotFound => ProcessingError::NotFound(file.display().to_string()),
     std::io::ErrorKind::PermissionDenied => {
-      MetadataError::PermissionDenied(file.display().to_string())
+      ProcessingError::PermissionDenied(file.display().to_string())
     }
-    _ => MetadataError::Io(e.to_string()),
+    _ => ProcessingError::Io(e),
   })?;
 
   let file_path = file.to_string_lossy().to_string();
@@ -72,7 +75,7 @@ pub fn extract_file_metadata(file: &Path) -> Result<FileMetadata, MetadataError>
   let file_size = metadata.len();
 
   if file_size == 0 {
-    return Err(MetadataError::EmptyFile(file_path));
+    return Err(ProcessingError::EmptyFile(file_path));
   }
 
   let mtx = metadata
@@ -114,10 +117,9 @@ pub async fn extract_files_metadata_concurrent(files: Vec<PathBuf>) -> MetadataS
     match res {
       Ok(Ok(meta)) => metadata.push(meta),
       Ok(Err(err)) => match err {
-        MetadataError::NotFound(_) => not_found += 1,
-        MetadataError::PermissionDenied(_) => permission_denied += 1,
-        MetadataError::EmptyFile(_) => io_errors += 1,
-        MetadataError::Io(_) => io_errors += 1,
+        ProcessingError::NotFound(_) => not_found += 1,
+        ProcessingError::PermissionDenied(_) => permission_denied += 1,
+        _ => io_errors += 1,
       },
       Err(_) => io_errors += 1,
     }

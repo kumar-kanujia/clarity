@@ -1,8 +1,13 @@
-use std::{fs::File, io::Error, path::Path};
+use crate::infrastructure::processing::error::ProcessingError;
+
+use std::{fs::File, path::Path};
 
 const PARALLEL_THRESHOLD: i64 = 1024 * 1024;
 
-pub fn generate_file_hash<P: AsRef<Path>>(path: P, file_size: i64) -> Result<String, Error> {
+pub fn generate_file_hash<P: AsRef<Path>>(
+  path: P,
+  file_size: i64,
+) -> Result<String, ProcessingError> {
   if file_size > PARALLEL_THRESHOLD {
     let mut hasher = blake3::Hasher::new();
 

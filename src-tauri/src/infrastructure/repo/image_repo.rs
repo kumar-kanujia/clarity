@@ -26,7 +26,6 @@ pub async fn list_images_paginated(
   )
   .bind(last_max_tx)
   .bind(last_seq_id)
-  .bind(last_seq_id)
   .bind(limit)
   .fetch_all(db)
   .await?;
@@ -113,14 +112,13 @@ pub async fn bulk_update_image_metadata(
 
 pub async fn bulk_update_image_hash(
   pool: &Db,
-  data: &[(i64, String)],
-  process_status: ProcessStatus,
+  data: &[(ImageFile, String)],
 ) -> Result<u64, DatabaseError> {
   let mut tx = pool.begin().await?;
 
   let mut total_rows = 0;
 
-  for (seq_id, file_hash) in data {
+  for (file, file_hash) in data {
     let result = sqlx::query(
       r#"
             UPDATE image_file
@@ -132,9 +130,9 @@ pub async fn bulk_update_image_hash(
             "#,
     )
     .bind(file_hash)
-    .bind(process_status as i32)
+    .bind(file.process_status as i32)
     .bind(get_unix_timestamp())
-    .bind(seq_id)
+    .bind(file.seq_id)
     .execute(&mut *tx)
     .await?;
 

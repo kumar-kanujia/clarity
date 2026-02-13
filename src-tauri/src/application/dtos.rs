@@ -1,6 +1,9 @@
 use std::cmp;
 
-use crate::domain::imagefile::{ImageFile, ProcessStatus};
+use crate::{
+  domain::imagefile::{ImageFile, ProcessStatus},
+  infrastructure::fs::ops::get_file_name,
+};
 
 use serde::Serialize;
 
@@ -23,7 +26,7 @@ impl From<ImageFile> for Image {
       seq_id: file.seq_id,
       file_size: file.size_string(),
       resolution: file.dimensions_string(),
-      file_name: file.file_name(),
+      file_name: get_file_name(&file.file_path).unwrap_or("unknown".to_string()),
       file_path: file.file_path,
       thumbnail_path: file.thumbnail_path,
       created_at: cmp::max(file.ctx, file.mtx),

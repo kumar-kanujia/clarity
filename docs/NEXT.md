@@ -84,17 +84,17 @@ Goal: Explicit, predictable duplicate identification.
 
 ## 1. Hashing Infrastructure
 
-- [ ] Choose hashing algorithm (e.g., SHA-256)
-- [ ] Compute hash from file content (streamed, not full memory load)
-- [ ] Store hash in database
+- [x] Choose hashing algorithm (e.g., SHA-256)
+- [x] Compute hash from file content (streamed, not full memory load)
+- [x] Store hash in database
 - [ ] Ensure hashing failures are logged with proper category
 
 ---
 
 ## 2. Database Changes
 
-- [ ] Add hash column to image table
-- [ ] Backfill hash for existing records
+- [x] Add hash column to image table
+- [x] Backfill hash for existing records
 - [ ] Ensure deterministic behavior on re-scan
 - [ ] Validate performance impact on large datasets
 

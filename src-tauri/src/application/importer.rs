@@ -4,7 +4,7 @@ use crate::{
   error::AppError,
   infrastructure::{
     fs::scanner,
-    media::metadata::{self, MetadataStats},
+    processing::metadata::{self, MetadataStats},
     repo::{error::DatabaseError, image_repo},
   },
   setup::state::Db,
@@ -54,6 +54,7 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
   })
 }
 
+#[tracing::instrument]
 pub async fn scan_and_import_images(
   db: &Db,
   paths: Vec<PathBuf>,

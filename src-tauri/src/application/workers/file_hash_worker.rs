@@ -2,9 +2,9 @@ use std::time::Instant;
 
 use crate::{
   application::workers::Worker,
-  domain::imagefile::ProcessStatus,
+  domain::imagefile::{ImageFile, ProcessStatus},
   infrastructure::{
-    media::hashing,
+    processing::hashing,
     repo::image_repo::{bulk_update_image_hash, list_image_files_by_status},
   },
   setup::state::Db,
@@ -19,7 +19,7 @@ pub struct FileHashWorker;
 
 impl Worker for FileHashWorker {
   fn spawn(self, _: &AppHandle, db: Db) {
-    let max_batch_size = Self::get_batch_size();
+    let max_batch_size = Self::get_batch_size(10);
 
     let span = tracing::info_span!("file_hash_worker", max_batch_size = max_batch_size);
     let _enter = span.enter();
@@ -49,13 +49,14 @@ impl Worker for FileHashWorker {
 
           tracing::info!(files = files.len(), "Hash batch fetched");
 
-          let result: Vec<(i64, String)> = tauri::async_runtime::spawn_blocking(move || {
+          let result: Vec<(ImageFile, String)> = tauri::async_runtime::spawn_blocking(move || {
             files
               .into_par_iter()
-              .filter_map(|file| {
+              .filter_map(|mut file| {
                 if let Ok(file_hash) = hashing::generate_file_hash(&file.file_path, file.file_size)
                 {
-                  Some((file.seq_id, file_hash))
+                  file.mark_hashed();
+                  Some((file, file_hash))
                 } else {
                   None
                 }
@@ -65,7 +66,7 @@ impl Worker for FileHashWorker {
           .await
           .unwrap();
 
-          if let Err(e) = bulk_update_image_hash(&db, &result, ProcessStatus::Hashed).await {
+          if let Err(e) = bulk_update_image_hash(&db, &result).await {
             tracing::error!(error = ?e, result = result.len(), "Failed to persist image hash updates");
             Self::wait_for(5).await;
           } else {

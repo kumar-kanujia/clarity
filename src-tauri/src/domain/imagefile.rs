@@ -1,9 +1,7 @@
-use std::path::Path;
+use crate::domain::imagemetadata::ImageMetadata;
 
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, prelude::Type};
-
-use crate::domain::imagemetadata::ImageMetadata;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Type, Default, PartialEq, Eq)]
 #[repr(i32)]
@@ -53,12 +51,8 @@ impl ImageFile {
     format!("{value:.2} {unit}")
   }
 
-  pub fn file_name(&self) -> String {
-    Path::new(&self.file_path)
-      .file_name()
-      .and_then(|os_str| os_str.to_str())
-      .unwrap_or("unknown")
-      .to_string()
+  pub fn mark_hashed(&mut self) {
+    self.process_status = ProcessStatus::Hashed;
   }
 
   pub fn update_metadata(&mut self, metadata: ImageMetadata) {

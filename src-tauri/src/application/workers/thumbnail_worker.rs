@@ -4,7 +4,7 @@ use crate::{
   error::AppError,
   infrastructure::{
     fs::ops,
-    media::metadata::create_image_metadata,
+    processing::metadata::create_image_metadata,
     repo::image_repo::{bulk_update_image_metadata, list_image_files_by_status},
   },
   setup::state::Db,
@@ -22,7 +22,7 @@ impl ThumbnailWorker {
   fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
     let cache_dir = app.path().app_data_dir().map_err(|err| {
       tracing::error!(error = ?err, "Failed to resolve app data directory");
-      AppError::InternalError("Failed to resolve app data directory".into())
+      AppError::Internal("Failed to resolve app data directory".into())
     })?;
 
     let target_dir = cache_dir.join("org.clarity").join(".thumbnails");
@@ -38,7 +38,7 @@ impl ThumbnailWorker {
 
 impl Worker for ThumbnailWorker {
   fn spawn(self, app: &AppHandle, db: Db) {
-    let max_batch_size = Self::get_batch_size();
+    let max_batch_size = Self::get_batch_size(2);
 
     let span = tracing::info_span!("thumbnail_worker", max_batch_size = max_batch_size);
     let _enter = span.enter();

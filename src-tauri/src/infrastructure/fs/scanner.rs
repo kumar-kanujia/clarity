@@ -1,4 +1,4 @@
-use crate::infrastructure::fs::error::ScanError;
+use crate::infrastructure::fs::error::FSError;
 
 use walkdir::WalkDir;
 
@@ -30,9 +30,9 @@ pub fn is_image_file(path: &Path) -> bool {
     .is_some_and(is_supported_image_ext)
 }
 
-pub fn perform_file_scan_for_images(path: &PathBuf) -> Result<ScanResult, ScanError> {
+pub fn perform_file_scan_for_images(path: &PathBuf) -> Result<ScanResult, FSError> {
   if !path.exists() {
-    return Err(ScanError::InvalidRoot(path.display().to_string()));
+    return Err(FSError::InvalidRoot(path.display().to_string()));
   }
 
   let mut total_files = 0;
