@@ -68,7 +68,7 @@ impl Worker for ThumbnailWorker {
     tauri::async_runtime::spawn(
       async move {
         loop {
-          let t_fetch = Instant::now();
+          let start = Instant::now();
 
           let thumbnail_target = thumbnail_target.clone();
 
@@ -87,11 +87,7 @@ impl Worker for ThumbnailWorker {
               }
             };
 
-          let fetch_ms = t_fetch.elapsed().as_millis();
-
           tracing::info!(files = files_data.len(), "Thumbnail batch fetched");
-
-          let t_process = Instant::now();
 
           let updated_files = match tauri::async_runtime::spawn_blocking(move || {
             Self::work(files_data, &thumbnail_target)
@@ -106,28 +102,22 @@ impl Worker for ThumbnailWorker {
             }
           };
 
-          let process_ms = t_process.elapsed().as_millis();
-          if !updated_files.is_empty() {
-            let t_update = Instant::now();
-            if let Err(e) = bulk_update_image_metadata(&db, &updated_files).await {
-              tracing::error!(
-                  error = ?e,
-                  updated = updated_files.len(),
-                  "Failed to persist thumbnail metadata updates"
-              );
-              Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-            } else {
-              let update_ms = t_update.elapsed().as_millis();
-
-              tracing::info!(
-                "Batch Done | Count: {} | Fetch: {}ms | CPU: {}ms | DB Write: {}ms",
-                updated_files.len(),
-                fetch_ms,
-                process_ms,
-                update_ms
-              );
-            }
+          if !updated_files.is_empty()
+            && let Err(e) = bulk_update_image_metadata(&db, &updated_files).await
+          {
+            tracing::error!(
+                error = ?e,
+                updated = updated_files.len(),
+                "Failed to persist thumbnail metadata updates"
+            );
+            Self::wait_for(Self::IDEAL_WAIT_TIME).await;
           }
+          let end = start.elapsed().as_secs();
+          tracing::info!(
+            "Batch Done | Count: {} | Time: {}s",
+            updated_files.len(),
+            end
+          );
         }
       }
       .instrument(span.clone()),
