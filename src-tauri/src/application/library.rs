@@ -5,6 +5,7 @@ use crate::{
   setup::state::Db,
 };
 
+#[tracing::instrument]
 pub async fn list_scanned_images(
   db: &Db,
   last_max_tx: i64,

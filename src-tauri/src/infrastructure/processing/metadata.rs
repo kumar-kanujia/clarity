@@ -22,9 +22,12 @@ pub struct MetadataStats {
   pub io_errors: usize,
 }
 
-fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), ProcessingError> {
-  let img = image::open(source).map_err(|err| ProcessingError::OpenImage {
-    path: source.display().to_string(),
+fn generate_thumbnail_file<P: AsRef<Path>>(
+  source: P,
+  target: &Path,
+) -> Result<(u32, u32), ProcessingError> {
+  let img = image::open(&source).map_err(|err| ProcessingError::OpenImage {
+    path: source.as_ref().display().to_string(),
     source: err,
   })?;
 
@@ -43,8 +46,8 @@ fn generate_thumbnail_file(source: &Path, target: &Path) -> Result<(u32, u32), P
   Ok((width, height))
 }
 
-pub fn create_image_metadata(
-  file: &Path,
+pub fn create_image_metadata<P: AsRef<Path>>(
+  file: P,
   thumnail_target: &Path,
 ) -> Result<ImageMetadata, ProcessingError> {
   let uuid = Uuid::new_v4();

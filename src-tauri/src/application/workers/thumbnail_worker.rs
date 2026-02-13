@@ -1,17 +1,21 @@
 use crate::{
   application::workers::Worker,
-  domain::imagefile::ProcessStatus,
+  domain::{imagefile::ProcessStatus, imagemetadata::ImageMetadata},
   error::AppError,
   infrastructure::{
     fs::ops,
-    processing::metadata::create_image_metadata,
+    processing::metadata,
     repo::image_repo::{bulk_update_image_metadata, list_image_paths_by_status},
   },
   setup::state::Db,
 };
 
-use std::{path::PathBuf, time::Instant};
+use std::{
+  path::{Path, PathBuf},
+  time::Instant,
+};
 
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use tauri::{AppHandle, Manager};
 use tracing::Instrument;
 
@@ -25,13 +29,32 @@ impl ThumbnailWorker {
     ops::ensure_dir(&target_dir)?;
     Ok(target_dir)
   }
+
+  fn work(files_data: Vec<(i64, String)>, thumbnail_target: &Path) -> Vec<(i64, ImageMetadata)> {
+    files_data
+      .into_par_iter()
+      .filter_map(|(seq_id, file_path)| {
+        match metadata::create_image_metadata(&file_path, thumbnail_target) {
+          Ok(image_metadata) => Some((seq_id, image_metadata)),
+          Err(err) => {
+            tracing::error!(
+              error = ?err,
+              %file_path,
+              "Failed to generate image metadata"
+            );
+            None
+          }
+        }
+      })
+      .collect()
+  }
 }
 
 impl Worker for ThumbnailWorker {
   fn spawn(self, app: &AppHandle, db: Db) {
     let max_batch_size = Self::get_batch_size(2);
 
-    let span = tracing::info_span!("thumbnail_worker", max_batch_size = max_batch_size);
+    let span = tracing::info_span!("thumbnail_worker", %max_batch_size);
     let _enter = span.enter();
 
     let thumbnail_target = match Self::get_thumbnail_target(app) {
@@ -45,7 +68,9 @@ impl Worker for ThumbnailWorker {
     tauri::async_runtime::spawn(
       async move {
         loop {
-          let start_time = Instant::now();
+          let t_fetch = Instant::now();
+
+          let thumbnail_target = thumbnail_target.clone();
 
           let files_data =
             match list_image_paths_by_status(&db, max_batch_size, ProcessStatus::Hashed).await {
@@ -57,66 +82,52 @@ impl Worker for ThumbnailWorker {
               Ok(f) => f,
               Err(e) => {
                 tracing::error!(error = ?e, "DB Fetch failed");
-                Self::wait_for(10).await;
+                Self::wait_for(Self::IDEAL_WAIT_TIME).await;
                 continue;
               }
             };
 
+          let fetch_ms = t_fetch.elapsed().as_millis();
+
           tracing::info!(files = files_data.len(), "Thumbnail batch fetched");
 
-          let mut tasks = Vec::new();
+          let t_process = Instant::now();
 
-          for (seq_id, file_path) in files_data {
-            let target_clone = thumbnail_target.clone();
-            let task = tauri::async_runtime::spawn_blocking(move || {
-              let path = PathBuf::from(&file_path);
+          let updated_files = match tauri::async_runtime::spawn_blocking(move || {
+            Self::work(files_data, &thumbnail_target)
+          })
+          .await
+          {
+            Ok(f) => f,
+            Err(e) => {
+              tracing::error!(error = ?e, "Thumbnail worker task panicked");
+              Self::wait_for(Self::IDEAL_WAIT_TIME).await;
+              continue;
+            }
+          };
 
-              let result = create_image_metadata(&path, &target_clone);
-              (seq_id, file_path, result)
-            });
+          let process_ms = t_process.elapsed().as_millis();
+          if !updated_files.is_empty() {
+            let t_update = Instant::now();
+            if let Err(e) = bulk_update_image_metadata(&db, &updated_files).await {
+              tracing::error!(
+                  error = ?e,
+                  updated = updated_files.len(),
+                  "Failed to persist thumbnail metadata updates"
+              );
+              Self::wait_for(Self::IDEAL_WAIT_TIME).await;
+            } else {
+              let update_ms = t_update.elapsed().as_millis();
 
-            tasks.push(task);
-          }
-
-          let mut updated_files = Vec::with_capacity(tasks.len());
-
-          for task in tasks {
-            match task.await {
-              Ok((seq_id, file_path, metadata_result)) => match metadata_result {
-                Ok(image_metadata) => {
-                  updated_files.push((seq_id, image_metadata));
-                }
-                Err(err) => {
-                  tracing::error!(
-                      error = ?err,
-                      path = %file_path,
-                      "Failed to generate image metadata"
-                  );
-                }
-              },
-              Err(join_err) => {
-                tracing::error!(
-                    error = ?join_err,
-                    "Thumbnail worker task panicked"
-                );
-              }
+              tracing::info!(
+                "Batch Done | Count: {} | Fetch: {}ms | CPU: {}ms | DB Write: {}ms",
+                updated_files.len(),
+                fetch_ms,
+                process_ms,
+                update_ms
+              );
             }
           }
-
-          if let Err(e) = bulk_update_image_metadata(&db, &updated_files).await {
-            tracing::error!(
-                error = ?e,
-                updated = updated_files.len(),
-                "Failed to persist thumbnail metadata updates"
-            );
-            Self::wait_for(5).await;
-          }
-
-          tracing::info!(
-            duration_secs = start_time.elapsed().as_secs_f32(),
-            updated = updated_files.len(),
-            "Thumbnail batch completed"
-          );
         }
       }
       .instrument(span.clone()),

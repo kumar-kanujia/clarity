@@ -87,7 +87,7 @@ Goal: Explicit, predictable duplicate identification.
 - [x] Choose hashing algorithm (e.g., SHA-256)
 - [x] Compute hash from file content (streamed, not full memory load)
 - [x] Store hash in database
-- [ ] Ensure hashing failures are logged with proper category
+- [x] Ensure hashing failures are logged with proper category
 
 ---
 
@@ -95,8 +95,8 @@ Goal: Explicit, predictable duplicate identification.
 
 - [x] Add hash column to image table
 - [x] Backfill hash for existing records
-- [ ] Ensure deterministic behavior on re-scan
-- [ ] Validate performance impact on large datasets
+- [x] Ensure deterministic behavior on re-scan
+- [x] Validate performance impact on large datasets
 
 ---
 

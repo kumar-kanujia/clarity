@@ -18,7 +18,7 @@ use tracing::Instrument;
 pub struct FileHashWorker;
 
 impl FileHashWorker {
-  fn hash_files(files: Vec<ImageFile>) -> Vec<(i64, String)> {
+  fn work(files: Vec<ImageFile>) -> Vec<(i64, String)> {
     files
       .into_par_iter()
       .filter_map(
@@ -62,10 +62,10 @@ impl Worker for FileHashWorker {
           tracing::info!(files = files.len(), "Hash batch fetched");
 
           let hashed_results =
-            match tauri::async_runtime::spawn_blocking(move || Self::hash_files(files)).await {
+            match tauri::async_runtime::spawn_blocking(move || Self::work(files)).await {
               Ok(res) => res,
               Err(e) => {
-                tracing::error!(error = ?e, "Task join error");
+                tracing::error!(error = ?e, "File hash worker task panicked");
                 Self::wait_for(Self::IDEAL_WAIT_TIME).await;
                 continue;
               }
