@@ -8,7 +8,8 @@ interface GalleryState {
   images: Image[];
   isLoading: boolean;
   hasMore: boolean;
-  offset: number;
+  lastCreatedAt: number | null;
+  lastSeqId: number | null;
   importSummary: ImportSummary | null;
   loadImages: (isReset?: boolean) => Promise<void>;
   importImages: () => Promise<void>;
@@ -22,29 +23,52 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
   images: [],
   isLoading: false,
   hasMore: true,
-  offset: 0,
+  lastCreatedAt: null,
+  lastSeqId: null,
   importSummary: null,
 
   loadImages: async (isReset = false) => {
-    const { isLoading, offset } = get();
+    const { isLoading, lastCreatedAt, lastSeqId } = get();
     if (isLoading && !isReset) return;
 
     set({ isLoading: true });
 
     try {
-      const currentOffset = isReset ? 0 : offset;
-      const newImages = await getSavedImagesBatch(currentOffset, BATCH_SIZE);
+      const currentCreatedAt =
+        isReset || lastCreatedAt === null
+          ? Math.floor(Date.now() / 1000) + 86400 // Today + 1 day to be safe
+          : lastCreatedAt;
+      const currentSeqId =
+        isReset || lastSeqId === null ? Number.MAX_SAFE_INTEGER : lastSeqId;
+
+      const newImages = await getSavedImagesBatch(
+        currentCreatedAt,
+        currentSeqId,
+        BATCH_SIZE,
+      );
 
       set((state) => {
         const hasMore = newImages.length >= BATCH_SIZE;
         const updatedImages = isReset
           ? newImages
           : [...state.images, ...newImages];
+
+        const lastItem = newImages[newImages.length - 1];
+
         return {
           images: updatedImages,
-          offset: isReset ? BATCH_SIZE : state.offset + BATCH_SIZE,
+          lastCreatedAt: lastItem
+            ? lastItem.createdAt
+            : isReset
+              ? null
+              : state.lastCreatedAt,
+          lastSeqId: lastItem
+            ? lastItem.seqId
+            : isReset
+              ? null
+              : state.lastSeqId,
           hasMore,
-          isLoading: false
+          isLoading: false,
         };
       });
     } catch (error) {
@@ -90,5 +114,5 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
     }
   },
 
-  clearImportSummary: () => set({ importSummary: null })
+  clearImportSummary: () => set({ importSummary: null }),
 }));

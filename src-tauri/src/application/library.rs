@@ -1,16 +1,19 @@
 use crate::{
   application::dtos::Image,
+  domain::imagefile::ImageFile,
   error::AppError,
   infrastructure::{fs::ops, repo::image_repo},
   setup::state::Db,
 };
 
+#[tracing::instrument]
 pub async fn list_scanned_images(
   db: &Db,
+  last_max_tx: i64,
   last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<Image>, AppError> {
-  let files = image_repo::list_images_paginated(db, last_seq_id, limit).await?;
+  let files = image_repo::list_images_paginated(db, last_max_tx, last_seq_id, limit).await?;
 
   let mut unreadable_count = 0;
 
@@ -34,5 +37,12 @@ pub async fn list_scanned_images(
     );
   }
 
+  Ok(images)
+}
+
+#[tracing::instrument]
+pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<Vec<Image>>, AppError> {
+  let image_files = image_repo::list_images_grouped_by_hash(db).await?;
+  let images = ImageFile::group_by_hash(image_files);
   Ok(images)
 }

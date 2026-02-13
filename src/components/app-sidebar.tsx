@@ -1,4 +1,11 @@
-import { Home, Inbox, Settings, FolderPlus, ImagePlus } from "lucide-react";
+import {
+  Home,
+  Inbox,
+  Settings,
+  FolderPlus,
+  ImagePlus,
+  Copy,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +28,11 @@ const items = [
     title: "Library",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Duplicates",
+    url: "/duplicates",
+    icon: Copy,
   },
 ];
 

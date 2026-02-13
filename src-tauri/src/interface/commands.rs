@@ -16,7 +16,7 @@ pub async fn save_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummary, String> {
-  let span = tracing::info_span!("save_image ", paths = paths.len());
+  let span = tracing::info_span!("save_image", paths = paths.len());
   let _enter = span.enter();
 
   let t0 = Instant::now();
@@ -51,20 +51,41 @@ pub async fn save_images(
 #[tauri::command]
 pub async fn fetch_scanned_images(
   state: State<'_, AppState>,
+  last_max_tx: i64,
   last_seq_id: i64,
   limit: i64,
 ) -> Result<Vec<Image>, String> {
   let span = tracing::info_span!(
     "fetch_scanned_images",
+    last_max_tx = last_max_tx,
     last_seq_id = last_seq_id,
     limit = limit
   );
   let _enter = span.enter();
 
-  match library::list_scanned_images(&state.db, last_seq_id, limit).await {
+  match library::list_scanned_images(&state.db, last_max_tx, last_seq_id, limit).await {
     Ok(images) => {
       tracing::info!(images = images.len(), "Fetch scanned images completed");
       Ok(images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "Load failed");
+      Err(error::user_friendly_message(&err))
+    }
+  }
+}
+
+#[tauri::command]
+pub async fn fetch_images_grouped_by_hash(
+  state: State<'_, AppState>,
+) -> Result<Vec<Vec<Image>>, String> {
+  let span = tracing::info_span!("fetch_images_grouped_by_hash");
+  let _enter = span.enter();
+
+  match library::list_images_grouped_by_hash(&state.db).await {
+    Ok(groups) => {
+      tracing::info!(groups = groups.len(), "Fetch grouped images completed");
+      Ok(groups)
     }
     Err(err) => {
       tracing::error!(error = ?err, "Load failed");

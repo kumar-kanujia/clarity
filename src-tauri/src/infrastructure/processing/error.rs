@@ -1,34 +1,28 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum MetadataError {
+pub enum ProcessingError {
   #[error("File not found: {0}")]
   NotFound(String),
 
   #[error("Permission denied: {0}")]
   PermissionDenied(String),
 
+  #[error("Empty file: {0}")]
+  EmptyFile(String),
+
   #[error("IO error: {0}")]
-  Io(String),
-}
+  Io(#[from] std::io::Error),
 
-#[derive(Debug, Error)]
-pub enum ImageMetadataError {
-  #[error("Thumbnail generation failed")]
-  Thumbnail(#[from] ThumbnailError),
-}
-
-#[derive(Debug, Error)]
-pub enum ThumbnailError {
   #[error("Failed to open image {path}: {source}")]
-  Open {
+  OpenImage {
     path: String,
     #[source]
     source: image::ImageError,
   },
 
-  #[error("Failed to save thumbnail to {path}: {source}")]
-  Save {
+  #[error("Failed to save image to {path}: {source}")]
+  SaveImage {
     path: String,
     #[source]
     source: image::ImageError,

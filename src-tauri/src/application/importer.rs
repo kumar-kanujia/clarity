@@ -4,7 +4,7 @@ use crate::{
   error::AppError,
   infrastructure::{
     fs::scanner,
-    media::metadata::{self, MetadataStats},
+    processing::metadata::{self, MetadataStats},
     repo::{error::DatabaseError, image_repo},
   },
   setup::state::Db,
@@ -33,7 +33,7 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
     not_found,
     permission_denied,
     io_errors,
-  } = metadata::extract_metadata_parallel(files).await;
+  } = metadata::extract_files_metadata_concurrent(files).await;
 
   let processed = metadata.len();
 
@@ -54,6 +54,7 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
   })
 }
 
+#[tracing::instrument]
 pub async fn scan_and_import_images(
   db: &Db,
   paths: Vec<PathBuf>,

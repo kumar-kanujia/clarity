@@ -1,30 +1,31 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, prelude::Type};
 
-use crate::domain::imagemetadata::ImageMetadata;
+use crate::application::dtos::Image;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Type, Default, PartialEq, Eq)]
 #[repr(i32)]
 pub enum ProcessStatus {
   #[default]
   Pending = 0,
-  Complete = 1,
-  Error = 2,
+  Hashed = 1,
+  Complete = 2,
+  Error = 3,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Default, Clone)]
 pub struct ImageFile {
   pub seq_id: i64,
-  pub file_name: String,
   pub file_path: String,
-  pub thumbnail_path: String,
   pub file_size: i64,
+  pub thumbnail_path: String,
   pub dim_x: u32,
   pub dim_y: u32,
+  pub process_status: ProcessStatus,
   pub ctx: i64,
   pub mtx: i64,
-  pub imported_at: i64,
-  pub process_status: ProcessStatus,
+  pub updated_at: i64,
+  pub file_hash: Vec<u8>,
 }
 
 impl ImageFile {
@@ -51,14 +52,35 @@ impl ImageFile {
     format!("{value:.2} {unit}")
   }
 
-  pub fn update_metadata(&mut self, metadata: ImageMetadata) {
-    self.thumbnail_path = metadata.thumbnail_path;
-    self.dim_x = metadata.dim_x;
-    self.dim_y = metadata.dim_y;
-    self.process_status = ProcessStatus::Complete;
-  }
+  pub fn group_by_hash(image_files: Vec<ImageFile>) -> Vec<Vec<Image>> {
+    if image_files.is_empty() {
+      return Vec::new();
+    }
 
-  pub fn mark_error(&mut self) {
-    self.process_status = ProcessStatus::Error;
+    let mut grouped_images = Vec::new();
+    let mut current_group = Vec::new();
+    let mut curr_hash: Option<Vec<u8>> = None;
+
+    for image_file in image_files {
+      if image_file.file_hash.is_empty() {
+        continue;
+      }
+
+      if let Some(ref h) = curr_hash
+        && *h != image_file.file_hash
+      {
+        grouped_images.push(current_group);
+        current_group = Vec::new();
+        curr_hash = Some(image_file.file_hash.clone());
+      } else {
+        curr_hash = Some(image_file.file_hash.clone());
+      }
+      current_group.push(image_file.into());
+    }
+    if !current_group.is_empty() {
+      grouped_images.push(current_group);
+    }
+
+    grouped_images
   }
 }

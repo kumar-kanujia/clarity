@@ -26,6 +26,6 @@ if (!rootElement.innerHTML) {
         <Toaster position="bottom-right" />
         <RouterProvider router={router} />
       </ThemeProvider>
-    </StrictMode>
+    </StrictMode>,
   );
 }

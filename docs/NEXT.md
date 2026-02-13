@@ -84,36 +84,36 @@ Goal: Explicit, predictable duplicate identification.
 
 ## 1. Hashing Infrastructure
 
-- [ ] Choose hashing algorithm (e.g., SHA-256)
-- [ ] Compute hash from file content (streamed, not full memory load)
-- [ ] Store hash in database
-- [ ] Ensure hashing failures are logged with proper category
+- [x] Choose hashing algorithm (e.g., SHA-256)
+- [x] Compute hash from file content (streamed, not full memory load)
+- [x] Store hash in database
+- [x] Ensure hashing failures are logged with proper category
 
 ---
 
 ## 2. Database Changes
 
-- [ ] Add hash column to image table
-- [ ] Backfill hash for existing records
-- [ ] Ensure deterministic behavior on re-scan
-- [ ] Validate performance impact on large datasets
+- [x] Add hash column to image table
+- [x] Backfill hash for existing records
+- [x] Ensure deterministic behavior on re-scan
+- [x] Validate performance impact on large datasets
 
 ---
 
 ## 3. Duplicate Query Capability
 
-- [ ] Query images grouped by identical hash
-- [ ] Expose duplicate detection at repository/service layer
-- [ ] Ensure no silent merging or auto-resolution
-- [ ] Log duplicate counts during scan (optional but visible)
+- [x] Query images grouped by identical hash
+- [x] Expose duplicate detection at repository/service layer
+- [x] Ensure no silent merging or auto-resolution
+- [x] Log duplicate counts during scan (optional but visible)
 
 ---
 
 ### Completion Check (Part 2)
 
-- [ ] Identical files are reliably detected
-- [ ] No probabilistic matching involved
-- [ ] Duplicate behavior is explicit and reversible
+- [x] Identical files are reliably detected
+- [x] No probabilistic matching involved
+- [x] Duplicate behavior is explicit and reversible
 
 ---
 

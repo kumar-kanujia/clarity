@@ -3,7 +3,9 @@ pub mod state;
 pub mod tracesetup;
 
 use crate::{
-  application::background::ThumbnailWorker,
+  application::workers::{
+    Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
+  },
   setup::{dbsetup::setup_db, state::AppState},
 };
 
@@ -26,7 +28,8 @@ pub fn setup_app(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   app_handle.manage(AppState { db: db.clone() });
 
-  ThumbnailWorker::spawn(&app_handle, db);
+  FileHashWorker::default().spawn(&app_handle, db.clone());
+  ThumbnailWorker::default().spawn(&app_handle, db);
 
   Ok(())
 }

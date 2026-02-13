@@ -1,4 +1,4 @@
-use crate::infrastructure::fs::error::FileAccessError;
+use crate::infrastructure::fs::error::FSError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DbInitError {
@@ -6,7 +6,7 @@ pub enum DbInitError {
   MissingAppDataDir,
 
   #[error("Failed to create database directory")]
-  CreateDir(#[from] FileAccessError),
+  CreateDir(#[from] FSError),
 
   #[error("Failed to connect to database")]
   Connect(#[source] sqlx::Error),

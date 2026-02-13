@@ -1,10 +1,11 @@
 export type Image = {
+  seqId: number;
   filePath: string;
   fileName: string;
   fileSize: string;
   resolution: string;
   thumbnailPath: string;
-  createdAt: Number;
+  createdAt: number;
   isProcessed: boolean;
 };
 
