@@ -14,7 +14,7 @@ pub enum AppError {
   Database(#[from] DatabaseError),
 
   #[error("Internal error: {0}")]
-  Internal(String),
+  Internal(#[from] tauri::Error),
 }
 
 pub fn user_friendly_message(err: &AppError) -> String {

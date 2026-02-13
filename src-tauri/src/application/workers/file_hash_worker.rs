@@ -22,11 +22,8 @@ impl FileHashWorker {
     files
       .into_par_iter()
       .filter_map(
-        |mut file| match hashing::generate_file_hash(&file.file_path, file.file_size) {
-          Ok(file_hash) => {
-            file.mark_hashed();
-            Some((file.seq_id, file_hash))
-          }
+        |file| match hashing::generate_file_hash(&file.file_path, file.file_size) {
+          Ok(file_hash) => Some((file.seq_id, file_hash)),
           Err(e) => {
             tracing::error!(path = %file.file_path, error = %e, "Hash failure");
             None

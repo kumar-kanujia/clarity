@@ -1,5 +1,3 @@
-use crate::domain::imagemetadata::ImageMetadata;
-
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, prelude::Type};
 
@@ -49,20 +47,5 @@ impl ImageFile {
     };
 
     format!("{value:.2} {unit}")
-  }
-
-  pub fn mark_hashed(&mut self) {
-    self.process_status = ProcessStatus::Hashed;
-  }
-
-  pub fn update_metadata(&mut self, metadata: ImageMetadata) {
-    self.thumbnail_path = metadata.thumbnail_path;
-    self.dim_x = metadata.dim_x;
-    self.dim_y = metadata.dim_y;
-    self.process_status = ProcessStatus::Complete;
-  }
-
-  pub fn mark_error(&mut self) {
-    self.process_status = ProcessStatus::Error;
   }
 }

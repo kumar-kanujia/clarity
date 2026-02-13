@@ -16,7 +16,7 @@ pub async fn save_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummary, String> {
-  let span = tracing::info_span!("save_image ", paths = paths.len());
+  let span = tracing::info_span!("save_image", paths = paths.len());
   let _enter = span.enter();
 
   let t0 = Instant::now();
