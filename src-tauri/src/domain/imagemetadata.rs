@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::domain::imagefile::ImageFile;
+use crate::domain::image::ImageFile;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ImageMetadata {

@@ -1,10 +1,9 @@
 use crate::{
-  application::dtos::ImportSummary,
-  domain::filemetadata::FileMetadata,
+  domain::{image::Image, import_summary::ImportSummary},
   error::AppError,
   infrastructure::{
     fs::scanner,
-    processing::metadata::{self, MetadataStats},
+    processing::metadata::{self, MetadataExtractStatus},
     repo::{error::DatabaseError, image_repo},
   },
   setup::state::Db,
@@ -15,29 +14,29 @@ use std::path::PathBuf;
 /// Batch size for image save operations
 pub const CHUNK_SIZE: usize = 50;
 
-async fn persist_images(db: &Db, image_files: &[FileMetadata]) -> Result<u64, DatabaseError> {
+async fn persist_images(db: &Db, image_files: &[Image]) -> Result<i64, DatabaseError> {
   let mut imported = 0;
 
   for chunk in image_files.chunks(CHUNK_SIZE) {
-    imported += image_repo::bulk_insert_image(db, chunk).await?;
+    imported += image_repo::bulk_insert_image(db, chunk).await? as i64;
   }
 
   Ok(imported)
 }
 
-async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, AppError> {
-  let discovered = files.len();
+async fn import_images_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, AppError> {
+  let discovered = files.len() as i64;
 
-  let MetadataStats {
-    metadata,
+  let MetadataExtractStatus {
+    result,
     not_found,
     permission_denied,
     io_errors,
   } = metadata::extract_files_metadata_concurrent(files).await;
 
-  let processed = metadata.len();
+  let processed = result.len() as i64;
 
-  let imported = persist_images(db, &metadata).await? as usize;
+  let imported = persist_images(db, &result).await? as i64;
 
   let skipped = processed - imported;
 
@@ -57,14 +56,17 @@ async fn import_image_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummar
 #[tracing::instrument]
 pub async fn scan_and_import_images(
   db: &Db,
-  paths: Vec<PathBuf>,
+  paths: Vec<String>,
 ) -> Result<ImportSummary, AppError> {
   let mut set = tokio::task::JoinSet::new();
+
   let mut discovered = Vec::new();
+
   let mut total_files = 0;
   let mut walk_errors = 0;
 
   for path in paths {
+    let path = PathBuf::from(path);
     set.spawn_blocking(move || scanner::perform_file_scan_for_images(&path));
   }
 
@@ -78,7 +80,7 @@ pub async fn scan_and_import_images(
     discovered.extend(scan_result.images);
   }
 
-  let mut summary = import_image_batch(db, discovered).await?;
+  let mut summary = import_images_batch(db, discovered).await?;
 
   summary.selected = total_files;
   summary.walk_errors = walk_errors;

@@ -1,6 +1,6 @@
 use crate::{
   application::dtos::Image,
-  domain::imagefile::ImageFile,
+  domain::image::ImageFile,
   error::AppError,
   infrastructure::{fs::ops, repo::image_repo},
   setup::state::Db,

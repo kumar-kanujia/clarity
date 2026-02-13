@@ -1,16 +1,17 @@
 use chrono::NaiveDateTime;
 use sqlx::prelude::{FromRow, Type};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
 #[repr(i32)]
 pub enum ImageStatus {
+  #[default]
   Pending = 0,
   Hashed = 1,
   Thumbnailed = 2,
 }
 
 #[derive(Debug, FromRow)]
-pub struct Image {
+pub struct ImageModel {
   pub id: i64,
   pub path: String,
   pub size_bytes: i64,

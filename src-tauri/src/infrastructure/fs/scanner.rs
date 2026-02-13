@@ -7,8 +7,8 @@ use std::sync::OnceLock;
 
 pub struct ScanResult {
   pub images: Vec<PathBuf>,
-  pub total_files: usize,
-  pub walk_errors: usize,
+  pub total_files: i64,
+  pub walk_errors: i64,
 }
 
 static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();

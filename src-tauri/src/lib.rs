@@ -6,7 +6,7 @@ mod interface;
 mod setup;
 
 use crate::{
-  interface::commands::{fetch_images_grouped_by_hash, fetch_scanned_images, save_images},
+  interface::commands::save_images,
   setup::{setup_app, tracesetup},
 };
 
@@ -21,8 +21,8 @@ pub fn run() {
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![
       save_images,
-      fetch_scanned_images,
-      fetch_images_grouped_by_hash
+      // fetch_scanned_images,
+      // fetch_images_grouped_by_hash
     ])
     .setup(setup_app)
     .run(tauri::generate_context!())
