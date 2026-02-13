@@ -9,6 +9,25 @@ use crate::{
   setup::state::Db,
 };
 
+pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<ImageFile>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageFile>(
+    r#"
+      SELECT * FROM image_file
+      WHERE file_hash IN (
+      SELECT file_hash
+          FROM image_file
+          WHERE file_hash IS NOT NULL
+          GROUP BY file_hash
+          HAVING COUNT(*) > 1
+      )
+      ORDER BY file_hash, max_tx ASC
+    "#,
+  )
+  .fetch_all(db)
+  .await?;
+  Ok(result)
+}
+
 pub async fn list_images_paginated(
   db: &Db,
   last_max_tx: i64,
@@ -17,9 +36,7 @@ pub async fn list_images_paginated(
 ) -> Result<Vec<ImageFile>, DatabaseError> {
   let result = sqlx::query_as::<_, ImageFile>(
     r#"
-        SELECT
-          seq_id, file_path, file_size, thumbnail_path,
-          dim_x, dim_y, process_status, ctx, mtx, updated_at
+        SELECT *
         FROM image_file
         WHERE (max_tx, seq_id) < (?1, ?2)
         ORDER BY max_tx DESC, seq_id DESC
@@ -62,9 +79,7 @@ pub async fn list_image_files_by_status(
 ) -> Result<Vec<ImageFile>, DatabaseError> {
   let result = sqlx::query_as::<_, ImageFile>(
     r#"
-        SELECT
-          seq_id, file_path, file_size, thumbnail_path,
-          dim_x, dim_y, process_status, ctx, mtx, updated_at
+        SELECT *
         FROM image_file
         WHERE process_status = ?1
         LIMIT ?2

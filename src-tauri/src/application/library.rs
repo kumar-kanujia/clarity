@@ -1,5 +1,6 @@
 use crate::{
   application::dtos::Image,
+  domain::imagefile::ImageFile,
   error::AppError,
   infrastructure::{fs::ops, repo::image_repo},
   setup::state::Db,
@@ -36,5 +37,11 @@ pub async fn list_scanned_images(
     );
   }
 
+  Ok(images)
+}
+
+pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<Vec<Image>>, AppError> {
+  let image_files = image_repo::list_images_grouped_by_hash(db).await?;
+  let images = ImageFile::group_by_hash(image_files);
   Ok(images)
 }

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, prelude::Type};
 
+use crate::application::dtos::Image;
+
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Type, Default, PartialEq, Eq)]
 #[repr(i32)]
 pub enum ProcessStatus {
@@ -19,10 +21,11 @@ pub struct ImageFile {
   pub thumbnail_path: String,
   pub dim_x: u32,
   pub dim_y: u32,
+  pub process_status: ProcessStatus,
   pub ctx: i64,
   pub mtx: i64,
   pub updated_at: i64,
-  pub process_status: ProcessStatus,
+  pub file_hash: Vec<u8>,
 }
 
 impl ImageFile {
@@ -47,5 +50,37 @@ impl ImageFile {
     };
 
     format!("{value:.2} {unit}")
+  }
+
+  pub fn group_by_hash(image_files: Vec<ImageFile>) -> Vec<Vec<Image>> {
+    if image_files.is_empty() {
+      return Vec::new();
+    }
+
+    let mut grouped_images = Vec::new();
+    let mut current_group = Vec::new();
+    let mut curr_hash: Option<Vec<u8>> = None;
+
+    for image_file in image_files {
+      if image_file.file_hash.is_empty() {
+        continue;
+      }
+
+      if let Some(ref h) = curr_hash
+        && *h != image_file.file_hash
+      {
+        grouped_images.push(current_group);
+        current_group = Vec::new();
+        curr_hash = Some(image_file.file_hash.clone());
+      } else {
+        curr_hash = Some(image_file.file_hash.clone());
+      }
+      current_group.push(image_file.into());
+    }
+    if !current_group.is_empty() {
+      grouped_images.push(current_group);
+    }
+
+    grouped_images
   }
 }

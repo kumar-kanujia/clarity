@@ -16,3 +16,4 @@ CREATE TABLE IF NOT EXISTS image_file (
 
 CREATE INDEX IF NOT EXISTS idx_image_file_hash ON image_file (file_hash);
 CREATE INDEX IF NOT EXISTS idx_image_file_max_tx_pagination ON image_file (max_tx, seq_id);
+CREATE INDEX IF NOT EXISTS idx_dedupe_sort ON image_file(file_hash, max_tx);

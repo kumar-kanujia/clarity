@@ -74,3 +74,22 @@ pub async fn fetch_scanned_images(
     }
   }
 }
+
+#[tauri::command]
+pub async fn fetch_images_grouped_by_hash(
+  state: State<'_, AppState>,
+) -> Result<Vec<Vec<Image>>, String> {
+  let span = tracing::info_span!("fetch_images_grouped_by_hash");
+  let _enter = span.enter();
+
+  match library::list_images_grouped_by_hash(&state.db).await {
+    Ok(images) => {
+      tracing::info!(images = images.len(), "Fetch grouped images completed");
+      Ok(images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "Load failed");
+      Err(error::user_friendly_message(&err))
+    }
+  }
+}

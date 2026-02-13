@@ -36,7 +36,7 @@ impl FileHashWorker {
 
 impl Worker for FileHashWorker {
   fn spawn(self, _: &AppHandle, db: Db) {
-    let max_batch_size = Self::get_batch_size(10);
+    let max_batch_size = Self::get_batch_size(4);
     let span = tracing::info_span!("file_hash_worker", %max_batch_size);
 
     tauri::async_runtime::spawn(
@@ -54,7 +54,7 @@ impl Worker for FileHashWorker {
               Ok(f) => f,
               Err(e) => {
                 tracing::error!(error = ?e, "DB Fetch failed");
-                Self::wait_for(10).await;
+                Self::wait_for(Self::IDEAL_WAIT_TIME).await;
                 continue;
               }
             };
