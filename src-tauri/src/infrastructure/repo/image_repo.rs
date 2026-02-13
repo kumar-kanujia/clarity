@@ -15,8 +15,8 @@ pub async fn list_images_paginated(
 ) -> Result<Vec<ImageFile>, DatabaseError> {
   let result = sqlx::query_as::<_, ImageFile>(
     r#"
-        SELECT 
-          seq_id, file_path, file_size, thumbnail_path, 
+        SELECT
+          seq_id, file_path, file_size, thumbnail_path,
           dim_x, dim_y, process_status, ctx, mtx, updated_at
         FROM image_file
         WHERE (max_tx, seq_id) < (?1, ?2)
@@ -39,8 +39,8 @@ pub async fn list_image_files_by_status(
 ) -> Result<Vec<ImageFile>, DatabaseError> {
   let result = sqlx::query_as::<_, ImageFile>(
     r#"
-        SELECT 
-          seq_id, file_path, file_size, thumbnail_path, 
+        SELECT
+          seq_id, file_path, file_size, thumbnail_path,
           dim_x, dim_y, process_status, ctx, mtx, updated_at
         FROM image_file
         WHERE process_status = ?1
@@ -112,13 +112,13 @@ pub async fn bulk_update_image_metadata(
 
 pub async fn bulk_update_image_hash(
   pool: &Db,
-  data: &[(ImageFile, String)],
+  data: &[(i64, String)],
 ) -> Result<u64, DatabaseError> {
   let mut tx = pool.begin().await?;
 
   let mut total_rows = 0;
 
-  for (file, file_hash) in data {
+  for (seq_id, file_hash) in data {
     let result = sqlx::query(
       r#"
             UPDATE image_file
@@ -130,9 +130,9 @@ pub async fn bulk_update_image_hash(
             "#,
     )
     .bind(file_hash)
-    .bind(file.process_status as i32)
+    .bind(ProcessStatus::Hashed as i32)
     .bind(get_unix_timestamp())
-    .bind(file.seq_id)
+    .bind(seq_id)
     .execute(&mut *tx)
     .await?;
 
