@@ -20,7 +20,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset"] }
 serde = { version = "1", features = ["derive"] }
-sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio"] }
+sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio", "chrono"] }
 futures = "0.3.31"
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
 serde_json = "1"
@@ -36,6 +36,7 @@ image = "0.25.9"
 rayon = "1.11.0"
 uuid = { version = "1.20.0", features = ["v4"] }
 memmap2 = "0.9.9"
+chrono = "0.4.43"
 
 [dev-dependencies]
 tempfile = "3.24.0"
