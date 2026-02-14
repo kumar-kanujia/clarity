@@ -1,7 +1,13 @@
+use sqlx::{Sqlite, Transaction};
+
 #[allow(clippy::needless_raw_strings)]
-use crate::infrastructure::repo::error::DatabaseError;
 use crate::{
-  domain::image::FileMetaData, infrastructure::models::image_model::ImageModel, setup::state::Db,
+  domain::image::{FileMetaData, Image},
+  infrastructure::{
+    models::image_model::{ImageModel, ImageStatus},
+    repo::error::DatabaseError,
+  },
+  setup::state::Db,
 };
 
 pub async fn create_images_by_file_metadata(
@@ -34,11 +40,11 @@ pub async fn list_images_paginated(
     None => {
       sqlx::query_as::<_, ImageModel>(
         r#"
-          SELECT *
-          FROM images
-          ORDER BY created_at DESC, id DESC
-          LIMIT ?1
-        "#,
+              SELECT *
+              FROM images
+              ORDER BY created_at DESC, id DESC
+              LIMIT ?1
+            "#,
       )
       .bind(limit)
       .fetch_all(db)
@@ -47,12 +53,12 @@ pub async fn list_images_paginated(
     Some((created_at, id)) => {
       sqlx::query_as::<_, ImageModel>(
         r#"
-          SELECT *
-          FROM images
-          WHERE (created_at, id) < (?1, ?2)
-          ORDER BY created_at DESC, id DESC
-          LIMIT ?3
-        "#,
+              SELECT *
+              FROM images
+              WHERE (created_at, id) < (?1, ?2)
+              ORDER BY created_at DESC, id DESC
+              LIMIT ?3
+            "#,
       )
       .bind(created_at)
       .bind(id)
@@ -62,6 +68,63 @@ pub async fn list_images_paginated(
     }
   };
   Ok(result)
+}
+
+pub async fn list_images_by_status(
+  db: &Db,
+  limit: i64,
+  process_status: ImageStatus,
+) -> Result<Vec<ImageModel>, DatabaseError> {
+  let result = sqlx::query_as::<_, ImageModel>(
+    r#"
+        SELECT *
+        FROM images
+        WHERE status = ?1 and retry_count < 3
+        LIMIT ?2
+        "#,
+  )
+  .bind(process_status)
+  .bind(limit)
+  .fetch_all(db)
+  .await?;
+  Ok(result)
+}
+
+pub async fn update_images_hash(db: &Db, images: &[Image]) -> Result<u64, DatabaseError> {
+  if images.is_empty() {
+    return Ok(0);
+  }
+
+  let mut tx = db.begin().await?;
+
+  let mut total_updated = 0;
+
+  for image in images {
+    let result = sqlx::query(
+      r#"
+            UPDATE images
+            SET
+              content_hash = ?1,
+              status = ?2,
+              retry_count = ?3,
+              error_message = ?4
+            WHERE id = ?5
+            "#,
+    )
+    .bind(&image.content_hash)
+    .bind(image.status)
+    .bind(image.retry_count)
+    .bind(&image.error_message)
+    .bind(image.id)
+    .execute(&mut *tx)
+    .await?;
+
+    total_updated += result.rows_affected();
+  }
+
+  tx.commit().await?;
+
+  Ok(total_updated)
 }
 
 // pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<ImageFile>, DatabaseError> {

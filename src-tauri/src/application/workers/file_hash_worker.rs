@@ -2,15 +2,16 @@ use std::time::Instant;
 
 use crate::{
   application::workers::Worker,
-  domain::imagefile::{ImageFile, ProcessStatus},
+  domain::image::Image,
   infrastructure::{
+    models::image_model::ImageStatus,
     processing::hashing,
-    repo::image_repo::{bulk_update_image_hash, list_image_files_by_status},
+    repo::image_repo::{list_images_by_status, update_images_hash},
   },
   setup::state::Db,
 };
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use tauri::AppHandle;
 use tracing::Instrument;
 
@@ -18,19 +19,18 @@ use tracing::Instrument;
 pub struct FileHashWorker;
 
 impl FileHashWorker {
-  fn work(files: Vec<ImageFile>) -> Vec<(i64, String)> {
-    files
-      .into_par_iter()
-      .filter_map(
-        |file| match hashing::generate_file_hash(&file.file_path, file.file_size) {
-          Ok(file_hash) => Some((file.seq_id, file_hash)),
-          Err(e) => {
-            tracing::error!(path = %file.file_path, error = %e, "Hash failure");
-            None
-          }
-        },
-      )
-      .collect()
+  fn work(files: &mut [Image]) {
+    files.par_iter_mut().for_each(|image| {
+      match hashing::generate_file_hash(&image.path, image.size_bytes) {
+        Ok(content_hash) => {
+          image.update_hash(content_hash);
+        }
+        Err(e) => {
+          tracing::error!(path = %image.path, id = image.id, error = %e, "Hash failure for: ");
+          image.mark_hash_error(e.to_string());
+        }
+      }
+    });
   }
 }
 
@@ -45,8 +45,8 @@ impl Worker for FileHashWorker {
         loop {
           let start_time = Instant::now();
 
-          let files =
-            match list_image_files_by_status(&db, max_batch_size, ProcessStatus::Pending).await {
+          let mut files: Vec<Image> =
+            match list_images_by_status(&db, max_batch_size, ImageStatus::Pending).await {
               Ok(f) if f.is_empty() => {
                 Self::wait_for(Self::IDEAL_WAIT_TIME).await;
                 continue;
@@ -54,33 +54,44 @@ impl Worker for FileHashWorker {
               Ok(f) => f,
               Err(e) => {
                 tracing::error!(error = ?e, "DB Fetch failed");
-                Self::wait_for(Self::IDEAL_WAIT_TIME).await;
+                Self::wait_for(Self::IDEAL_HOLD_TIME).await;
                 continue;
               }
-            };
+            }
+            .into_iter()
+            .map(Image::from)
+            .collect();
 
           tracing::info!(files = files.len(), "Hash batch fetched");
 
-          let hashed_results =
-            match tauri::async_runtime::spawn_blocking(move || Self::work(files)).await {
-              Ok(res) => res,
-              Err(e) => {
-                tracing::error!(error = ?e, "File hash worker task panicked");
-                Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-                continue;
-              }
-            };
+          let hashed_results: Vec<Image> = match tauri::async_runtime::spawn_blocking(move || {
+            Self::work(&mut files);
+            files
+          })
+          .await
+          {
+            Ok(res) => res,
+            Err(e) => {
+              tracing::error!(error = ?e, "File hash worker task panicked");
+              Self::wait_for(Self::IDEAL_HOLD_TIME).await;
+              continue;
+            }
+          };
 
           if !hashed_results.is_empty() {
-            if let Err(e) = bulk_update_image_hash(&db, &hashed_results).await {
-              tracing::error!(error = ?e, "Bulk update failed");
-              Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-            } else {
-              tracing::info!(
-                count = hashed_results.len(),
-                elapsed_ms = start_time.elapsed().as_millis(),
-                "Batch processed successfully"
-              );
+            match update_images_hash(&db, &hashed_results).await {
+              Err(e) => {
+                tracing::error!(error = ?e, "Bulk update failed");
+                Self::wait_for(Self::IDEAL_HOLD_TIME).await;
+              }
+              Ok(file_updated) => {
+                tracing::info!(
+                  file_processed = hashed_results.len(),
+                  file_updated = file_updated,
+                  elapsed_ms = start_time.elapsed().as_millis(),
+                  "Batch processed successfully"
+                );
+              }
             }
           }
         }

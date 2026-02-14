@@ -1,9 +1,6 @@
-use crate::{
-  infrastructure::{
-    models::image_model::{ImageModel, ImageStatus},
-    system::format_datetime,
-  },
-  interface::dto::ImageDto,
+use crate::infrastructure::{
+  models::image_model::{ImageModel, ImageStatus},
+  system::format_datetime,
 };
 
 #[derive(Debug)]
@@ -24,7 +21,7 @@ pub struct Image {
   pub content_hash: Vec<u8>,
   pub status: ImageStatus,
   pub retry_count: i64,
-  pub error_message: String,
+  pub error_message: Option<String>,
   pub created_at: String,
   pub updated_at: String,
 }
@@ -53,37 +50,50 @@ impl Image {
     format!("{value:.2} {unit}")
   }
 
-  pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
-    if images.is_empty() {
-      return Vec::new();
-    }
-
-    let mut grouped_images = Vec::new();
-    let mut current_group = Vec::new();
-    let mut curr_hash: Option<Vec<u8>> = None;
-
-    for image in images {
-      if image.content_hash.is_empty() {
-        continue;
-      }
-
-      if let Some(ref h) = curr_hash
-        && *h != image.content_hash
-      {
-        grouped_images.push(current_group);
-        current_group = Vec::new();
-        curr_hash = Some(image.content_hash.clone());
-      } else {
-        curr_hash = Some(image.content_hash.clone());
-      }
-      current_group.push(image.into());
-    }
-    if !current_group.is_empty() {
-      grouped_images.push(current_group);
-    }
-
-    grouped_images
+  pub fn update_hash(&mut self, content_hash: Vec<u8>) {
+    self.content_hash = content_hash;
+    self.status = ImageStatus::Hashed;
+    self.retry_count = 0;
+    self.error_message = None;
   }
+
+  pub fn mark_hash_error(&mut self, error_message: String) {
+    self.status = ImageStatus::Pending;
+    self.error_message = Some(error_message);
+    self.retry_count += 1;
+  }
+
+  // pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
+  //   if images.is_empty() {
+  //     return Vec::new();
+  //   }
+
+  //   let mut grouped_images = Vec::new();
+  //   let mut current_group = Vec::new();
+  //   let mut curr_hash: Option<Vec<u8>> = None;
+
+  //   for image in images {
+  //     if image.content_hash.is_empty() {
+  //       continue;
+  //     }
+
+  //     if let Some(ref h) = curr_hash
+  //       && *h != image.content_hash
+  //     {
+  //       grouped_images.push(current_group);
+  //       current_group = Vec::new();
+  //       curr_hash = Some(image.content_hash.clone());
+  //     } else {
+  //       curr_hash = Some(image.content_hash.clone());
+  //     }
+  //     current_group.push(image.into());
+  //   }
+  //   if !current_group.is_empty() {
+  //     grouped_images.push(current_group);
+  //   }
+
+  //   grouped_images
+  // }
 }
 
 impl From<ImageModel> for Image {
@@ -98,7 +108,7 @@ impl From<ImageModel> for Image {
       thumbnail_path: model.thumbnail_path.unwrap_or_default(),
       status: model.status,
       retry_count: model.retry_count,
-      error_message: model.error_message.unwrap_or_default(),
+      error_message: model.error_message,
       created_at: format_datetime(model.created_at),
       updated_at: format_datetime(model.updated_at),
     }

@@ -1,5 +1,5 @@
 pub mod file_hash_worker;
-pub mod thumbnail_worker;
+// pub mod thumbnail_worker;
 
 use std::{cmp, time::Duration};
 
@@ -8,7 +8,10 @@ use tauri::AppHandle;
 use crate::setup::state::Db;
 
 pub trait Worker {
+  /// 5 Sec
   const IDEAL_WAIT_TIME: u64 = 5 * 1000;
+
+  const IDEAL_HOLD_TIME: u64 = 30 * 1000;
 
   fn get_batch_size(factor: i64) -> i64 {
     cmp::max(4, num_cpus::get() as i64 * factor)

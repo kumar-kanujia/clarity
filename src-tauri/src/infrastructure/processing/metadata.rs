@@ -1,5 +1,5 @@
 use crate::{
-  domain::image::{FileMetaData, Image},
+  domain::image::FileMetaData,
   infrastructure::{
     processing::error::ProcessingError,
     system::{get_cpu_cap, get_utc_timestamp},
@@ -100,11 +100,11 @@ pub fn extract_file_metadata(file: &Path) -> Result<FileMetaData, ProcessingErro
 }
 
 pub async fn extract_files_metadata_concurrent(files: Vec<PathBuf>) -> MetadataExtractStatus {
-  let concurrency = get_cpu_cap().min(32);
+  let c = get_cpu_cap().min(32);
 
   let results = futures::stream::iter(files)
     .map(|path| tokio::task::spawn_blocking(move || extract_file_metadata(&path)))
-    .buffer_unordered(concurrency)
+    .buffer_unordered(c)
     .collect::<Vec<_>>()
     .await;
 
