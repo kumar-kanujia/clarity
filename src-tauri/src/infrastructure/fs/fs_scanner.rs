@@ -1,27 +1,17 @@
-use crate::infrastructure::fs::error::FSError;
+use crate::{
+  domain::{file::file_scan_result::FileScanResult, image::Image},
+  infrastructure::fs::error::FSError,
+};
 
 use walkdir::WalkDir;
 
-use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
-
-static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
-
-pub struct FileScanResult {
-  pub files: Vec<PathBuf>,
-  pub total_files: i64,
-  pub walk_errors: i64,
-}
+use std::path::Path;
 
 pub struct FileScanner;
 
 impl FileScanner {
-  fn get_extensions() -> &'static [&'static str] {
-    IMAGE_EXTENSIONS.get_or_init(|| vec!["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"])
-  }
-
   fn is_supported_image_ext(ext: &str) -> bool {
-    Self::get_extensions()
+    Image::get_extensions()
       .iter()
       .any(|&e| ext.eq_ignore_ascii_case(e))
   }
