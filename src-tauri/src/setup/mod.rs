@@ -3,7 +3,9 @@ pub mod state;
 pub mod tracesetup;
 
 use crate::{
-  application::workers::{Worker, file_hash_worker::FileHashWorker},
+  application::workers::{
+    Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
+  },
   infrastructure::system::get_num_threads,
   setup::{dbsetup::setup_db, state::AppState},
 };
@@ -47,9 +49,9 @@ pub fn setup_app(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   tracing::info!("Setting up Workers");
 
-  FileHashWorker::default().spawn(&app_handle, db, shutdown.clone());
-  // ThumbnailWorker::default().spawn(&app_handle, db);
-  //
+  FileHashWorker::default().spawn(&app_handle, db.clone(), shutdown.clone());
+  ThumbnailWorker::default().spawn(&app_handle, db, shutdown.clone());
+
   tracing::info!("Workers setup complete");
 
   Ok(())

@@ -126,6 +126,47 @@ pub async fn update_images_hash(db: &Db, images: &[Image]) -> Result<u64, Databa
   Ok(total_updated)
 }
 
+pub async fn update_images_metadata(db: &Db, images: &[Image]) -> Result<u64, DatabaseError> {
+  if images.is_empty() {
+    return Ok(0);
+  }
+
+  let mut tx = db.begin().await?;
+
+  let mut total_updated = 0;
+
+  for image in images {
+    let result = sqlx::query(
+      r#"
+            UPDATE images
+            SET
+              width = ?1,
+              height = ?2,
+              thumbnail_path = ?3,
+              status = ?4,
+              retry_count = ?5,
+              error_message = ?6
+            WHERE id = ?7
+            "#,
+    )
+    .bind(image.width)
+    .bind(image.height)
+    .bind(&image.thumbnail_path)
+    .bind(image.status)
+    .bind(image.retry_count)
+    .bind(&image.error_message)
+    .bind(image.id)
+    .execute(&mut *tx)
+    .await?;
+
+    total_updated += result.rows_affected();
+  }
+
+  tx.commit().await?;
+
+  Ok(total_updated)
+}
+
 // pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<ImageFile>, DatabaseError> {
 //   let result = sqlx::query_as::<_, ImageFile>(
 //     r#"
@@ -143,115 +184,4 @@ pub async fn update_images_hash(db: &Db, images: &[Image]) -> Result<u64, Databa
 //   .fetch_all(db)
 //   .await?;
 //   Ok(result)
-// }
-
-// pub async fn list_image_paths_by_status(
-//   db: &Db,
-//   limit: i64,
-//   process_status: ProcessStatus,
-// ) -> Result<Vec<(i64, String)>, DatabaseError> {
-//   let result = sqlx::query_as::<_, (i64, String)>(
-//     r#"
-//         SELECT
-//           seq_id, file_path
-//         FROM image_file
-//         WHERE process_status = ?1
-//         LIMIT ?2
-//         "#,
-//   )
-//   .bind(process_status as i32)
-//   .bind(limit)
-//   .fetch_all(db)
-//   .await?;
-//   Ok(result)
-// }
-
-// pub async fn list_image_files_by_status(
-//   db: &Db,
-//   limit: i64,
-//   process_status: ProcessStatus,
-// ) -> Result<Vec<ImageFile>, DatabaseError> {
-//   let result = sqlx::query_as::<_, ImageFile>(
-//     r#"
-//         SELECT *
-//         FROM image_file
-//         WHERE process_status = ?1
-//         LIMIT ?2
-//         "#,
-//   )
-//   .bind(process_status as i32)
-//   .bind(limit)
-//   .fetch_all(db)
-//   .await?;
-//   Ok(result)
-// }
-
-// pub async fn bulk_update_image_metadata(
-//   pool: &Db,
-//   updated_metadata: &[(i64, ImageMetadata)],
-// ) -> Result<u64, DatabaseError> {
-//   let mut tx = pool.begin().await?;
-
-//   let mut total_rows = 0;
-
-//   for (seq_id, meta_data) in updated_metadata {
-//     let result = sqlx::query(
-//       r#"
-//             UPDATE image_file
-//             SET
-//                 thumbnail_path = ?1,
-//                 dim_x = ?2,
-//                 dim_y = ?3,
-//                 process_status = ?4
-//             WHERE seq_id = ?5
-//             "#,
-//     )
-//     .bind(&meta_data.thumbnail_path)
-//     .bind(meta_data.dim_x)
-//     .bind(meta_data.dim_y)
-//     .bind(ProcessStatus::Complete as i32)
-//     .bind(seq_id)
-//     .execute(&mut *tx)
-//     .await?;
-
-//     total_rows += result.rows_affected();
-//   }
-
-//   tx.commit().await?;
-
-//   Ok(total_rows)
-// }
-
-// pub async fn bulk_update_image_hash(
-//   pool: &Db,
-//   data: &[(i64, String)],
-// ) -> Result<u64, DatabaseError> {
-//   let mut tx = pool.begin().await?;
-
-//   let mut total_rows = 0;
-
-//   for (seq_id, file_hash) in data {
-//     let result = sqlx::query(
-//       r#"
-//             UPDATE image_file
-//             SET
-//                 file_hash = ?1,
-//                 process_status = ?2,
-//                 updated_at = ?3
-//             WHERE seq_id = ?4
-//             "#,
-//     )
-//     .bind(file_hash)
-//     .bind(ProcessStatus::Hashed as i32)
-//     .bind(get_unix_timestamp())
-//     .bind(seq_id)
-//     .execute(&mut *tx)
-//     .await?;
-
-//     total_rows += result.rows_affected();
-//   }
-
-//   tx.commit().await?;
-
-//   Ok(total_rows)
 // }

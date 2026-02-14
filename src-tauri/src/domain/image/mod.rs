@@ -1,6 +1,12 @@
-use crate::infrastructure::{
-  models::image_model::{ImageModel, ImageStatus},
-  system::format_datetime,
+pub mod image_metadata;
+
+use crate::{
+  domain::image::image_metadata::ImageMetadata,
+  infrastructure::{
+    models::image_model::{ImageModel, ImageStatus},
+    system::format_datetime,
+  },
+  interface::dto::ImageDto,
 };
 
 use std::sync::OnceLock;
@@ -64,37 +70,52 @@ impl Image {
     self.retry_count += 1;
   }
 
-  // pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
-  //   if images.is_empty() {
-  //     return Vec::new();
-  //   }
+  pub fn update_image_metadata(&mut self, image_metadata: ImageMetadata) {
+    self.thumbnail_path = image_metadata.thumbnail_path;
+    self.width = image_metadata.width;
+    self.height = image_metadata.height;
+    self.status = ImageStatus::Thumbnailed;
+    self.retry_count = 0;
+    self.error_message = None;
+  }
 
-  //   let mut grouped_images = Vec::new();
-  //   let mut current_group = Vec::new();
-  //   let mut curr_hash: Option<Vec<u8>> = None;
+  pub fn mark_image_metadata_error(&mut self, error_message: String) {
+    self.status = ImageStatus::Hashed;
+    self.error_message = Some(error_message);
+    self.retry_count += 1;
+  }
 
-  //   for image in images {
-  //     if image.content_hash.is_empty() {
-  //       continue;
-  //     }
+  pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
+    if images.is_empty() {
+      return Vec::new();
+    }
 
-  //     if let Some(ref h) = curr_hash
-  //       && *h != image.content_hash
-  //     {
-  //       grouped_images.push(current_group);
-  //       current_group = Vec::new();
-  //       curr_hash = Some(image.content_hash.clone());
-  //     } else {
-  //       curr_hash = Some(image.content_hash.clone());
-  //     }
-  //     current_group.push(image.into());
-  //   }
-  //   if !current_group.is_empty() {
-  //     grouped_images.push(current_group);
-  //   }
+    let mut grouped_images = Vec::new();
+    let mut current_group = Vec::new();
+    let mut curr_hash: Option<Vec<u8>> = None;
 
-  //   grouped_images
-  // }
+    for image in images {
+      if image.content_hash.is_empty() {
+        continue;
+      }
+
+      if let Some(ref h) = curr_hash
+        && *h != image.content_hash
+      {
+        grouped_images.push(current_group);
+        current_group = Vec::new();
+        curr_hash = Some(image.content_hash.clone());
+      } else {
+        curr_hash = Some(image.content_hash.clone());
+      }
+      current_group.push(image.into());
+    }
+    if !current_group.is_empty() {
+      grouped_images.push(current_group);
+    }
+
+    grouped_images
+  }
 }
 
 impl From<ImageModel> for Image {

@@ -1,5 +1,6 @@
+pub mod batch_worker;
 pub mod file_hash_worker;
-// pub mod thumbnail_worker;
+pub mod thumbnail_worker;
 
 use std::{cmp, time::Duration};
 
