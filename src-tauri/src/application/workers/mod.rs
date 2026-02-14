@@ -4,6 +4,7 @@ pub mod file_hash_worker;
 use std::{cmp, time::Duration};
 
 use tauri::AppHandle;
+use tokio_util::sync::CancellationToken;
 
 use crate::setup::state::Db;
 
@@ -17,9 +18,12 @@ pub trait Worker {
     cmp::max(4, num_cpus::get() as i64 * factor)
   }
 
-  async fn wait_for(time: u64) {
-    tokio::time::sleep(Duration::from_millis(time)).await;
+  async fn sleep_or_shutdown(ms: u64, shutdown: &CancellationToken) -> bool {
+    tokio::select! {
+      _ = shutdown.cancelled() => true,
+      _ = tokio::time::sleep(Duration::from_millis(ms)) => false,
+    }
   }
 
-  fn spawn(self, app: &AppHandle, db: Db);
+  fn spawn(self, app: &AppHandle, db: Db, shutdown: CancellationToken);
 }
