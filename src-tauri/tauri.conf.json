@@ -42,7 +42,7 @@
       "force": false,
       "includePatterns": null,
       "includePrivate": false,
-      "outputPath": "./src/tauri",
+      "outputPath": "./src/app",
       "projectPath": "./src-tauri",
       "typeMappings": null,
       "validationLibrary": "zod",

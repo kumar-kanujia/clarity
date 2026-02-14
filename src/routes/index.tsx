@@ -1,17 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ImageDto } from "@/tauri";
-import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ImageDto } from '@/app';
+import { Button } from '@/components/ui/button';
+import { createFileRoute } from '@tanstack/react-router';
+import { CheckCircle2, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useState } from 'react';
 
-import { EmptyState } from "@/features/gallery/components/empty-state";
-import { ImageGrid } from "@/features/gallery/components/image-grid";
-import { ImageModal } from "@/components/elements/image-modal";
-import { useGalleryStore } from "@/hooks/use-gallery-store";
+import { ImageModal } from '@/components/elements/image-modal';
+import { EmptyState } from '@/features/gallery/components/empty-state';
+import { ImageGrid } from '@/features/gallery/components/image-grid';
+import { useGalleryStore } from '@/hooks/use-gallery-store';
 
-export const Route = createFileRoute("/")({
-  component: Index,
+export const Route = createFileRoute('/')({
+  component: Index
 });
 
 function Index() {
@@ -23,10 +23,11 @@ function Index() {
     importSummary,
     importImages,
     importFolder,
-    clearImportSummary,
+    clearImportSummary
   } = useGalleryStore();
 
-  const [previewImage, setPreviewImage] = useState<ImageDto | null>(null);
+  const [previewImage, setPreviewImage] =
+    useState<ImageDto | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -38,7 +39,7 @@ function Index() {
   const handleNextImage = async () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.path === previewImage.path,
+      img => img.path === previewImage.path
     );
 
     // If next image exists, go to it
@@ -48,9 +49,10 @@ function Index() {
     // If at the end and has more, load more then go to next
     else if (hasMore && !isLoading) {
       await loadImages(false);
-      const updatedImages = useGalleryStore.getState().images;
+      const updatedImages =
+        useGalleryStore.getState().images;
       const newCurrentIndex = updatedImages.findIndex(
-        (img) => img.path === previewImage.path,
+        img => img.path === previewImage.path
       );
       if (newCurrentIndex < updatedImages.length - 1) {
         setPreviewImage(updatedImages[newCurrentIndex + 1]);
@@ -61,7 +63,7 @@ function Index() {
   const handlePrevImage = () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.path === previewImage.path,
+      img => img.path === previewImage.path
     );
     if (currentIndex > 0) {
       setPreviewImage(images[currentIndex - 1]);
@@ -75,7 +77,7 @@ function Index() {
         {importSummary && (
           <motion.div
             initial={{ opacity: 0, y: -20, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
             exit={{ opacity: 0, y: -20, height: 0 }}
             className="w-full px-4 pt-4"
           >
@@ -85,23 +87,25 @@ function Index() {
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg">Import Complete</h4>
+                  <h4 className="font-bold text-lg">
+                    Import Complete
+                  </h4>
                   <p className="text-sm text-muted-foreground font-medium">
                     <span className="text-foreground">
                       {importSummary.totalScanned}
-                    </span>{" "}
-                    total scanned,{" "}
+                    </span>{' '}
+                    total scanned,{' '}
                     <span className="text-foreground">
                       {importSummary.totalImported}
-                    </span>{" "}
-                    imported,{" "}
+                    </span>{' '}
+                    imported,{' '}
                     <span className="text-yellow-500">
                       {importSummary.skipped}
-                    </span>{" "}
-                    skipped,{" "}
+                    </span>{' '}
+                    skipped,{' '}
                     <span className="text-destructive">
                       {importSummary.failed}
-                    </span>{" "}
+                    </span>{' '}
                     failed
                   </p>
                 </div>
@@ -143,13 +147,17 @@ function Index() {
         onPrev={handlePrevImage}
         hasNext={
           (!!previewImage &&
-            images.findIndex((img) => img.path === previewImage.path) <
+            images.findIndex(
+              img => img.path === previewImage.path
+            ) <
               images.length - 1) ||
           hasMore
         }
         hasPrev={
           !!previewImage &&
-          images.findIndex((img) => img.path === previewImage.path) > 0
+          images.findIndex(
+            img => img.path === previewImage.path
+          ) > 0
         }
       />
     </div>

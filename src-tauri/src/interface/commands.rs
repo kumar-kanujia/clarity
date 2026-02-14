@@ -40,21 +40,28 @@ pub async fn fetch_images(
   limit: i64,
   cursor: Option<ImageCursor>,
 ) -> Result<PaginatedImages, String> {
-  let span = tracing::info_span!("fetch_scanned_images", limit = limit);
+  let span = tracing::info_span!("fetch_images", limit = limit);
   let _enter = span.enter();
 
-  let cursor = cursor.map(|c| (c.created_at, c.id));
+  let cursor = cursor.map(|c| {
+    tracing::info!(
+      created_at = c.created_at,
+      id = c.id,
+      "Fetching images with cursor"
+    );
+    (c.created_at, c.id)
+  });
 
   match library::list_scanned_images(&state.db, limit, cursor).await {
     Ok(paginated_images) => {
       tracing::info!(
         data = paginated_images.data.len(),
-        "Fetch scanned images completed"
+        "Fetch images completed:"
       );
       Ok(paginated_images)
     }
     Err(err) => {
-      tracing::error!(error = ?err, "Load failed");
+      tracing::error!(error = ?err, "fetch_image failed");
       Err(error::user_friendly_message(&err))
     }
   }

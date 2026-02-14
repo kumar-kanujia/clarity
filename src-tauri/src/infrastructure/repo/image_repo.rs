@@ -34,7 +34,7 @@ pub async fn list_images_paginated(
     None => {
       sqlx::query_as::<_, ImageModel>(
         r#"
-          SELECT id, path, size_bytes, width, height, thumbnail_path, created_at
+          SELECT *
           FROM images
           ORDER BY created_at DESC, id DESC
           LIMIT ?1
@@ -47,7 +47,7 @@ pub async fn list_images_paginated(
     Some((created_at, id)) => {
       sqlx::query_as::<_, ImageModel>(
         r#"
-          SELECT id, path, size_bytes, width, height, thumbnail_path, created_at
+          SELECT *
           FROM images
           WHERE (created_at, id) < (?1, ?2)
           ORDER BY created_at DESC, id DESC
