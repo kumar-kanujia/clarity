@@ -1,12 +1,16 @@
 #[allow(clippy::needless_raw_strings)]
 use crate::infrastructure::repo::error::DatabaseError;
-use crate::{domain::image::Image, setup::state::Db};
+use crate::{
+  domain::image::FileMetaData, infrastructure::models::image_model::ImageModel, setup::state::Db,
+};
 
-pub async fn bulk_insert_image(db: &Db, files: &[Image]) -> Result<u64, DatabaseError> {
+pub async fn create_images_by_file_metadata(
+  db: &Db,
+  files: &[FileMetaData],
+) -> Result<u64, DatabaseError> {
   if files.is_empty() {
     return Ok(0);
   }
-
   let mut query_builder =
     sqlx::QueryBuilder::new("INSERT OR IGNORE INTO images (path, size_bytes, created_at) ");
 
@@ -19,6 +23,45 @@ pub async fn bulk_insert_image(db: &Db, files: &[Image]) -> Result<u64, Database
   let result = query_builder.build().execute(db).await?;
 
   Ok(result.rows_affected())
+}
+
+pub async fn list_images_paginated(
+  db: &Db,
+  limit: i64,
+  cursor: Option<(String, i64)>,
+) -> Result<Vec<ImageModel>, DatabaseError> {
+  let result = match cursor {
+    None => {
+      sqlx::query_as::<_, ImageModel>(
+        r#"
+          SELECT id, path, size_bytes, width, height, thumbnail_path, created_at
+          FROM images
+          ORDER BY created_at DESC, id DESC
+          LIMIT ?1
+        "#,
+      )
+      .bind(limit)
+      .fetch_all(db)
+      .await?
+    }
+    Some((created_at, id)) => {
+      sqlx::query_as::<_, ImageModel>(
+        r#"
+          SELECT id, path, size_bytes, width, height, thumbnail_path, created_at
+          FROM images
+          WHERE (created_at, id) < (?1, ?2)
+          ORDER BY created_at DESC, id DESC
+          LIMIT ?3
+        "#,
+      )
+      .bind(created_at)
+      .bind(id)
+      .bind(limit)
+      .fetch_all(db)
+      .await?
+    }
+  };
+  Ok(result)
 }
 
 // pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<ImageFile>, DatabaseError> {
@@ -35,29 +78,6 @@ pub async fn bulk_insert_image(db: &Db, files: &[Image]) -> Result<u64, Database
 //       ORDER BY file_hash, max_tx ASC
 //     "#,
 //   )
-//   .fetch_all(db)
-//   .await?;
-//   Ok(result)
-// }
-
-// pub async fn list_images_paginated(
-//   db: &Db,
-//   last_max_tx: i64,
-//   last_seq_id: i64,
-//   limit: i64,
-// ) -> Result<Vec<ImageFile>, DatabaseError> {
-//   let result = sqlx::query_as::<_, ImageFile>(
-//     r#"
-//         SELECT *
-//         FROM image_file
-//         WHERE (max_tx, seq_id) < (?1, ?2)
-//         ORDER BY max_tx DESC, seq_id DESC
-//         LIMIT ?3
-//         "#,
-//   )
-//   .bind(last_max_tx)
-//   .bind(last_seq_id)
-//   .bind(limit)
 //   .fetch_all(db)
 //   .await?;
 //   Ok(result)

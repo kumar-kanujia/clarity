@@ -1,4 +1,17 @@
-use crate::{infrastructure::models::image_model::ImageStatus, interface::dto::ImageDto};
+use crate::{
+  infrastructure::{
+    models::image_model::{ImageModel, ImageStatus},
+    system::format_datetime,
+  },
+  interface::dto::ImageDto,
+};
+
+#[derive(Debug)]
+pub struct FileMetaData {
+  pub path: String,
+  pub size_bytes: i64,
+  pub created_at: String,
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct Image {
@@ -17,15 +30,6 @@ pub struct Image {
 }
 
 impl Image {
-  pub fn new_file_metadata(path: String, size_bytes: i64, created_at: String) -> Self {
-    Self {
-      path,
-      size_bytes,
-      created_at,
-      ..Default::default()
-    }
-  }
-
   pub fn resolution(&self) -> String {
     format!("{}x{}", self.width, self.height)
   }
@@ -79,5 +83,24 @@ impl Image {
     }
 
     grouped_images
+  }
+}
+
+impl From<ImageModel> for Image {
+  fn from(model: ImageModel) -> Self {
+    Self {
+      id: model.id,
+      path: model.path,
+      size_bytes: model.size_bytes,
+      content_hash: model.content_hash.unwrap_or_default(),
+      width: model.width.unwrap_or_default(),
+      height: model.height.unwrap_or_default(),
+      thumbnail_path: model.thumbnail_path.unwrap_or_default(),
+      status: model.status,
+      retry_count: model.retry_count,
+      error_message: model.error_message.unwrap_or_default(),
+      created_at: format_datetime(model.created_at),
+      updated_at: format_datetime(model.updated_at),
+    }
   }
 }

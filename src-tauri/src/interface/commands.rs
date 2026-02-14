@@ -1,16 +1,19 @@
 use crate::{
-  application::importer, error, interface::dto::ImportSummaryDto, setup::state::AppState,
+  application::{importer, library},
+  error,
+  interface::dto::{ImageCursor, ImportSummaryDto, PaginatedImages},
+  setup::state::AppState,
 };
 
 use std::time::Instant;
 use tauri::State;
 
 #[tauri::command]
-pub async fn save_images(
+pub async fn import_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
 ) -> Result<ImportSummaryDto, String> {
-  let span = tracing::info_span!("save_image", paths = paths.len());
+  let span = tracing::info_span!("import_images", paths = paths.len());
   let _enter = span.enter();
 
   let start = Instant::now();
@@ -31,32 +34,31 @@ pub async fn save_images(
   }
 }
 
-// #[tauri::command]
-// pub async fn fetch_scanned_images(
-//   state: State<'_, AppState>,
-//   last_max_tx: i64,
-//   last_seq_id: i64,
-//   limit: i64,
-// ) -> Result<Vec<Image>, String> {
-//   let span = tracing::info_span!(
-//     "fetch_scanned_images",
-//     last_max_tx = last_max_tx,
-//     last_seq_id = last_seq_id,
-//     limit = limit
-//   );
-//   let _enter = span.enter();
+#[tauri::command]
+pub async fn fetch_images(
+  state: State<'_, AppState>,
+  limit: i64,
+  cursor: Option<ImageCursor>,
+) -> Result<PaginatedImages, String> {
+  let span = tracing::info_span!("fetch_scanned_images", limit = limit);
+  let _enter = span.enter();
 
-//   match library::list_scanned_images(&state.db, last_max_tx, last_seq_id, limit).await {
-//     Ok(images) => {
-//       tracing::info!(images = images.len(), "Fetch scanned images completed");
-//       Ok(images)
-//     }
-//     Err(err) => {
-//       tracing::error!(error = ?err, "Load failed");
-//       Err(error::user_friendly_message(&err))
-//     }
-//   }
-// }
+  let cursor = cursor.map(|c| (c.created_at, c.id));
+
+  match library::list_scanned_images(&state.db, limit, cursor).await {
+    Ok(paginated_images) => {
+      tracing::info!(
+        data = paginated_images.data.len(),
+        "Fetch scanned images completed"
+      );
+      Ok(paginated_images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "Load failed");
+      Err(error::user_friendly_message(&err))
+    }
+  }
+}
 
 // #[tauri::command]
 // pub async fn fetch_images_grouped_by_hash(

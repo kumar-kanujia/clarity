@@ -1,6 +1,20 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::{image::Image, import_summary::ImportSummary};
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaginatedImages {
+  pub data: Vec<ImageDto>,
+  pub next_cursor: Option<ImageCursor>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ImageCursor {
+  pub created_at: String,
+  pub id: i64,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

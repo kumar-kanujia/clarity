@@ -1,5 +1,5 @@
 use crate::{
-  domain::{image::Image, import_summary::ImportSummary},
+  domain::{image::FileMetaData, import_summary::ImportSummary},
   error::AppError,
   infrastructure::{
     fs::scanner,
@@ -11,35 +11,30 @@ use crate::{
 
 use std::path::PathBuf;
 
-/// Batch size for image save operations
 pub const CHUNK_SIZE: usize = 50;
 
-async fn persist_images(db: &Db, image_files: &[Image]) -> Result<i64, DatabaseError> {
+async fn persist_images_file_metadata(
+  db: &Db,
+  image_files: &[FileMetaData],
+) -> Result<i64, DatabaseError> {
   let mut imported = 0;
-
   for chunk in image_files.chunks(CHUNK_SIZE) {
-    imported += image_repo::bulk_insert_image(db, chunk).await? as i64;
+    imported += image_repo::create_images_by_file_metadata(db, chunk).await? as i64;
   }
-
   Ok(imported)
 }
 
-async fn import_images_batch(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, AppError> {
+async fn import_images(db: &Db, files: Vec<PathBuf>) -> Result<ImportSummary, AppError> {
   let discovered = files.len() as i64;
-
   let MetadataExtractStatus {
     result,
     not_found,
     permission_denied,
     io_errors,
   } = metadata::extract_files_metadata_concurrent(files).await;
-
   let processed = result.len() as i64;
-
-  let imported = persist_images(db, &result).await? as i64;
-
+  let imported = persist_images_file_metadata(db, &result).await? as i64;
   let skipped = processed - imported;
-
   Ok(ImportSummary {
     discovered,
     processed,
@@ -80,7 +75,7 @@ pub async fn scan_and_import_images(
     discovered.extend(scan_result.images);
   }
 
-  let mut summary = import_images_batch(db, discovered).await?;
+  let mut summary = import_images(db, discovered).await?;
 
   summary.selected = total_files;
   summary.walk_errors = walk_errors;

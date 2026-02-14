@@ -1,48 +1,62 @@
 use crate::{
-  application::dtos::Image,
-  domain::image::ImageFile,
+  domain::image::Image,
   error::AppError,
-  infrastructure::{fs::ops, repo::image_repo},
+  infrastructure::{fs::ops, repo::image_repo, system::format_datetime},
+  interface::dto::{ImageCursor, ImageDto, PaginatedImages},
   setup::state::Db,
 };
 
 #[tracing::instrument]
 pub async fn list_scanned_images(
   db: &Db,
-  last_max_tx: i64,
-  last_seq_id: i64,
   limit: i64,
-) -> Result<Vec<Image>, AppError> {
-  let files = image_repo::list_images_paginated(db, last_max_tx, last_seq_id, limit).await?;
+  cursor: Option<(String, i64)>,
+) -> Result<PaginatedImages, AppError> {
+  let images = image_repo::list_images_paginated(db, limit + 1, cursor).await?;
 
-  let mut unreadable_count = 0;
+  let next_cursor = if images.len() as i64 > limit
+    && let Some(last) = images.last()
+  {
+    let created_at = format_datetime(last.created_at);
+    Some(ImageCursor {
+      created_at,
+      id: last.id,
+    })
+  } else {
+    None
+  };
 
-  let images = files
+  let mut data: Vec<ImageDto> = images
     .into_iter()
-    .filter(|file| match ops::is_file_readable(&file.file_path) {
-      Ok(()) => true,
+    .map(Image::from)
+    .filter_map(|image| match ops::is_file_readable(&image.path) {
       Err(err) => {
         tracing::info!("Unreadable image: {:?}", err);
-        unreadable_count += 1;
-        false
+        None
       }
+      Ok(()) => Some(ImageDto::from(image)),
     })
-    .map(Image::from)
     .collect();
 
-  if unreadable_count > 0 {
-    tracing::warn!(
-      unreadable = unreadable_count,
-      "Unreadable images skipped during pagination"
-    );
+  if data.len() == 0 {
+    return Ok(PaginatedImages {
+      data: Vec::new(),
+      next_cursor: None,
+    });
   }
 
-  Ok(images)
+  let has_next = data.len() as i64 > limit;
+
+  if has_next {
+    data.truncate(limit as usize);
+  }
+
+  Ok(PaginatedImages { data, next_cursor })
 }
 
-#[tracing::instrument]
-pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<Vec<Image>>, AppError> {
-  let image_files = image_repo::list_images_grouped_by_hash(db).await?;
-  let images = ImageFile::group_by_hash(image_files);
-  Ok(images)
-}
+// #[tracing::instrument]
+// pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<Vec<Image>>, AppError> {
+//   let image_files = image_repo::list_images_grouped_by_hash(db).await?;
+//   let images = ImageFile::group_by_hash(image_files);
+//   Ok(images)
+// }

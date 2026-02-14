@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS images (
   updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_images_created_at ON images (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_images_created_at_id ON images (created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_images_work_queue ON images (status, retry_count);
 CREATE INDEX IF NOT EXISTS idx_images_hash ON images (content_hash);
 

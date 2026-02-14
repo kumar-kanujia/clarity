@@ -10,7 +10,7 @@ pub enum ImageStatus {
   Thumbnailed = 2,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Clone)]
 pub struct ImageModel {
   pub id: i64,
   pub path: String,

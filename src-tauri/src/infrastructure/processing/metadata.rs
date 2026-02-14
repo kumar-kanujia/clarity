@@ -1,10 +1,13 @@
 use crate::{
-  domain::image::Image,
-  infrastructure::{processing::error::ProcessingError, system::get_utc_timestamp},
+  domain::image::{FileMetaData, Image},
+  infrastructure::{
+    processing::error::ProcessingError,
+    system::{get_cpu_cap, get_utc_timestamp},
+  },
 };
 
 use std::{
-  fs,
+  fs::{self, Metadata},
   path::{Path, PathBuf},
   time::{self},
 };
@@ -57,41 +60,47 @@ use futures::stream::StreamExt;
 // }
 
 pub struct MetadataExtractStatus {
-  pub result: Vec<Image>,
+  pub result: Vec<FileMetaData>,
   pub not_found: i64,
   pub permission_denied: i64,
   pub io_errors: i64,
 }
 
-pub fn extract_file_metadata(file: &Path) -> Result<Image, ProcessingError> {
-  let metadata = fs::metadata(file).map_err(|e| match e.kind() {
+fn get_metadata(file: &Path) -> Result<Metadata, ProcessingError> {
+  fs::metadata(file).map_err(|e| match e.kind() {
     std::io::ErrorKind::NotFound => ProcessingError::NotFound(file.display().to_string()),
     std::io::ErrorKind::PermissionDenied => {
       ProcessingError::PermissionDenied(file.display().to_string())
     }
     _ => ProcessingError::Io(e),
-  })?;
+  })
+}
 
-  let path = file.to_string_lossy().to_string();
-
-  let size_bytes = metadata.len() as i64;
-
-  if size_bytes == 0 {
-    return Err(ProcessingError::EmptyFile(path));
-  }
-
+fn get_created_at(metadata: Metadata) -> String {
   let system_time = metadata
     .created()
     .or_else(|_| metadata.modified())
     .unwrap_or(time::SystemTime::now());
+  get_utc_timestamp(system_time)
+}
 
-  let created_at = get_utc_timestamp(system_time);
-
-  Ok(Image::new_file_metadata(path, size_bytes, created_at))
+pub fn extract_file_metadata(file: &Path) -> Result<FileMetaData, ProcessingError> {
+  let metadata = get_metadata(file)?;
+  let path = file.to_string_lossy().to_string();
+  let size_bytes = metadata.len() as i64;
+  if size_bytes == 0 {
+    return Err(ProcessingError::EmptyFile(path));
+  }
+  let created_at = get_created_at(metadata);
+  Ok(FileMetaData {
+    path,
+    size_bytes,
+    created_at,
+  })
 }
 
 pub async fn extract_files_metadata_concurrent(files: Vec<PathBuf>) -> MetadataExtractStatus {
-  let concurrency = (num_cpus::get() * 2).min(32);
+  let concurrency = get_cpu_cap().min(32);
 
   let results = futures::stream::iter(files)
     .map(|path| tokio::task::spawn_blocking(move || extract_file_metadata(&path)))
@@ -105,7 +114,6 @@ pub async fn extract_files_metadata_concurrent(files: Vec<PathBuf>) -> MetadataE
   let mut permission_denied = 0;
   let mut io_errors = 0;
 
-  // TODO: handle logging
   for res in results {
     match res {
       Ok(Ok(meta)) => result.push(meta),
