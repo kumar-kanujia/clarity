@@ -1,5 +1,5 @@
 use crate::{
-  application::{importer, library},
+  application::{library, workflow::scan_and_import_images::ScanAndImportImages},
   error,
   interface::dto::{ImageCursor, ImportSummaryDto, PaginatedImages},
   setup::state::AppState,
@@ -18,10 +18,9 @@ pub async fn import_images(
 
   let start = Instant::now();
 
-  match importer::scan_and_import_images(&state.db, paths).await {
+  match ScanAndImportImages::run(&state.db, &paths).await {
     Ok(summary) => {
       tracing::info!("Import completed in {:?}", start.elapsed());
-      summary.trace_import_summary();
       Ok(summary.into())
     }
     Err(err) => {

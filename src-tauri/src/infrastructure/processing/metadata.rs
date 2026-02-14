@@ -1,18 +1,13 @@
 use crate::{
-  domain::image::FileMetaData,
-  infrastructure::{
-    processing::error::ProcessingError,
-    system::{get_cpu_cap, get_utc_timestamp},
-  },
+  domain::file::file_scan::FileMetaData,
+  infrastructure::{processing::error::ProcessingError, system::get_utc_timestamp},
 };
 
 use std::{
   fs::{self, Metadata},
-  path::{Path, PathBuf},
+  path::Path,
   time::{self},
 };
-
-use futures::stream::StreamExt;
 
 // /// Thumbnail size in pixels
 // pub const THUMBNAIL_SIZE: u32 = 256;
@@ -59,77 +54,39 @@ use futures::stream::StreamExt;
 //   })
 // }
 
-pub struct MetadataExtractStatus {
-  pub result: Vec<FileMetaData>,
-  pub not_found: i64,
-  pub permission_denied: i64,
-  pub io_errors: i64,
-}
+pub struct MetadataP;
 
-fn get_metadata(file: &Path) -> Result<Metadata, ProcessingError> {
-  fs::metadata(file).map_err(|e| match e.kind() {
-    std::io::ErrorKind::NotFound => ProcessingError::NotFound(file.display().to_string()),
-    std::io::ErrorKind::PermissionDenied => {
-      ProcessingError::PermissionDenied(file.display().to_string())
-    }
-    _ => ProcessingError::Io(e),
-  })
-}
-
-fn get_created_at(metadata: Metadata) -> String {
-  let system_time = metadata
-    .created()
-    .or_else(|_| metadata.modified())
-    .unwrap_or(time::SystemTime::now());
-  get_utc_timestamp(system_time)
-}
-
-pub fn extract_file_metadata(file: &Path) -> Result<FileMetaData, ProcessingError> {
-  let metadata = get_metadata(file)?;
-  let path = file.to_string_lossy().to_string();
-  let size_bytes = metadata.len() as i64;
-  if size_bytes == 0 {
-    return Err(ProcessingError::EmptyFile(path));
-  }
-  let created_at = get_created_at(metadata);
-  Ok(FileMetaData {
-    path,
-    size_bytes,
-    created_at,
-  })
-}
-
-pub async fn extract_files_metadata_concurrent(files: Vec<PathBuf>) -> MetadataExtractStatus {
-  let c = get_cpu_cap().min(32);
-
-  let results = futures::stream::iter(files)
-    .map(|path| tokio::task::spawn_blocking(move || extract_file_metadata(&path)))
-    .buffer_unordered(c)
-    .collect::<Vec<_>>()
-    .await;
-
-  let mut result = Vec::new();
-
-  let mut not_found = 0;
-  let mut permission_denied = 0;
-  let mut io_errors = 0;
-
-  for res in results {
-    match res {
-      Ok(Ok(meta)) => result.push(meta),
-      Ok(Err(err)) => match err {
-        ProcessingError::NotFound(_) => not_found += 1,
-        ProcessingError::PermissionDenied(_) => permission_denied += 1,
-        _ => io_errors += 1,
-      },
-      Err(_) => io_errors += 1,
-    }
+impl MetadataP {
+  fn get_metadata(file: &Path) -> Result<Metadata, ProcessingError> {
+    fs::metadata(file).map_err(|e| match e.kind() {
+      std::io::ErrorKind::NotFound => ProcessingError::NotFound(file.display().to_string()),
+      std::io::ErrorKind::PermissionDenied => {
+        ProcessingError::PermissionDenied(file.display().to_string())
+      }
+      _ => ProcessingError::Io(e),
+    })
   }
 
-  MetadataExtractStatus {
-    result,
-    not_found,
-    permission_denied,
-    io_errors,
+  fn extract_created_at(metadata: Metadata) -> String {
+    let system_time = metadata
+      .created()
+      .or_else(|_| metadata.modified())
+      .unwrap_or(time::SystemTime::now());
+    get_utc_timestamp(system_time)
+  }
+
+  pub fn get_file_metadata(file: &Path) -> Result<FileMetaData, ProcessingError> {
+    let metadata = Self::get_metadata(file)?;
+    let path = file.to_string_lossy().to_string();
+    let size_bytes = metadata.len() as i64;
+    if size_bytes == 0 {
+      return Err(ProcessingError::EmptyFile(path));
+    }
+    let created_at = Self::extract_created_at(metadata);
+    Ok(FileMetaData {
+      path,
+      size_bytes,
+      created_at,
+    })
   }
 }

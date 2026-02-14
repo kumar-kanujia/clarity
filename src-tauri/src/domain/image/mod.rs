@@ -5,13 +5,6 @@ use crate::infrastructure::{
 
 use std::sync::OnceLock;
 
-#[derive(Debug)]
-pub struct FileMetaData {
-  pub path: String,
-  pub size_bytes: i64,
-  pub created_at: String,
-}
-
 #[derive(Debug, Default, Clone)]
 pub struct Image {
   pub id: i64,

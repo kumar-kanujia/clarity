@@ -1,8 +1,7 @@
-use sqlx::{Sqlite, Transaction};
-
+use crate::domain::file::file_scan::FileMetaData;
 #[allow(clippy::needless_raw_strings)]
 use crate::{
-  domain::image::{FileMetaData, Image},
+  domain::image::Image,
   infrastructure::{
     models::image_model::{ImageModel, ImageStatus},
     repo::error::DatabaseError,

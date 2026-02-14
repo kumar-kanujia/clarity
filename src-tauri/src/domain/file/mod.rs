@@ -1,1 +1,1 @@
-pub mod file_scan_result;
+pub mod file_scan;
