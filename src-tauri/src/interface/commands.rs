@@ -1,5 +1,8 @@
 use crate::{
-  application::{library, workflow::scan_and_import_images::ScanAndImportImages},
+  application::{
+    services::image_query_service::ImageQueryService,
+    workflow::scan_and_import_images::ScanAndImportImages,
+  },
   error,
   interface::dto::{ImageCursor, ImportSummaryDto, PaginatedImages},
   setup::state::AppState,
@@ -42,16 +45,9 @@ pub async fn fetch_images(
   let span = tracing::info_span!("fetch_images", limit = limit);
   let _enter = span.enter();
 
-  let cursor = cursor.map(|c| {
-    tracing::info!(
-      created_at = c.created_at,
-      id = c.id,
-      "Fetching images with cursor"
-    );
-    (c.created_at, c.id)
-  });
+  let qs = ImageQueryService::default();
 
-  match library::list_scanned_images(&state.db, limit, cursor).await {
+  match qs.list_images_paginated(&state.db, limit, cursor).await {
     Ok(paginated_images) => {
       tracing::info!(
         data = paginated_images.data.len(),

@@ -9,7 +9,7 @@ pub struct PaginatedImages {
   pub next_cursor: Option<ImageCursor>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ImageCursor {
   pub created_at: String,

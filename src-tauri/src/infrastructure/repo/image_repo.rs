@@ -1,4 +1,4 @@
-use crate::domain::file::file_scan::FileMetaData;
+use crate::{domain::file::file_scan::FileMetaData, interface::dto::ImageCursor};
 #[allow(clippy::needless_raw_strings)]
 use crate::{
   domain::image::Image,
@@ -33,7 +33,7 @@ pub async fn create_images_by_file_metadata(
 pub async fn list_images_paginated(
   db: &Db,
   limit: i64,
-  cursor: Option<(String, i64)>,
+  cursor: Option<ImageCursor>,
 ) -> Result<Vec<ImageModel>, DatabaseError> {
   let result = match cursor {
     None => {
@@ -49,7 +49,7 @@ pub async fn list_images_paginated(
       .fetch_all(db)
       .await?
     }
-    Some((created_at, id)) => {
+    Some(ImageCursor { created_at, id }) => {
       sqlx::query_as::<_, ImageModel>(
         r#"
               SELECT *
