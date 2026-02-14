@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Image } from "@/types";
+import { ImageDto } from "@/tauri";
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { EmptyState } from "@/features/gallery/components/empty-state";
 import { ImageGrid } from "@/features/gallery/components/image-grid";
-import { ImageModal } from "@/features/scanner/components/image-modal";
+import { ImageModal } from "@/components/elements/image-modal";
 import { useGalleryStore } from "@/hooks/use-gallery-store";
 
 export const Route = createFileRoute("/")({
@@ -26,7 +26,7 @@ function Index() {
     clearImportSummary,
   } = useGalleryStore();
 
-  const [previewImage, setPreviewImage] = useState<Image | null>(null);
+  const [previewImage, setPreviewImage] = useState<ImageDto | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -38,7 +38,7 @@ function Index() {
   const handleNextImage = async () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.filePath === previewImage.filePath,
+      (img) => img.path === previewImage.path,
     );
 
     // If next image exists, go to it
@@ -48,12 +48,9 @@ function Index() {
     // If at the end and has more, load more then go to next
     else if (hasMore && !isLoading) {
       await loadImages(false);
-      // Re-calculate index after load, logic might need adjustment if state updates are async/batched
-      // For simple case, we just rely on user clicking next again or we could try to auto-advance
-      // providing the new image exists.
       const updatedImages = useGalleryStore.getState().images;
       const newCurrentIndex = updatedImages.findIndex(
-        (img) => img.filePath === previewImage.filePath,
+        (img) => img.path === previewImage.path,
       );
       if (newCurrentIndex < updatedImages.length - 1) {
         setPreviewImage(updatedImages[newCurrentIndex + 1]);
@@ -64,7 +61,7 @@ function Index() {
   const handlePrevImage = () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      (img) => img.filePath === previewImage.filePath,
+      (img) => img.path === previewImage.path,
     );
     if (currentIndex > 0) {
       setPreviewImage(images[currentIndex - 1]);
@@ -73,7 +70,7 @@ function Index() {
 
   return (
     <div className="flex flex-col h-full space-y-4 p-0 animate-in fade-in duration-700">
-      {/* Import Summary Alert - Floating or Fixed? Let's make it sticky top or floating */}
+      {/* Import Summary Alert */}
       <AnimatePresence>
         {importSummary && (
           <motion.div
@@ -91,15 +88,11 @@ function Index() {
                   <h4 className="font-bold text-lg">Import Complete</h4>
                   <p className="text-sm text-muted-foreground font-medium">
                     <span className="text-foreground">
-                      {importSummary.total}
+                      {importSummary.totalScanned}
                     </span>{" "}
-                    total selected,{" "}
+                    total scanned,{" "}
                     <span className="text-foreground">
-                      {importSummary.scanned}
-                    </span>{" "}
-                    scanned,{" "}
-                    <span className="text-foreground">
-                      {importSummary.imported}
+                      {importSummary.totalImported}
                     </span>{" "}
                     imported,{" "}
                     <span className="text-yellow-500">
@@ -150,13 +143,13 @@ function Index() {
         onPrev={handlePrevImage}
         hasNext={
           (!!previewImage &&
-            images.findIndex((img) => img.filePath === previewImage.filePath) <
+            images.findIndex((img) => img.path === previewImage.path) <
               images.length - 1) ||
           hasMore
         }
         hasPrev={
           !!previewImage &&
-          images.findIndex((img) => img.filePath === previewImage.filePath) > 0
+          images.findIndex((img) => img.path === previewImage.path) > 0
         }
       />
     </div>

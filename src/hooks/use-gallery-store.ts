@@ -1,16 +1,14 @@
 import { create } from "zustand";
-import { Image, ImportSummary } from "@/types";
-import { getSavedImagesBatch, saveImages } from "@/tauri/tauri-commands";
+import * as tauri from "@/tauri";
 import { selectDirs, selectImages } from "@/tauri/tauri-api";
 import { toast } from "sonner";
 
 interface GalleryState {
-  images: Image[];
+  images: tauri.ImageDto[];
   isLoading: boolean;
   hasMore: boolean;
-  lastCreatedAt: number | null;
-  lastSeqId: number | null;
-  importSummary: ImportSummary | null;
+  nextCursor: tauri.ImageCursor | null;
+  importSummary: tauri.ImportSummaryDto | null;
   loadImages: (isReset?: boolean) => Promise<void>;
   importImages: () => Promise<void>;
   importFolder: () => Promise<void>;
@@ -23,51 +21,32 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
   images: [],
   isLoading: false,
   hasMore: true,
-  lastCreatedAt: null,
-  lastSeqId: null,
+  nextCursor: null,
   importSummary: null,
 
   loadImages: async (isReset = false) => {
-    const { isLoading, lastCreatedAt, lastSeqId } = get();
-    if (isLoading && !isReset) return;
+    const { isLoading, nextCursor, hasMore } = get();
+    if (isLoading || (!hasMore && !isReset)) return;
 
     set({ isLoading: true });
 
     try {
-      const currentCreatedAt =
-        isReset || lastCreatedAt === null
-          ? Math.floor(Date.now() / 1000) + 86400 // Today + 1 day to be safe
-          : lastCreatedAt;
-      const currentSeqId =
-        isReset || lastSeqId === null ? Number.MAX_SAFE_INTEGER : lastSeqId;
+      const params: tauri.FetchImagesParams = {
+        limit: BATCH_SIZE,
+        cursor: isReset ? undefined : (nextCursor ?? undefined),
+      };
 
-      const newImages = await getSavedImagesBatch(
-        currentCreatedAt,
-        currentSeqId,
-        BATCH_SIZE,
-      );
+      const result = await tauri.fetchImages(params);
 
       set((state) => {
-        const hasMore = newImages.length >= BATCH_SIZE;
         const updatedImages = isReset
-          ? newImages
-          : [...state.images, ...newImages];
-
-        const lastItem = newImages[newImages.length - 1];
+          ? result.data
+          : [...state.images, ...result.data];
 
         return {
           images: updatedImages,
-          lastCreatedAt: lastItem
-            ? lastItem.createdAt
-            : isReset
-              ? null
-              : state.lastCreatedAt,
-          lastSeqId: lastItem
-            ? lastItem.seqId
-            : isReset
-              ? null
-              : state.lastSeqId,
-          hasMore,
+          nextCursor: result.nextCursor ?? null,
+          hasMore: !!result.nextCursor,
           isLoading: false,
         };
       });
@@ -83,7 +62,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       const files = await selectImages();
       if (files && files.length > 0) {
         set({ isLoading: true, importSummary: null });
-        const summary = await saveImages(files);
+        const summary = await tauri.importImages({ paths: files });
         set({ importSummary: summary });
         await get().loadImages(true);
       }
@@ -101,7 +80,9 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       const path = await selectDirs();
       if (path) {
         set({ isLoading: true, importSummary: null });
-        const summary = await saveImages(path);
+        const summary = await tauri.importImages({
+          paths: typeof path === "string" ? [path] : path,
+        });
         set({ importSummary: summary });
         await get().loadImages(true);
       }

@@ -1,5 +1,5 @@
 import { getFileURI } from "@/tauri/tauri-api";
-import { Image } from "@/types";
+import { ImageDto } from "@/tauri";
 import { X, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 interface ImageModalProps {
-  image: Image | null;
+  image: ImageDto | null;
   onClose: () => void;
   onNext?: () => void;
   onPrev?: () => void;
@@ -103,13 +103,13 @@ export const ImageModal = ({
           {/* Main Content */}
           <div className="relative w-full h-full flex items-center justify-center p-4">
             <motion.img
-              key={image.filePath}
+              key={image.path}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              src={getFileURI(image.filePath)}
-              alt={image.fileName}
+              src={getFileURI(image.path)}
+              alt={image.path.split("/").pop()}
               className="max-h-full max-w-full object-contain shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />
@@ -125,7 +125,7 @@ export const ImageModal = ({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h2 className="text-2xl font-bold text-white mb-6 break-words">
-                    {image.fileName}
+                    {image.path.split("/").pop()}
                   </h2>
 
                   <div className="space-y-6">
@@ -140,7 +140,7 @@ export const ImageModal = ({
                       <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
                         Size
                       </h3>
-                      <p className="text-white font-mono">{image.fileSize}</p>
+                      <p className="text-white font-mono">{image.size}</p>
                     </div>
 
                     <div>
@@ -148,8 +148,10 @@ export const ImageModal = ({
                         Created
                       </h3>
                       <p className="text-white font-mono">
-                        {/* @ts-ignore */}
-                        {format(new Date(image.createdAt * 1000), "PPP p")}
+                        {format(
+                          new Date(parseInt(image.createdAt) * 1000),
+                          "PPP p",
+                        )}
                       </p>
                     </div>
 
@@ -158,7 +160,7 @@ export const ImageModal = ({
                         Path
                       </h3>
                       <p className="text-white/70 text-xs font-mono break-all">
-                        {image.filePath}
+                        {image.path}
                       </p>
                     </div>
                   </div>
