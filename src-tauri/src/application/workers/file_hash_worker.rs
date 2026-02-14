@@ -3,92 +3,35 @@ use crate::{
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,
-    repo::image_repo::{list_images_by_status, update_images_hash},
+    repo::{error::DatabaseError, image_repo},
   },
   setup::state::Db,
 };
 
-use std::time::Instant;
-use tauri::AppHandle;
-use tokio_util::sync::CancellationToken;
-use tracing::Instrument;
-
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct FileHashWorker;
 
 impl Worker for FileHashWorker {
-  fn spawn(self, _: &AppHandle, db: Db, shutdown: CancellationToken) {
-    let max_batch_size = Self::get_batch_size(4);
-    let span = tracing::info_span!("file_hash_worker", %max_batch_size);
+  fn name(&self) -> &'static str {
+    "file_hash_worker"
+  }
 
-    tauri::async_runtime::spawn(
-      async move {
-        loop {
-          let batch_span = tracing::info_span!("hash_batch");
+  fn batch_factor(&self) -> usize {
+    4
+  }
 
-          let _enter = batch_span.enter();
+  async fn fetch_batch(&self, db: &Db, limit: i64) -> Result<Vec<Image>, DatabaseError> {
+    let models = image_repo::list_images_by_status(db, limit, ImageStatus::Pending).await?;
+    Ok(models.into_iter().map(Image::from).collect())
+  }
 
-          let start_time = Instant::now();
+  fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
+    FileHashService::process_batch(&mut items);
+    items
+  }
 
-          let mut files: Vec<Image> =
-            match list_images_by_status(&db, max_batch_size, ImageStatus::Pending).await {
-              Ok(f) if f.is_empty() => {
-                if Self::sleep_or_shutdown(Self::IDEAL_WAIT_TIME, &shutdown).await {
-                  tracing::info!("File hash worker shutting down");
-                  break;
-                }
-                continue;
-              }
-              Ok(f) => f.into_iter().map(Image::from).collect(),
-              Err(e) => {
-                tracing::error!(error = ?e, "DB Fetch failed");
-                if Self::sleep_or_shutdown(Self::IDEAL_HOLD_TIME, &shutdown).await {
-                  tracing::info!("File hash worker shutting down");
-                  break;
-                }
-                continue;
-              }
-            };
-
-          tracing::info!(batch_size = files.len(), "Hash batch fetched");
-
-          files = match tauri::async_runtime::spawn_blocking(move || {
-            FileHashService::process_batch(&mut files);
-            files
-          })
-          .await
-          {
-            Ok(res) => res,
-            Err(e) => {
-              tracing::error!(error = ?e, "File hash worker task panicked");
-              if Self::sleep_or_shutdown(Self::IDEAL_HOLD_TIME, &shutdown).await {
-                tracing::info!("File hash worker shutting down");
-                break;
-              }
-              continue;
-            }
-          };
-
-          match update_images_hash(&db, &files).await {
-            Err(e) => {
-              tracing::error!(error = ?e, "Bulk update failed");
-              if Self::sleep_or_shutdown(Self::IDEAL_HOLD_TIME, &shutdown).await {
-                tracing::info!("File hash worker shutting down");
-                break;
-              }
-            }
-            Ok(file_updated) => {
-              tracing::info!(
-                file_processed = files.len(),
-                file_updated = file_updated,
-                elapsed_ms = start_time.elapsed().as_millis(),
-                "Batch processed successfully"
-              );
-            }
-          }
-        }
-      }
-      .instrument(span),
-    );
+  async fn update_batch(&self, db: &Db, items: &Vec<Image>) -> Result<u64, DatabaseError> {
+    let count = image_repo::update_images_hash(db, items).await?;
+    Ok(count)
   }
 }

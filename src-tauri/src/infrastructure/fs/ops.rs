@@ -4,6 +4,7 @@ use std::fs::{self, File};
 use std::io::ErrorKind;
 use std::path::Path;
 
+#[allow(unreachable_code)]
 pub fn get_file_name(path: &str) -> Option<String> {
   Path::new(path)
     .file_name()

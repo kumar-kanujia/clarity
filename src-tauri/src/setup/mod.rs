@@ -49,8 +49,14 @@ pub fn setup_app(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   tracing::info!("Setting up Workers");
 
-  FileHashWorker::default().spawn(&app_handle, db.clone(), shutdown.clone());
-  ThumbnailWorker::default().spawn(&app_handle, db, shutdown.clone());
+  let shutdown_clone = shutdown.clone();
+  let db_clone = db.clone();
+  let worker = FileHashWorker;
+  tauri::async_runtime::spawn(async move { worker.run(db_clone, shutdown_clone).await });
+
+  if let Some(worker) = ThumbnailWorker::new(app_handle) {
+    tauri::async_runtime::spawn(async move { worker.run(db, shutdown).await });
+  }
 
   tracing::info!("Workers setup complete");
 

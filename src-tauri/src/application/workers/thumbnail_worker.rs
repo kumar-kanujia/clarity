@@ -1,107 +1,57 @@
+use std::path::PathBuf;
+
+use tauri::AppHandle;
+
 use crate::{
   application::{services::thumbnail_service::ThumbnailService, workers::Worker},
   domain::image::Image,
-  infrastructure::repo::image_repo::{list_images_by_status, update_images_metadata},
+  infrastructure::{
+    models::image_model::ImageStatus,
+    repo::{error::DatabaseError, image_repo},
+  },
   setup::state::Db,
 };
 
-use std::time::Instant;
-use tauri::AppHandle;
-use tokio_util::sync::CancellationToken;
-use tracing::Instrument;
+#[derive(Debug, Clone)]
+pub struct ThumbnailWorker {
+  pub thumbnail_target: PathBuf,
+}
 
-#[derive(Debug, Default, Clone)]
-pub struct ThumbnailWorker;
-
-impl Worker for ThumbnailWorker {
-  fn spawn(self, app: &AppHandle, db: Db, shutdown: CancellationToken) {
-    let max_batch_size = Self::get_batch_size(2);
-    let span = tracing::info_span!("thumbnail_worker", %max_batch_size);
-    let _enter = span.enter();
-
-    let thumbnail_target = match ThumbnailService::get_thumbnail_target(app) {
-      Ok(path) => path,
+impl ThumbnailWorker {
+  pub fn new(app: &AppHandle) -> Option<Self> {
+    match ThumbnailService::get_thumbnail_target(app) {
+      Ok(path) => Some(Self {
+        thumbnail_target: path,
+      }),
       Err(e) => {
         tracing::error!(error = ?e, "Thumbnail worker failed to lock cache directory");
-        return;
+        None
       }
-    };
+    }
+  }
+}
 
-    tauri::async_runtime::spawn(
-      async move {
-        loop {
-          let batch_span = tracing::info_span!("thumbnail_worker_batch");
+impl Worker for ThumbnailWorker {
+  fn name(&self) -> &'static str {
+    "thumbnail_worker"
+  }
 
-          let _enter = batch_span.enter();
+  fn batch_factor(&self) -> usize {
+    2
+  }
 
-          let start_time = Instant::now();
+  async fn fetch_batch(&self, db: &Db, limit: i64) -> Result<Vec<Image>, DatabaseError> {
+    let models = image_repo::list_images_by_status(db, limit, ImageStatus::Hashed).await?;
+    Ok(models.into_iter().map(Image::from).collect())
+  }
 
-          let thumbnail_target = thumbnail_target.clone();
+  fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
+    ThumbnailService::process_batch(&mut items, &self.thumbnail_target);
+    items
+  }
 
-          let mut files: Vec<Image> = match list_images_by_status(
-            &db,
-            max_batch_size,
-            crate::infrastructure::models::image_model::ImageStatus::Hashed,
-          )
-          .await
-          {
-            Ok(f) if f.is_empty() => {
-              if Self::sleep_or_shutdown(Self::IDEAL_WAIT_TIME, &shutdown).await {
-                tracing::info!("Thumbnail worker shutting down");
-                break;
-              }
-              continue;
-            }
-            Ok(f) => f.into_iter().map(Image::from).collect(),
-            Err(e) => {
-              tracing::error!(error = ?e, "DB Fetch failed");
-              if Self::sleep_or_shutdown(Self::IDEAL_HOLD_TIME, &shutdown).await {
-                tracing::info!("Thumbnail worker shutting down");
-                break;
-              }
-              continue;
-            }
-          };
-
-          tracing::info!(batch_size = files.len(), "Hash batch fetched");
-
-          files = match tauri::async_runtime::spawn_blocking(move || {
-            ThumbnailService::process_batch(&mut files, &thumbnail_target);
-            files
-          })
-          .await
-          {
-            Ok(res) => res,
-            Err(e) => {
-              tracing::error!(error = ?e, "Thumbnail worker task panicked");
-              if Self::sleep_or_shutdown(Self::IDEAL_HOLD_TIME, &shutdown).await {
-                tracing::info!("Thumbnail worker shutting down");
-                break;
-              }
-              continue;
-            }
-          };
-
-          match update_images_metadata(&db, &files).await {
-            Err(e) => {
-              tracing::error!(error = ?e, "Bulk update failed");
-              if Self::sleep_or_shutdown(Self::IDEAL_HOLD_TIME, &shutdown).await {
-                tracing::info!("Thumbnail worker shutting down");
-                break;
-              }
-            }
-            Ok(file_updated) => {
-              tracing::info!(
-                file_processed = files.len(),
-                file_updated = file_updated,
-                elapsed_ms = start_time.elapsed().as_millis(),
-                "Batch processed successfully"
-              );
-            }
-          }
-        }
-      }
-      .instrument(span.clone()),
-    );
+  async fn update_batch(&self, db: &Db, items: &Vec<Image>) -> Result<u64, DatabaseError> {
+    let count = image_repo::update_images_metadata(db, items).await?;
+    Ok(count)
   }
 }
