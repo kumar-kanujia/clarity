@@ -1,17 +1,26 @@
 pub mod file_hash_worker;
 pub mod thumbnail_worker;
 
+use std::fmt::Debug;
+use std::time::Instant;
 use std::{cmp, time::Duration};
 use tokio_util::sync::CancellationToken;
-
-use crate::infrastructure::repo::error::DatabaseError;
-
-use crate::domain::image::Image;
+use tracing::Instrument;
+use uuid::Uuid;
 
 const IDEAL_WAIT_TIME: u64 = 5 * 1000;
 const IDEAL_HOLD_TIME: u64 = 30 * 1000;
 
 pub trait Worker: Clone + Send + Sync + 'static {
+  /// The data fetched from the DB
+  type Input: Send + 'static;
+
+  /// The data produced after processing
+  type Output: Send + 'static;
+
+  /// The error type
+  type Error: Debug + Send;
+
   /// Unique name for logging (e.g., "thumbnail_worker")
   fn name(&self) -> &'static str;
 
@@ -19,14 +28,14 @@ pub trait Worker: Clone + Send + Sync + 'static {
   fn batch_factor(&self) -> usize;
 
   /// Step 1: Fetch data from DB
-  async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError>;
+  async fn fetch_batch(&self, limit: i64) -> Result<Vec<Self::Input>, Self::Error>;
 
   /// Step 2: CPU-bound processing (Sync function, not Async)
   /// This is run inside a blocking thread automatically by the run() method.
-  fn process_batch(&self, items: Vec<Image>) -> Vec<Image>;
+  fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output>;
 
   /// Step 3: Update DB with results
-  async fn update_batch(&self, items: &Vec<Image>) -> Result<u64, DatabaseError>;
+  async fn update_batch(&self, items: &[Self::Output]) -> Result<u64, Self::Error>;
 
   /// Helper: Calculate dynamic batch size
   fn get_batch_size(&self) -> i64 {
@@ -45,68 +54,101 @@ pub trait Worker: Clone + Send + Sync + 'static {
     let name = self.name();
     let batch_size = self.get_batch_size();
 
-    let span = tracing::info_span!("worker_loop", worker = name, %batch_size);
-    let _enter = span.enter();
+    let worker_id = Uuid::new_v4().to_string();
 
-    loop {
-      let batch_span = tracing::info_span!("worker", worker = name);
-      let _guard = batch_span.enter();
-      let start_time = std::time::Instant::now();
+    let worker_span = tracing::info_span!(
+        parent: None,
+        "worker",
+        worker = name,
+        id = %worker_id,
+        limit = %batch_size
+    );
 
-      // --- 1. FETCH ---
-      let mut items = match self.fetch_batch(batch_size).await {
-        Ok(items) if items.is_empty() => {
-          if Self::sleep_or_shutdown(IDEAL_WAIT_TIME, &shutdown).await {
-            tracing::info!("{} shutting down", name);
-            break;
+    async move {
+      tracing::info!("Worker started");
+
+      let mut batch_counter = 0;
+
+      loop {
+        batch_counter += 1;
+
+        // Unique span for this specific batch
+        let batch_span = tracing::info_span!("batch", worker = name, bid = batch_counter);
+
+        let batch_result = async {
+          let start_time = Instant::now();
+
+          // --- 1. FETCH ---
+          let items_in = match self.fetch_batch(batch_size).await {
+            Ok(items) if items.is_empty() => {
+              tracing::debug!("Queue empty, sleeping...");
+              return Ok(false);
+            }
+            Ok(items) => items,
+            Err(e) => return Err(e),
+          };
+
+          let input_count = items_in.len();
+          tracing::info!(count = input_count, "Items fetched");
+
+          // --- 2. PROCESS (Blocking) ---
+          // We clone `self` to move it into the thread, that's why we require Clone
+          let worker_clone = self.clone();
+          let current_span = tracing::Span::current();
+
+          let items_out = tokio::task::spawn_blocking(move || {
+            let _guard = current_span.enter();
+            worker_clone.process_batch(items_in)
+          })
+          .await
+          .map_err(|e| tracing::error!(error = ?e, "Worker panic/task failure"))
+          .ok();
+
+          let items_out = match items_out {
+            Some(items) => items,
+            None => return Ok(true),
+          };
+
+          // --- 3. UPDATE ---
+          match self
+            .update_batch(&items_out)
+            .instrument(tracing::info_span!("db_update", worker = name,))
+            .await
+          {
+            Ok(updated) => {
+              tracing::info!(
+                input = input_count,
+                output = items_out.len(),
+                updated = updated,
+                duration_ms = start_time.elapsed().as_millis(),
+                "Batch complete",
+              );
+              Ok(true)
+            }
+            Err(e) => Err(e),
           }
-          continue;
         }
-        Ok(items) => items,
-        Err(e) => {
-          tracing::error!(error = ?e, "DB Fetch failed");
-          if Self::sleep_or_shutdown(IDEAL_HOLD_TIME, &shutdown).await {
-            break;
+        .instrument(batch_span)
+        .await;
+
+        match batch_result {
+          Ok(true) => { /* Loop immediately */ }
+          Ok(false) => {
+            if Self::sleep_or_shutdown(IDEAL_WAIT_TIME, &shutdown).await {
+              tracing::info!("Shutdown signal received");
+              break;
+            }
           }
-          continue;
-        }
-      };
-
-      tracing::info!(count = items.len(), "Batch fetched");
-
-      // --- 2. PROCESS (Blocking) ---
-      // We clone `self` to move it into the thread, that's why we require Clone
-      let worker_clone = self.clone();
-      items = match tauri::async_runtime::spawn_blocking(move || worker_clone.process_batch(items))
-        .await
-      {
-        Ok(res) => res,
-        Err(e) => {
-          tracing::error!(error = ?e, "Worker task panicked");
-          if Self::sleep_or_shutdown(IDEAL_HOLD_TIME, &shutdown).await {
-            break;
-          }
-          continue;
-        }
-      };
-
-      // --- 3. UPDATE ---
-      match self.update_batch(&items).await {
-        Ok(updated) => {
-          tracing::info!(
-            processed = items.len(),
-            updated = updated,
-            elapsed_ms = start_time.elapsed().as_millis(),
-            "Batch processed successfully"
-          );
-        }
-        Err(e) => {
-          tracing::error!(error = ?e, "Bulk update failed");
-          if Self::sleep_or_shutdown(IDEAL_HOLD_TIME, &shutdown).await {
-            break;
+          Err(e) => {
+            tracing::error!(error = ?e, "Worker cycle failed");
+            if Self::sleep_or_shutdown(IDEAL_HOLD_TIME, &shutdown).await {
+              break;
+            }
           }
         }
       }
     }
+    .instrument(worker_span)
+    .await;
   }
 }

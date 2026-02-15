@@ -33,6 +33,10 @@ impl ThumbnailWorker {
 }
 
 impl Worker for ThumbnailWorker {
+  type Input = Image;
+  type Output = Image;
+  type Error = DatabaseError;
+
   fn name(&self) -> &'static str {
     "thumbnail_worker"
   }
@@ -54,7 +58,7 @@ impl Worker for ThumbnailWorker {
     items
   }
 
-  async fn update_batch(&self, items: &Vec<Image>) -> Result<u64, DatabaseError> {
+  async fn update_batch(&self, items: &[Image]) -> Result<u64, DatabaseError> {
     let count = self.repo.update_images_metadata(items).await?;
     Ok(count)
   }

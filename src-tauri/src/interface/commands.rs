@@ -10,7 +10,6 @@ use crate::{
   setup::state::AppState,
 };
 
-use std::time::Instant;
 use tauri::State;
 
 #[tauri::command]
@@ -21,13 +20,11 @@ pub async fn import_images(
   let span = tracing::info_span!("import_images", paths = paths.len());
   let _enter = span.enter();
 
-  let start = Instant::now();
-
   let wf = ScanAndImportImages::new(&state.db);
 
   match wf.run(&paths).await {
     Ok(summary) => {
-      tracing::info!("Import completed in {:?}", start.elapsed());
+      tracing::info!("Import completed");
       Ok(summary.into())
     }
     Err(err) => {

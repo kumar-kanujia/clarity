@@ -19,6 +19,10 @@ impl FileHashWorker {
 }
 
 impl Worker for FileHashWorker {
+  type Input = Image;
+  type Output = Image;
+  type Error = DatabaseError;
+
   fn name(&self) -> &'static str {
     "file_hash_worker"
   }
@@ -40,7 +44,7 @@ impl Worker for FileHashWorker {
     items
   }
 
-  async fn update_batch(&self, items: &Vec<Image>) -> Result<u64, DatabaseError> {
+  async fn update_batch(&self, items: &[Image]) -> Result<u64, DatabaseError> {
     let count = self.repo.update_images_hash(items).await?;
     Ok(count)
   }
