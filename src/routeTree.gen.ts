@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TagsRouteImport } from './routes/tags'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScansRouteImport } from './routes/scans'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TagsRoute = TagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScansRoute = ScansRouteImport.update({
+  id: '/scans',
+  path: '/scans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/scans': typeof ScansRoute
+  '/settings': typeof SettingsRoute
+  '/tags': typeof TagsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/scans': typeof ScansRoute
+  '/settings': typeof SettingsRoute
+  '/tags': typeof TagsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/scans': typeof ScansRoute
+  '/settings': typeof SettingsRoute
+  '/tags': typeof TagsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/scans' | '/settings' | '/tags'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/scans' | '/settings' | '/tags'
+  id: '__root__' | '/' | '/scans' | '/settings' | '/tags'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ScansRoute: typeof ScansRoute
+  SettingsRoute: typeof SettingsRoute
+  TagsRoute: typeof TagsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tags': {
+      id: '/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scans': {
+      id: '/scans'
+      path: '/scans'
+      fullPath: '/scans'
+      preLoaderRoute: typeof ScansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ScansRoute: ScansRoute,
+  SettingsRoute: SettingsRoute,
+  TagsRoute: TagsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

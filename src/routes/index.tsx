@@ -1,17 +1,15 @@
-import { ImageDto } from '@/app';
-import { Button } from '@/components/ui/button';
-import { createFileRoute } from '@tanstack/react-router';
-import { CheckCircle2, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { ImageDto } from "@/app";
+import { createFileRoute } from "@tanstack/react-router";
+import { CheckCircle2, X, Home } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
-import { ImageModal } from '@/components/elements/image-modal';
-import { EmptyState } from '@/features/gallery/components/empty-state';
-import { ImageGrid } from '@/features/gallery/components/image-grid';
-import { useGalleryStore } from '@/hooks/use-gallery-store';
+import { ImageModal } from "@/components/elements/image-modal";
+import { ImageGrid } from "@/features/gallery/components/image-grid";
+import { useGalleryStore } from "@/hooks/use-gallery-store";
 
-export const Route = createFileRoute('/')({
-  component: Index
+export const Route = createFileRoute("/")({
+  component: Index,
 });
 
 function Index() {
@@ -21,38 +19,29 @@ function Index() {
     hasMore,
     loadImages,
     importSummary,
-    importImages,
-    importFolder,
-    clearImportSummary
+    clearImportSummary,
   } = useGalleryStore();
 
-  const [previewImage, setPreviewImage] =
-    useState<ImageDto | null>(null);
+  const [previewImage, setPreviewImage] = useState<ImageDto | null>(null);
 
   // Initial load
   useEffect(() => {
     loadImages(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, []);
 
-  // Navigation Logic
   const handleNextImage = async () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      img => img.path === previewImage.path
+      (img) => img.path === previewImage.path,
     );
 
-    // If next image exists, go to it
     if (currentIndex < images.length - 1) {
       setPreviewImage(images[currentIndex + 1]);
-    }
-    // If at the end and has more, load more then go to next
-    else if (hasMore && !isLoading) {
+    } else if (hasMore && !isLoading) {
       await loadImages(false);
-      const updatedImages =
-        useGalleryStore.getState().images;
+      const updatedImages = useGalleryStore.getState().images;
       const newCurrentIndex = updatedImages.findIndex(
-        img => img.path === previewImage.path
+        (img) => img.path === previewImage.path,
       );
       if (newCurrentIndex < updatedImages.length - 1) {
         setPreviewImage(updatedImages[newCurrentIndex + 1]);
@@ -63,7 +52,7 @@ function Index() {
   const handlePrevImage = () => {
     if (!previewImage) return;
     const currentIndex = images.findIndex(
-      img => img.path === previewImage.path
+      (img) => img.path === previewImage.path,
     );
     if (currentIndex > 0) {
       setPreviewImage(images[currentIndex - 1]);
@@ -71,72 +60,57 @@ function Index() {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4 p-0 animate-in fade-in duration-700">
-      {/* Import Summary Alert */}
+    <div className="flex flex-col h-full bg-zinc-950 overflow-hidden">
+      {/* Subtle Import Status */}
       <AnimatePresence>
         {importSummary && (
           <motion.div
-            initial={{ opacity: 0, y: -20, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -20, height: 0 }}
-            className="w-full px-4 pt-4"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
           >
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between shadow-sm backdrop-blur-md">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-primary/20 rounded-full text-primary">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg">
-                    Import Complete
-                  </h4>
-                  <p className="text-sm text-muted-foreground font-medium">
-                    <span className="text-foreground">
-                      {importSummary.totalScanned}
-                    </span>{' '}
-                    total scanned,{' '}
-                    <span className="text-foreground">
-                      {importSummary.totalImported}
-                    </span>{' '}
-                    imported,{' '}
-                    <span className="text-yellow-500">
-                      {importSummary.skipped}
-                    </span>{' '}
-                    skipped,{' '}
-                    <span className="text-destructive">
-                      {importSummary.failed}
-                    </span>{' '}
-                    failed
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
+            <div className="bg-zinc-900/90 border border-white/5 shadow-2xl backdrop-blur-xl rounded-2xl py-2 px-4 flex items-center gap-4 pointer-events-auto">
+              <span className="text-xs font-medium text-primary flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Synchronized {importSummary.totalImported} new images
+              </span>
+              <button
                 onClick={clearImportSummary}
-                className="rounded-full hover:bg-primary/20"
+                className="text-zinc-500 hover:text-white transition-colors"
+                title="Dismiss"
               >
-                <X className="w-5 h-5 opacity-70" />
-              </Button>
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {!isLoading && images.length === 0 ? (
-          <EmptyState
-            onImportFolder={importFolder}
-            onImportImages={importImages}
-          />
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8 text-zinc-400">
+            <div className="w-16 h-16 bg-zinc-900 border border-white/5 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
+              <Home className="w-8 h-8 text-zinc-600" />
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-white">
+              Your library is empty
+            </h2>
+            <p className="max-w-sm text-sm">
+              Use the sidebar to import your photos and start organizing them
+              with Clarity.
+            </p>
+          </div>
         ) : (
-          <ImageGrid
-            images={images}
-            isLoading={isLoading}
-            hasMore={hasMore}
-            onLoadMore={() => loadImages(false)}
-            onPreview={setPreviewImage}
-          />
+          <div className="px-6 py-6 overflow-hidden">
+            <ImageGrid
+              images={images}
+              isLoading={isLoading}
+              hasMore={hasMore}
+              onLoadMore={() => loadImages(false)}
+              onPreview={setPreviewImage}
+            />
+          </div>
         )}
       </div>
 
@@ -147,17 +121,13 @@ function Index() {
         onPrev={handlePrevImage}
         hasNext={
           (!!previewImage &&
-            images.findIndex(
-              img => img.path === previewImage.path
-            ) <
+            images.findIndex((img) => img.path === previewImage.path) <
               images.length - 1) ||
           hasMore
         }
         hasPrev={
           !!previewImage &&
-          images.findIndex(
-            img => img.path === previewImage.path
-          ) > 0
+          images.findIndex((img) => img.path === previewImage.path) > 0
         }
       />
     </div>

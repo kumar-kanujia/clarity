@@ -1,15 +1,10 @@
-import { ImageDto } from '@/app';
-import { getFileURI } from '@/app/tauri-api';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  X
-} from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { ImageDto } from "@/app";
+import { getFileURI } from "@/app/tauri-api";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ChevronLeft, ChevronRight, Info, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 interface ImageModalProps {
   image: ImageDto | null;
@@ -26,24 +21,33 @@ export const ImageModal = ({
   onNext,
   onPrev,
   hasNext,
-  hasPrev
+  hasPrev,
 }: ImageModalProps) => {
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
+    if (image) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [image]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!image) return;
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight' && onNext && hasNext)
-        onNext();
-      if (e.key === 'ArrowLeft' && onPrev && hasPrev)
-        onPrev();
-      if (e.key === 'i') setShowInfo(prev => !prev);
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight" && onNext && hasNext) onNext();
+      if (e.key === "ArrowLeft" && onPrev && hasPrev) onPrev();
+      if (e.key === "i") setShowInfo((prev) => !prev);
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () =>
-      window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [image, onClose, onNext, onPrev, hasNext, hasPrev]);
 
   if (!image) return null;
@@ -69,15 +73,15 @@ export const ImageModal = ({
 
           {/* Info Toggle */}
           <button
-            onClick={e => {
+            onClick={(e) => {
               e.stopPropagation();
               setShowInfo(!showInfo);
             }}
             className={cn(
-              'absolute top-4 right-16 z-50 p-2 rounded-full transition-colors',
+              "absolute top-4 right-16 z-50 p-2 rounded-full transition-colors",
               showInfo
-                ? 'bg-white text-black'
-                : 'bg-white/10 hover:bg-white/20 text-white'
+                ? "bg-white text-black"
+                : "bg-white/10 hover:bg-white/20 text-white",
             )}
           >
             <Info className="w-6 h-6" />
@@ -86,7 +90,7 @@ export const ImageModal = ({
           {/* Navigation */}
           {hasPrev && (
             <button
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 onPrev?.();
               }}
@@ -98,7 +102,7 @@ export const ImageModal = ({
 
           {hasNext && (
             <button
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 onNext?.();
               }}
@@ -116,28 +120,28 @@ export const ImageModal = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{
-                type: 'spring',
+                type: "spring",
                 damping: 25,
-                stiffness: 300
+                stiffness: 300,
               }}
               src={getFileURI(image.path)}
-              alt={image.path.split('/').pop()}
+              alt={image.path.split("/").pop()}
               className="max-h-full max-w-full object-contain shadow-2xl"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             />
 
             {/* Info Panel */}
             <AnimatePresence>
               {showInfo && (
                 <motion.div
-                  initial={{ x: '100%', opacity: 0 }}
+                  initial={{ x: "100%", opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: '100%', opacity: 0 }}
+                  exit={{ x: "100%", opacity: 0 }}
                   className="absolute right-0 top-0 bottom-0 w-80 bg-black/80 backdrop-blur-2xl border-l border-white/10 p-6 shadow-2xl overflow-y-auto"
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <h2 className="text-2xl font-bold text-white mb-6 break-words">
-                    {image.path.split('/').pop()}
+                  <h2 className="text-2xl font-bold text-white mb-6 wrap-break-word">
+                    {image.path.split("/").pop()}
                   </h2>
 
                   <div className="space-y-6">
@@ -145,18 +149,14 @@ export const ImageModal = ({
                       <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
                         Dimensions
                       </h3>
-                      <p className="text-white font-mono">
-                        {image.resolution}
-                      </p>
+                      <p className="text-white font-mono">{image.resolution}</p>
                     </div>
 
                     <div>
                       <h3 className="text-xs uppercase tracking-wider text-white/50 mb-1">
                         Size
                       </h3>
-                      <p className="text-white font-mono">
-                        {image.size}
-                      </p>
+                      <p className="text-white font-mono">{image.size}</p>
                     </div>
 
                     <div>
@@ -165,10 +165,8 @@ export const ImageModal = ({
                       </h3>
                       <p className="text-white font-mono">
                         {format(
-                          new Date(
-                            parseInt(image.createdAt) * 1000
-                          ),
-                          'PPP p'
+                          new Date(parseInt(image.createdAt) * 1000),
+                          "PPP p",
                         )}
                       </p>
                     </div>
