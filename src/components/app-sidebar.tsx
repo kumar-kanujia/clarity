@@ -5,7 +5,7 @@ import {
   Tag,
   ImagePlus,
   FolderPlus,
-  Star,
+  Heart,
   Trash2,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -17,9 +17,17 @@ import {
 } from "@/components/ui/sidebar";
 
 import { Link, useLocation } from "@tanstack/react-router";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useGalleryStore } from "@/hooks/use-gallery-store";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 // Menu items.
 const items = [
@@ -50,117 +58,235 @@ export function AppSidebar() {
   }, [fetchTags]);
 
   return (
-    <Sidebar
-      collapsible="none"
-      className="w-16 border-r border-white/5 bg-zinc-950 flex flex-col items-center py-4 z-50"
-    >
-      <SidebarContent className="flex flex-col items-center gap-4 w-full h-full bg-transparent">
-        {/* Navigation Items */}
-        <div className="flex flex-col gap-2 w-full px-2">
-          {items.map((item) => {
-            const isActive = location.pathname === item.url;
-            return (
-              <SidebarMenuItem key={item.title} className="list-none w-full">
-                <Link
-                  to={item.url}
-                  className={cn(
-                    "flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 group relative",
-                    isActive
-                      ? "text-primary bg-primary/10"
-                      : "text-zinc-500 hover:text-zinc-200 hover:bg-white/5",
-                  )}
-                  title={item.title}
-                >
-                  <item.icon className="w-6 h-6 shrink-0" />
-                  {isActive && (
-                    <motion.div
-                      layoutId="sidebar-active"
-                      className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
-                    />
-                  )}
-                </Link>
-              </SidebarMenuItem>
-            );
-          })}
-        </div>
-
-        <div className="mt-4 w-10 h-px bg-white/5 mx-auto" />
-
-        {/* System Tags */}
-        <div className="flex flex-col gap-2 w-full px-2">
-          {systemTags.map((tag) => {
-            const Icon =
-              tag.tagName.toLowerCase() === "favorite" ? Star : Trash2;
-            return (
-              <SidebarMenuItem key={tag.id} className="list-none w-full">
-                <button
-                  className="flex items-center justify-center w-12 h-12 rounded-xl text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all duration-200 group relative"
-                  title={`${tag.tagName} (${tag.imageCount})`}
-                >
-                  <Icon className="w-6 h-6 shrink-0" />
-                </button>
-              </SidebarMenuItem>
-            );
-          })}
-        </div>
-
-        {systemTags.length > 0 && (
-          <div className="mt-4 w-10 h-px bg-white/5 mx-auto" />
-        )}
-
-        {/* User Tags */}
-        <div className="flex flex-col gap-2 w-full px-2 overflow-y-auto max-h-[30vh] custom-scrollbar">
-          {userTags.map((tag) => (
-            <SidebarMenuItem key={tag.id} className="list-none w-full">
-              <button
-                className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-white/5 transition-all duration-200 group relative"
-                title={`${tag.tagName} (${tag.imageCount})`}
-              >
-                <div
-                  className="w-4 h-4 rounded-full border border-white/10"
-                  style={{ backgroundColor: tag.tagColor }}
-                />
-              </button>
-            </SidebarMenuItem>
-          ))}
-        </div>
-
-        <div className="mt-4 w-10 h-px bg-white/5 mx-auto" />
-
-        {/* Quick Actions */}
-        <div className="flex flex-col gap-2 w-full px-2 mt-2">
-          <button
-            onClick={importImages}
-            className="flex items-center justify-center w-12 h-12 rounded-xl text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all duration-200 group"
-            title="Import Images"
+    <TooltipProvider delayDuration={0}>
+      <Sidebar
+        collapsible="none"
+        className="w-20 border-r bg-background/50 backdrop-blur-xl flex flex-col items-center py-6 z-50 transition-all duration-500"
+      >
+        <SidebarContent className="flex flex-col items-center gap-8 w-full h-full bg-transparent">
+          {/* Logo */}
+          <motion.div
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-12 h-12 rounded-3xl bg-primary flex items-center justify-center p-0.5 shadow-2xl shadow-primary/30 cursor-pointer"
           >
-            <ImagePlus className="w-6 h-6" />
-          </button>
-          <button
-            onClick={importFolder}
-            className="flex items-center justify-center w-12 h-12 rounded-xl text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all duration-200 group"
-            title="Import Folder"
-          >
-            <FolderPlus className="w-6 h-6" />
-          </button>
-        </div>
+            <div className="w-full h-full rounded-2xl border-2 border-primary-foreground/20 flex items-center justify-center">
+              <span className="text-primary-foreground font-black text-sm tracking-tighter">
+                CL
+              </span>
+            </div>
+          </motion.div>
 
-        {/* Settings at Bottom */}
-        <div className="mt-auto flex flex-col gap-2 w-full px-2 pb-4">
-          <Link
-            to="/settings"
-            className={cn(
-              "flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 group",
-              location.pathname === "/settings"
-                ? "text-primary bg-primary/10"
-                : "text-zinc-500 hover:text-zinc-200 hover:bg-white/5",
+          <div className="flex flex-col items-center gap-6 w-full px-3">
+            {/* Main Navigation */}
+            <div className="flex flex-col gap-3 w-full">
+              {items.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem
+                    key={item.title}
+                    className="list-none w-full"
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          to={item.url}
+                          className={cn(
+                            "flex items-center justify-center w-full aspect-square rounded-4xl transition-all duration-300 group relative",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                          )}
+                        >
+                          <item.icon className="w-5 h-5 shrink-0" />
+                          {isActive && (
+                            <motion.div
+                              layoutId="sidebar-active"
+                              className="absolute -right-3 w-1.5 h-6 bg-primary rounded-l-full shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 30,
+                              }}
+                            />
+                          )}
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        className="font-black uppercase tracking-widest text-[10px] bg-foreground text-background border-none px-3 py-1.5 rounded-lg shadow-2xl"
+                      >
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  </SidebarMenuItem>
+                );
+              })}
+            </div>
+
+            <Separator className="w-8 opacity-50" />
+
+            {/* System Special Tags */}
+            <div className="flex flex-col gap-3 w-full">
+              <AnimatePresence>
+                {systemTags.map((tag) => {
+                  const Icon =
+                    tag.tagName.toLowerCase() === "favorite" ? Heart : Trash2;
+                  const isFav = tag.tagName.toLowerCase() === "favorite";
+                  return (
+                    <SidebarMenuItem key={tag.id} className="list-none w-full">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className={cn(
+                              "flex items-center justify-center w-full aspect-square rounded-4xl transition-all duration-300 group relative",
+                              isFav
+                                ? "text-red-500 hover:bg-red-500/10"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                            )}
+                          >
+                            <Icon
+                              className={cn(
+                                "w-5 h-5 shrink-0",
+                                isFav && tag.imageCount > 0 && "fill-current",
+                              )}
+                            />
+                            {tag.imageCount > 0 && (
+                              <span
+                                className={cn(
+                                  "absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[8px] font-black animate-in zoom-in duration-300",
+                                  isFav
+                                    ? "bg-red-500 text-white shadow-lg shadow-red-500/30"
+                                    : "bg-primary text-primary-foreground",
+                                )}
+                              >
+                                {tag.imageCount}
+                              </span>
+                            )}
+                          </motion.button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          className="font-black uppercase tracking-widest text-[10px] bg-foreground text-background border-none px-3 py-1.5 rounded-lg"
+                        >
+                          {tag.tagName}
+                        </TooltipContent>
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+
+            <Separator className="w-8 opacity-50" />
+
+            {/* Custom Labels Scroll */}
+            {userTags.length > 0 && (
+              <>
+                <Separator className="w-8 opacity-50" />
+                <div className="flex flex-col gap-3 w-full max-h-[25vh] overflow-y-auto px-1 py-1 custom-scrollbar no-scrollbar">
+                  {userTags.map((tag) => (
+                    <SidebarMenuItem key={tag.id} className="list-none w-full">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="flex items-center justify-center w-full aspect-square rounded-2xl hover:bg-muted/50 transition-all duration-300 group relative"
+                          >
+                            <div
+                              className="w-3.5 h-3.5 rounded-full border shadow-sm group-hover:shadow-md transition-all duration-500"
+                              style={{ backgroundColor: tag.tagColor }}
+                            />
+                            {tag.imageCount > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-background border text-[8px] font-black text-foreground shadow-sm">
+                                {tag.imageCount}
+                              </span>
+                            )}
+                          </motion.button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          className="font-bold uppercase tracking-widest text-[10px] bg-foreground text-background border-none px-3 py-1.5 rounded-lg"
+                        >
+                          {tag.tagName}
+                        </TooltipContent>
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  ))}
+                </div>
+              </>
             )}
-            title="Settings"
-          >
-            <Settings className="w-6 h-6" />
-          </Link>
-        </div>
-      </SidebarContent>
-    </Sidebar>
+          </div>
+
+          {/* Bottom Actions Stack */}
+          <div className="mt-auto flex flex-col items-center gap-4 w-full px-3 pb-2">
+            <div className="flex flex-col gap-2 w-full bg-muted/30 rounded-4xl p-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={importImages}
+                    className="w-full aspect-square rounded-2xl text-muted-foreground hover:bg-background hover:text-primary hover:shadow-sm transition-all duration-300"
+                  >
+                    <ImagePlus className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="font-bold uppercase tracking-widest text-[10px]"
+                >
+                  Import Images
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={importFolder}
+                    className="w-full aspect-square rounded-2xl text-muted-foreground hover:bg-background hover:text-primary hover:shadow-sm transition-all duration-300"
+                  >
+                    <FolderPlus className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="font-bold uppercase tracking-widest text-[10px]"
+                >
+                  Import Folder
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/settings"
+                  className={cn(
+                    "flex items-center justify-center w-12 h-12 rounded-3xl transition-all duration-300 group",
+                    location.pathname === "/settings"
+                      ? "bg-muted text-foreground shadow-inner"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <Settings className="w-5 h-5 transition-transform group-hover:rotate-45" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="font-bold uppercase tracking-widest text-[10px]"
+              >
+                Settings
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    </TooltipProvider>
   );
 }

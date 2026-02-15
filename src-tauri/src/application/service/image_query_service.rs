@@ -22,6 +22,25 @@ impl ImageQueryService {
   }
 
   #[tracing::instrument(skip(self))]
+  pub async fn list_images_with_tag_paginated(
+    &self,
+    tag_id: i64,
+    limit: i64,
+    cursor: Option<ImageCursor>,
+  ) -> Result<PaginatedImages, AppError> {
+    let raw_images = self
+      .repo
+      .list_images_with_tag_id_paginated(tag_id, limit + 1, cursor)
+      .await?;
+
+    let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
+
+    let data = self.filter_image(images_to_process);
+
+    Ok(PaginatedImages { data, next_cursor })
+  }
+
+  #[tracing::instrument(skip(self))]
   pub async fn list_images_paginated(
     &self,
     limit: i64,

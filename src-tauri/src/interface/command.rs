@@ -66,6 +66,36 @@ pub async fn fetch_images(
 }
 
 #[tauri::command]
+pub async fn fetch_images_with_tag(
+  state: State<'_, AppState>,
+  tag_id: i64,
+  limit: i64,
+  cursor: Option<ImageCursor>,
+) -> Result<PaginatedImages, String> {
+  let span = tracing::info_span!("fetch_images_with_tag", tag_id = tag_id, limit = limit);
+  let _enter = span.enter();
+
+  let qs = ImageQueryService::new(state.db.clone());
+
+  match qs
+    .list_images_with_tag_paginated(tag_id, limit, cursor)
+    .await
+  {
+    Ok(paginated_images) => {
+      tracing::info!(
+        data = paginated_images.data.len(),
+        "Fetch images completed:"
+      );
+      Ok(paginated_images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "fetch_images_with_tag failed");
+      Err(err.user_message())
+    }
+  }
+}
+
+#[tauri::command]
 pub async fn fetch_images_grouped_by_hash(
   state: State<'_, AppState>,
   limit: i64,

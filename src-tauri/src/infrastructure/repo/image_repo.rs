@@ -45,6 +45,42 @@ impl ImageRepository {
     Ok(result.rows_affected())
   }
 
+  pub async fn list_images_with_tag_id_paginated(
+    &self,
+    tag_id: i64,
+    limit: i64,
+    cursor: Option<ImageCursor>,
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
+    let mut query_builder = QueryBuilder::new(
+      r#"
+            SELECT i.*
+            FROM images i
+            JOIN image_tags it ON it.image_id = i.id
+            WHERE it.tag_id =
+            "#,
+    );
+
+    query_builder.push_bind(tag_id);
+
+    if let Some(cursor) = cursor {
+      query_builder.push(" AND (created_at, id) < (");
+      query_builder.push_bind(cursor.created_at);
+      query_builder.push(", ");
+      query_builder.push_bind(cursor.id);
+      query_builder.push(")");
+    }
+
+    query_builder.push(" ORDER BY created_at DESC, id DESC LIMIT ");
+    query_builder.push_bind(limit);
+
+    let result = query_builder
+      .build_query_as::<ImageRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(result)
+  }
+
   pub async fn list_images_paginated(
     &self,
     limit: i64,

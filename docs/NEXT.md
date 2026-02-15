@@ -142,17 +142,17 @@ Goal: Introduce deterministic organization primitives.
 
 ## 3. Query Capability
 
-- [ ] Retrieve images by tag
-- [ ] Support batch retrieval with tag filter
-- [ ] Ensure deterministic ordering remains intact
+- [x] Retrieve images by tag
+- [x] Support batch retrieval with tag filter
+- [x] Ensure deterministic ordering remains intact
 
 ---
 
 ### Completion Check (Part 3)
 
-- [ ] Tags persist across restarts
-- [ ] No UI assumptions baked into schema
-- [ ] Tag queries scale with batch retrieval
+- [x] Tags persist across restarts
+- [x] No UI assumptions baked into schema
+- [x] Tag queries scale with batch retrieval
 
 ---
 
