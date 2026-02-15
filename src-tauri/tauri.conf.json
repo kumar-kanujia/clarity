@@ -21,7 +21,11 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost",
       "assetProtocol": {
         "enable": true,
-        "scope": ["$HOME/**", "*", "**/.thumbnails/**"]
+        "scope": [
+          "$HOME/**",
+          "*",
+          "**/.thumbnails/**"
+        ]
       }
     }
   },
@@ -35,5 +39,19 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "typegen": {
+      "excludePatterns": null,
+      "force": false,
+      "includePatterns": null,
+      "includePrivate": false,
+      "outputPath": "./src/services/tauri",
+      "projectPath": "./src-tauri",
+      "typeMappings": null,
+      "validationLibrary": "zod",
+      "verbose": false,
+      "visualizeDeps": false
+    }
   }
 }

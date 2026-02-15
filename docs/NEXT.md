@@ -14,18 +14,14 @@ Goal: Every failure is classifiable, observable, and reproducible.
 
 ## 1. Error Taxonomy
 
-- [ ] Introduce explicit error categories (enum or constants):
+- [x] Introduce explicit error categories (enum or constants):
   - SCAN_ERROR
-  - METADATA_ERROR
+  - JOIN_ERROR
   - THUMBNAIL_ERROR
-  - DB_WRITE_ERROR
-  - FILE_MISSING
-  - FILE_PERMISSION_DENIED
-  - CORRUPTED_IMAGE
-  - UNSUPPORTED_FORMAT
+  - DATABASE_ERROR
 
-- [ ] Ensure all existing error paths map to one of these categories
-- [ ] Remove ad-hoc string-based error logging
+- [x] Ensure all existing error paths map to one of these categories
+- [x] Remove ad-hoc string-based error logging
 
 ---
 
@@ -33,28 +29,28 @@ Goal: Every failure is classifiable, observable, and reproducible.
 
 Every logged error must include:
 
-- [ ] Image ID (if known)
+- [x] Image ID (if known)
 
-- [ ] File path
+- [x] File path
 
-- [ ] Operation stage (scan / metadata / thumbnail / db / view)
+- [x] Operation stage (scan / metadata / thumbnail / db / view)
 
-- [ ] Exception type
+- [x] Exception type
 
-- [ ] Timestamp
+- [x] Timestamp
 
-- [ ] Standardize log format (structured object or consistent pattern)
+- [x] Standardize log format (structured object or consistent pattern)
 
-- [ ] Ensure logs never include raw image data
+- [x] Ensure logs never include raw image data
 
 ---
 
 ## 3. Recoverable vs Fatal Semantics
 
-- [ ] Define what qualifies as recoverable
-- [ ] Define what qualifies as fatal
-- [ ] Ensure recoverable errors never abort full scans
-- [ ] Ensure fatal errors terminate cleanly with clear logging
+- [x] Define what qualifies as recoverable
+- [x] Define what qualifies as fatal
+- [x] Ensure recoverable errors never abort full scans
+- [x] Ensure fatal errors terminate cleanly with clear logging
 
 ---
 
@@ -62,12 +58,12 @@ Every logged error must include:
 
 At the end of every scan:
 
-- [ ] Log total files visited
-- [ ] Log valid images indexed
-- [ ] Log skipped files (with count by category)
-- [ ] Log metadata failures
-- [ ] Log DB failures
-- [ ] Log total duration
+- [x] Log total files visited
+- [x] Log valid images indexed
+- [x] Log skipped files (with count by category)
+- [x] Log metadata failures
+- [x] Log DB failures
+- [x] Log total duration
 
 System health must be visible from logs alone.
 
@@ -75,10 +71,10 @@ System health must be visible from logs alone.
 
 ### Completion Check (Part 1)
 
-- [ ] All errors fall into explicit categories
-- [ ] Logs are structured and consistent
-- [ ] Scan results are diagnosable without reproducing manually
-- [ ] No silent failures remain
+- [x] All errors fall into explicit categories
+- [x] Logs are structured and consistent
+- [x] Scan results are diagnosable without reproducing manually
+- [x] No silent failures remain
 
 ---
 
@@ -88,36 +84,36 @@ Goal: Explicit, predictable duplicate identification.
 
 ## 1. Hashing Infrastructure
 
-- [ ] Choose hashing algorithm (e.g., SHA-256)
-- [ ] Compute hash from file content (streamed, not full memory load)
-- [ ] Store hash in database
-- [ ] Ensure hashing failures are logged with proper category
+- [x] Choose hashing algorithm (e.g., SHA-256)
+- [x] Compute hash from file content (streamed, not full memory load)
+- [x] Store hash in database
+- [x] Ensure hashing failures are logged with proper category
 
 ---
 
 ## 2. Database Changes
 
-- [ ] Add hash column to image table
-- [ ] Backfill hash for existing records
-- [ ] Ensure deterministic behavior on re-scan
-- [ ] Validate performance impact on large datasets
+- [x] Add hash column to image table
+- [x] Backfill hash for existing records
+- [x] Ensure deterministic behavior on re-scan
+- [x] Validate performance impact on large datasets
 
 ---
 
 ## 3. Duplicate Query Capability
 
-- [ ] Query images grouped by identical hash
-- [ ] Expose duplicate detection at repository/service layer
-- [ ] Ensure no silent merging or auto-resolution
-- [ ] Log duplicate counts during scan (optional but visible)
+- [x] Query images grouped by identical hash
+- [x] Expose duplicate detection at repository/service layer
+- [x] Ensure no silent merging or auto-resolution
+- [x] Log duplicate counts during scan (optional but visible)
 
 ---
 
 ### Completion Check (Part 2)
 
-- [ ] Identical files are reliably detected
-- [ ] No probabilistic matching involved
-- [ ] Duplicate behavior is explicit and reversible
+- [x] Identical files are reliably detected
+- [x] No probabilistic matching involved
+- [x] Duplicate behavior is explicit and reversible
 
 ---
 
@@ -127,36 +123,36 @@ Goal: Introduce deterministic organization primitives.
 
 ## 1. Schema Design
 
-- [ ] Create tags table
-- [ ] Create image_tags join table (many-to-many)
-- [ ] Enforce referential integrity
-- [ ] Add necessary indexes
+- [x] Create tags table
+- [x] Create image_tags join table (many-to-many)
+- [x] Enforce referential integrity
+- [x] Add necessary indexes
 
 ---
 
 ## 2. Tag Operations (Backend Only)
 
-- [ ] Create tag
-- [ ] Delete tag
-- [ ] Attach tag to image
-- [ ] Detach tag from image
-- [ ] Prevent duplicate tag assignments
+- [x] Create tag
+- [x] Delete tag
+- [x] Attach tag to image
+- [x] Detach tag from image
+- [x] Prevent duplicate tag assignments
 
 ---
 
 ## 3. Query Capability
 
-- [ ] Retrieve images by tag
-- [ ] Support batch retrieval with tag filter
-- [ ] Ensure deterministic ordering remains intact
+- [x] Retrieve images by tag
+- [x] Support batch retrieval with tag filter
+- [x] Ensure deterministic ordering remains intact
 
 ---
 
 ### Completion Check (Part 3)
 
-- [ ] Tags persist across restarts
-- [ ] No UI assumptions baked into schema
-- [ ] Tag queries scale with batch retrieval
+- [x] Tags persist across restarts
+- [x] No UI assumptions baked into schema
+- [x] Tag queries scale with batch retrieval
 
 ---
 

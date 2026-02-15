@@ -1,40 +1,21 @@
+use crate::infrastructure::fs::error::FSError;
+
 use std::fs::{self, File};
-use std::io::Error;
-use std::path::{Path, PathBuf};
+use std::io::ErrorKind;
+use std::path::Path;
 
-use crate::state::IMAGE_DIR;
-
-pub fn ensure_dir(path: &Path) -> Result<(), Error> {
+pub fn ensure_dir(path: &Path) -> Result<(), FSError> {
   fs::create_dir_all(path)?;
   Ok(())
 }
 
-#[allow(dead_code)]
-pub fn get_file_dir(app_dir: &Path, file_id: &str) -> PathBuf {
-  app_dir
-    .join(IMAGE_DIR)
-    .join(&file_id[0..2])
-    .join(&file_id[2..4])
-}
-
-#[allow(dead_code)]
-pub fn copy_file(source: &Path, target: &Path) -> Result<PathBuf, Error> {
-  fs::copy(source, target)?;
-  Ok(target.to_path_buf())
-}
-
-#[allow(dead_code)]
-pub async fn copy_file_async(source: &Path, target: &Path) -> Result<PathBuf, Error> {
-  tokio::fs::copy(source, target).await?;
-  Ok(target.to_path_buf())
-}
-
-pub fn verify_file_readbilty(path: &str) -> Result<bool, Error> {
+pub fn is_file_readable(path: &str) -> Result<(), FSError> {
   match File::open(path) {
-    Ok(_) => Ok(true),
+    Ok(_) => Ok(()),
     Err(e) => match e.kind() {
-      std::io::ErrorKind::NotFound => Ok(false),
-      _ => Err(e),
+      ErrorKind::NotFound => Err(FSError::FileNotFound(path.to_string())),
+      ErrorKind::PermissionDenied => Err(FSError::PermissionDenied(path.to_string())),
+      _ => Err(FSError::Io(e)),
     },
   }
 }

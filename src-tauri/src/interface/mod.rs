@@ -1,3 +1,2 @@
-pub mod commands;
-pub mod dbsetup;
-pub mod logsetup;
+pub mod command;
+pub mod dto;

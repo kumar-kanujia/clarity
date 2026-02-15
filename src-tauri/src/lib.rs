@@ -1,59 +1,48 @@
 mod application;
 mod domain;
+mod error;
 mod infrastructure;
 mod interface;
-mod old;
-mod state;
+mod setup;
 
 use crate::{
-  application::background::ThumbnailWorker,
-  interface::{
-    commands::{load_saved_images, save_images},
-    dbsetup::setup_db,
-    logsetup::{LOG_LEVEL, get_log_target},
+  interface::command::{
+    create_tag, delete_tag, fetch_images, fetch_images_grouped_by_hash, fetch_images_with_tag,
+    fetch_system_tags, fetch_user_tags, import_images, toggle_tag_on_image,
   },
-  state::AppState,
+  setup::{setup_app, state::AppState, tracesetup},
 };
-use old::{move_to_trash, scan_and_group_duplicates, scan_dir_for_images};
 
-use tauri::Manager;
-use tauri_plugin_log::fern::colors::ColoredLevelConfig;
+use tauri::{Manager, RunEvent};
+
+pub static IMAGE_DIR: &str = "images";
 
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
-    .plugin(
-      tauri_plugin_log::Builder::new()
-        .level(LOG_LEVEL)
-        .target(get_log_target())
-        .with_colors(ColoredLevelConfig::default())
-        .build(),
-    )
+  tracesetup::init_tracing();
+  let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![
-      scan_and_group_duplicates,
-      scan_dir_for_images,
-      move_to_trash,
-      save_images,
-      load_saved_images
+      import_images,
+      fetch_images,
+      fetch_images_grouped_by_hash,
+      create_tag,
+      fetch_user_tags,
+      fetch_system_tags,
+      delete_tag,
+      toggle_tag_on_image,
+      fetch_images_with_tag
     ])
-    .setup(|app| {
-      let app_handle = app.handle();
-
-      tauri::async_runtime::block_on(async move {
-        match setup_db(app_handle).await {
-          Ok(db) => {
-            app_handle.manage(AppState { db: db.clone() });
-            ThumbnailWorker::spawn(&app_handle.clone(), db.clone());
-          }
-          Err(err) => log::error!("DB Error: {}", err),
-        }
-      });
-
-      Ok(())
-    })
-    .run(tauri::generate_context!())
+    .setup(setup_app)
+    .build(tauri::generate_context!())
     .expect("error while running tauri application");
+
+  app.run(|app_handle, event| {
+    if let RunEvent::ExitRequested { .. } = event {
+      let state = app_handle.state::<AppState>();
+      state.shutdown.cancel();
+    }
+  });
 }

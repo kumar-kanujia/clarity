@@ -9,12 +9,48 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OldRouteImport } from './routes/old'
+import { Route as TagsRouteImport } from './routes/tags'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScansRouteImport } from './routes/scans'
+import { Route as RecentRouteImport } from './routes/recent'
+import { Route as MapViewRouteImport } from './routes/map-view'
+import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as AiFeaturesRouteImport } from './routes/ai-features'
 import { Route as IndexRouteImport } from './routes/index'
 
-const OldRoute = OldRouteImport.update({
-  id: '/old',
-  path: '/old',
+const TagsRoute = TagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScansRoute = ScansRouteImport.update({
+  id: '/scans',
+  path: '/scans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecentRoute = RecentRouteImport.update({
+  id: '/recent',
+  path: '/recent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapViewRoute = MapViewRouteImport.update({
+  id: '/map-view',
+  path: '/map-view',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiFeaturesRoute = AiFeaturesRouteImport.update({
+  id: '/ai-features',
+  path: '/ai-features',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,37 +61,128 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/old': typeof OldRoute
+  '/ai-features': typeof AiFeaturesRoute
+  '/insights': typeof InsightsRoute
+  '/map-view': typeof MapViewRoute
+  '/recent': typeof RecentRoute
+  '/scans': typeof ScansRoute
+  '/settings': typeof SettingsRoute
+  '/tags': typeof TagsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/old': typeof OldRoute
+  '/ai-features': typeof AiFeaturesRoute
+  '/insights': typeof InsightsRoute
+  '/map-view': typeof MapViewRoute
+  '/recent': typeof RecentRoute
+  '/scans': typeof ScansRoute
+  '/settings': typeof SettingsRoute
+  '/tags': typeof TagsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/old': typeof OldRoute
+  '/ai-features': typeof AiFeaturesRoute
+  '/insights': typeof InsightsRoute
+  '/map-view': typeof MapViewRoute
+  '/recent': typeof RecentRoute
+  '/scans': typeof ScansRoute
+  '/settings': typeof SettingsRoute
+  '/tags': typeof TagsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/old'
+  fullPaths:
+    | '/'
+    | '/ai-features'
+    | '/insights'
+    | '/map-view'
+    | '/recent'
+    | '/scans'
+    | '/settings'
+    | '/tags'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/old'
-  id: '__root__' | '/' | '/old'
+  to:
+    | '/'
+    | '/ai-features'
+    | '/insights'
+    | '/map-view'
+    | '/recent'
+    | '/scans'
+    | '/settings'
+    | '/tags'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai-features'
+    | '/insights'
+    | '/map-view'
+    | '/recent'
+    | '/scans'
+    | '/settings'
+    | '/tags'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  OldRoute: typeof OldRoute
+  AiFeaturesRoute: typeof AiFeaturesRoute
+  InsightsRoute: typeof InsightsRoute
+  MapViewRoute: typeof MapViewRoute
+  RecentRoute: typeof RecentRoute
+  ScansRoute: typeof ScansRoute
+  SettingsRoute: typeof SettingsRoute
+  TagsRoute: typeof TagsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/old': {
-      id: '/old'
-      path: '/old'
-      fullPath: '/old'
-      preLoaderRoute: typeof OldRouteImport
+    '/tags': {
+      id: '/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scans': {
+      id: '/scans'
+      path: '/scans'
+      fullPath: '/scans'
+      preLoaderRoute: typeof ScansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recent': {
+      id: '/recent'
+      path: '/recent'
+      fullPath: '/recent'
+      preLoaderRoute: typeof RecentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map-view': {
+      id: '/map-view'
+      path: '/map-view'
+      fullPath: '/map-view'
+      preLoaderRoute: typeof MapViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-features': {
+      id: '/ai-features'
+      path: '/ai-features'
+      fullPath: '/ai-features'
+      preLoaderRoute: typeof AiFeaturesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,7 +197,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  OldRoute: OldRoute,
+  AiFeaturesRoute: AiFeaturesRoute,
+  InsightsRoute: InsightsRoute,
+  MapViewRoute: MapViewRoute,
+  RecentRoute: RecentRoute,
+  ScansRoute: ScansRoute,
+  SettingsRoute: SettingsRoute,
+  TagsRoute: TagsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
