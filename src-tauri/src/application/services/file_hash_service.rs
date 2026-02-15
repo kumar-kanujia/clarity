@@ -1,8 +1,9 @@
+use crate::{domain::image::Image, infrastructure::processing::hashing};
+
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use std::panic;
 
-use crate::{domain::image::Image, infrastructure::processing::hashing};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-
+#[derive(Debug)]
 pub struct FileHashService;
 
 impl FileHashService {

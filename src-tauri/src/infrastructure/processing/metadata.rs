@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use crate::{
-  domain::{file::file_scan::FileMetaData, image::image_metadata::ImageMetadata},
+  domain::file::file_scan::FileMetaData,
   infrastructure::{processing::error::ProcessingError, system::get_utc_timestamp},
 };
 
@@ -10,51 +10,6 @@ use std::{
   path::Path,
   time::{self},
 };
-
-/// Thumbnail size in pixels
-pub const THUMBNAIL_SIZE: u32 = 256;
-
-fn generate_thumbnail_file<P: AsRef<Path>>(
-  source: P,
-  target: &Path,
-) -> Result<(i64, i64), ProcessingError> {
-  let img = image::open(&source).map_err(|err| ProcessingError::OpenImage {
-    path: source.as_ref().display().to_string(),
-    source: err,
-  })?;
-
-  let thumbnail = img.thumbnail(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-
-  thumbnail
-    .save(target)
-    .map_err(|err| ProcessingError::SaveImage {
-      path: target.display().to_string(),
-      source: err,
-    })?;
-
-  let width = img.width() as i64;
-  let height = img.height() as i64;
-
-  Ok((width, height))
-}
-
-pub fn create_image_metadata<P: AsRef<Path>>(
-  file: P,
-  thumnail_target: &Path,
-) -> Result<ImageMetadata, ProcessingError> {
-  let uuid = Uuid::new_v4();
-  let thumbnail_path = thumnail_target
-    .join(uuid.to_string())
-    .with_extension("webp");
-
-  let (width, height) = generate_thumbnail_file(file, &thumbnail_path)?;
-
-  Ok(ImageMetadata {
-    thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
-    width,
-    height,
-  })
-}
 
 pub struct MetadataP;
 

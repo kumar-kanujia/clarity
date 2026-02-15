@@ -4,14 +4,6 @@ use std::fs::{self, File};
 use std::io::ErrorKind;
 use std::path::Path;
 
-#[allow(unreachable_code)]
-pub fn get_file_name(path: &str) -> Option<String> {
-  Path::new(path)
-    .file_name()
-    .and_then(|os_str| os_str.to_str())
-    .and_then(|file_name| Some(file_name.to_string()))
-}
-
 pub fn ensure_dir(path: &Path) -> Result<(), FSError> {
   fs::create_dir_all(path)?;
   Ok(())

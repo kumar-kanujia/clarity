@@ -1,7 +1,4 @@
-pub mod image_metadata;
-
 use crate::{
-  domain::image::image_metadata::ImageMetadata,
   infrastructure::{
     models::image_model::{ImageModel, ImageStatus},
     system::format_datetime,
@@ -10,6 +7,13 @@ use crate::{
 };
 
 use std::sync::OnceLock;
+
+#[derive(Debug, Clone, Default)]
+pub struct ImageMetadata {
+  pub thumbnail_path: String,
+  pub width: i64,
+  pub height: i64,
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct Image {
@@ -24,6 +28,7 @@ pub struct Image {
   pub retry_count: i64,
   pub error_message: Option<String>,
   pub created_at: String,
+  #[allow(dead_code)]
   pub updated_at: String,
 }
 
@@ -85,6 +90,7 @@ impl Image {
     self.retry_count += 1;
   }
 
+  #[allow(dead_code)]
   pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
     if images.is_empty() {
       return Vec::new();

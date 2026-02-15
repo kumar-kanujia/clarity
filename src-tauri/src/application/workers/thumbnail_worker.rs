@@ -1,7 +1,3 @@
-use std::path::PathBuf;
-
-use tauri::AppHandle;
-
 use crate::{
   application::{services::thumbnail_service::ThumbnailService, workers::Worker},
   domain::image::Image,
@@ -11,6 +7,10 @@ use crate::{
   },
   setup::state::Db,
 };
+
+use std::path::PathBuf;
+
+use tauri::AppHandle;
 
 #[derive(Debug, Clone)]
 pub struct ThumbnailWorker {

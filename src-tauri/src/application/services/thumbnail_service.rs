@@ -1,7 +1,7 @@
 use crate::{
-  domain::image::{Image, image_metadata::ImageMetadata},
+  domain::image::{Image, ImageMetadata},
   error::AppError,
-  infrastructure::{fs::ops, processing::metadata},
+  infrastructure::{fs::ops, processing::thumbnail::ThumbnailP},
 };
 
 use std::{
@@ -32,7 +32,7 @@ impl ThumbnailService {
   }
 
   fn create_thumbnail(image: &Image, thumbnail_target: &Path) -> Result<ImageMetadata, String> {
-    panic::catch_unwind(|| metadata::create_image_metadata(&image.path, thumbnail_target))
+    panic::catch_unwind(|| ThumbnailP::create_image_metadata(&image.path, thumbnail_target))
       .map_err(|_| {
         tracing::error!(path=%image.path, id=image.id, "Hash panicked");
         "hash_image panicked".to_string()
