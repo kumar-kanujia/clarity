@@ -7,15 +7,21 @@ pub enum DatabaseError {
 
   #[error("Record already exists: {0}")]
   RecordAlreadyExists(String),
+
+  #[error("Not found: {0}")]
+  NotFound(String),
 }
 
 impl DatabaseError {
   pub fn user_message(&self) -> String {
     match self {
-      DatabaseError::RecordAlreadyExists(msg) => {
+      Self::RecordAlreadyExists(msg) => {
         format!("Record already exists: {0}", msg)
       }
-      DatabaseError::Connection(_) => "Database connection failed.".into(),
+      Self::NotFound(msg) => {
+        format!("Record not found: {0}", msg)
+      }
+      Self::Connection(_) => "Database connection failed.".into(),
     }
   }
 }

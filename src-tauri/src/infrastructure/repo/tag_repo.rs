@@ -51,4 +51,21 @@ impl TagRepository {
 
     Ok(row)
   }
+
+  pub async fn delete_tag(&self, tag_id: i64, tag_type: TagType) -> Result<(), DatabaseError> {
+    let res = sqlx::query("DELETE FROM tags WHERE id = ?1 and tag_type = ?2")
+      .bind(tag_id)
+      .bind(tag_type)
+      .execute(&self.db)
+      .await?;
+
+    if res.rows_affected() == 0 {
+      return Err(DatabaseError::NotFound(format!(
+        "Tag with tag_id: {} not found!",
+        tag_id
+      )));
+    }
+
+    Ok(())
+  }
 }

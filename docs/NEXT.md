@@ -134,9 +134,9 @@ Goal: Introduce deterministic organization primitives.
 
 - [x] Create tag
 - [x] Delete tag
-- [ ] Attach tag to image
-- [ ] Detach tag from image
-- [ ] Prevent duplicate tag assignments
+- [x] Attach tag to image
+- [x] Detach tag from image
+- [x] Prevent duplicate tag assignments
 
 ---
 

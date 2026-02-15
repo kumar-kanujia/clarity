@@ -2,7 +2,7 @@ use crate::{
   application::{
     service::{
       image_group_query_service::ImageGroupQueryService, image_query_service::ImageQueryService,
-      tag_service::TagService,
+      image_tag_service::ImageTagService, tag_service::TagService,
     },
     workflow::scan_and_import_images::ScanAndImportImages,
   },
@@ -137,6 +137,48 @@ pub async fn fetch_system_tags(state: State<'_, AppState>) -> Result<Vec<TagDto>
     Ok(tags) => {
       tracing::info!("System tags fetched");
       Ok(tags)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "DB error");
+      Err(err.user_message())
+    }
+  }
+}
+
+#[tauri::command]
+pub async fn delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<(), String> {
+  let span = tracing::info_span!("delete_tag");
+  let _enter = span.enter();
+
+  let ts = TagService::new(state.db.clone());
+
+  match ts.delete_user_tag(tag_id).await {
+    Ok(tags) => {
+      tracing::info!("Tage removed with tag_id: {tag_id}");
+      Ok(tags)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "DB error");
+      Err(err.user_message())
+    }
+  }
+}
+
+#[tauri::command]
+pub async fn toggle_tag_on_image(
+  state: State<'_, AppState>,
+  image_id: i64,
+  tag_id: i64,
+) -> Result<bool, String> {
+  let span = tracing::info_span!("toggle_tag_on_image");
+  let _enter = span.enter();
+
+  let ts = ImageTagService::new(state.db.clone());
+
+  match ts.toggle_tag(image_id, tag_id).await {
+    Ok(toggled) => {
+      tracing::info!("{tag_id}: Tag has been toggled on image with id: {image_id}");
+      Ok(toggled)
     }
     Err(err) => {
       tracing::error!(error = ?err, "DB error");

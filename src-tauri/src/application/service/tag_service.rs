@@ -44,4 +44,9 @@ impl TagService {
       .collect();
     Ok(system_tags)
   }
+
+  pub async fn delete_user_tag(&self, tag_id: i64) -> Result<(), AppError> {
+    self.repo.delete_tag(tag_id, TagType::User).await?;
+    Ok(())
+  }
 }
