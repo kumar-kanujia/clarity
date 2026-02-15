@@ -132,8 +132,8 @@ Goal: Introduce deterministic organization primitives.
 
 ## 2. Tag Operations (Backend Only)
 
-- [ ] Create tag
-- [ ] Delete tag
+- [x] Create tag
+- [x] Delete tag
 - [ ] Attach tag to image
 - [ ] Detach tag from image
 - [ ] Prevent duplicate tag assignments
