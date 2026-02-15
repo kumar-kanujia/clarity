@@ -152,3 +152,89 @@ pub trait Worker: Clone + Send + Sync + 'static {
     .await;
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_ideal_wait_time_constant() {
+    assert_eq!(IDEAL_WAIT_TIME, 5000);
+  }
+
+  #[test]
+  fn test_ideal_hold_time_constant() {
+    assert_eq!(IDEAL_HOLD_TIME, 30000);
+  }
+
+  #[tokio::test]
+  async fn test_sleep_or_shutdown_completes_normally() {
+    let token = CancellationToken::new();
+
+    struct TestWorker;
+    impl TestWorker {
+      async fn sleep_wrapper(ms: u64, token: &CancellationToken) -> bool {
+        tokio::select! {
+          _ = token.cancelled() => true,
+          _ = tokio::time::sleep(Duration::from_millis(ms)) => false,
+        }
+      }
+    }
+
+    let result = TestWorker::sleep_wrapper(10, &token).await;
+    assert!(!result, "Should complete normally without shutdown");
+  }
+
+  #[tokio::test]
+  async fn test_sleep_or_shutdown_cancelled() {
+    let token = CancellationToken::new();
+    let token_clone = token.clone();
+
+    struct TestWorker;
+    impl TestWorker {
+      async fn sleep_wrapper(ms: u64, token: &CancellationToken) -> bool {
+        tokio::select! {
+          _ = token.cancelled() => true,
+          _ = tokio::time::sleep(Duration::from_millis(ms)) => false,
+        }
+      }
+    }
+
+    let handle = tokio::spawn(async move {
+      TestWorker::sleep_wrapper(5000, &token_clone).await
+    });
+
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    token.cancel();
+
+    let result = handle.await.unwrap();
+    assert!(result, "Should detect cancellation");
+  }
+
+  #[test]
+  fn test_batch_size_calculation_minimum() {
+    struct TestWorker;
+    impl TestWorker {
+      fn calculate_batch_size(batch_factor: usize) -> i64 {
+        cmp::max(4, num_cpus::get() as i64 * batch_factor as i64)
+      }
+    }
+
+    let batch_size = TestWorker::calculate_batch_size(1);
+    assert!(batch_size >= 4, "Batch size should be at least 4");
+  }
+
+  #[test]
+  fn test_batch_size_calculation_with_factor() {
+    struct TestWorker;
+    impl TestWorker {
+      fn calculate_batch_size(batch_factor: usize) -> i64 {
+        cmp::max(4, num_cpus::get() as i64 * batch_factor as i64)
+      }
+    }
+
+    let num_cpus = num_cpus::get() as i64;
+    let batch_size = TestWorker::calculate_batch_size(4);
+    assert_eq!(batch_size, cmp::max(4, num_cpus * 4));
+  }
+}

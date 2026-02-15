@@ -49,3 +49,80 @@ impl Worker for FileHashWorker {
     Ok(count)
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_worker_name() {
+    let repo = Box::leak(Box::new(ImageRepository::new(
+      sqlx::SqlitePool::connect_lazy(":memory:").unwrap(),
+    )));
+    let worker = FileHashWorker::new(repo);
+    assert_eq!(worker.name(), "file_hash_worker");
+  }
+
+  #[test]
+  fn test_worker_batch_factor() {
+    let repo = Box::leak(Box::new(ImageRepository::new(
+      sqlx::SqlitePool::connect_lazy(":memory:").unwrap(),
+    )));
+    let worker = FileHashWorker::new(repo);
+    assert_eq!(worker.batch_factor(), 4);
+  }
+
+  #[test]
+  fn test_get_batch_size() {
+    let repo = Box::leak(Box::new(ImageRepository::new(
+      sqlx::SqlitePool::connect_lazy(":memory:").unwrap(),
+    )));
+    let worker = FileHashWorker::new(repo);
+    let batch_size = worker.get_batch_size();
+    assert!(batch_size >= 4);
+    assert!(batch_size <= num_cpus::get() as i64 * 4);
+  }
+
+  #[test]
+  fn test_process_batch_empty() {
+    let repo = Box::leak(Box::new(ImageRepository::new(
+      sqlx::SqlitePool::connect_lazy(":memory:").unwrap(),
+    )));
+    let worker = FileHashWorker::new(repo);
+    let items = vec![];
+    let result = worker.process_batch(items);
+    assert_eq!(result.len(), 0);
+  }
+
+  #[test]
+  fn test_process_batch_transforms_images() {
+    let repo = Box::leak(Box::new(ImageRepository::new(
+      sqlx::SqlitePool::connect_lazy(":memory:").unwrap(),
+    )));
+    let worker = FileHashWorker::new(repo);
+
+    let items = vec![
+      Image {
+        id: 1,
+        path: "/nonexistent/test.jpg".to_string(),
+        size_bytes: 100,
+        status: ImageStatus::Pending,
+        ..Default::default()
+      },
+    ];
+
+    let result = worker.process_batch(items);
+    assert_eq!(result.len(), 1);
+    // Should have attempted to process and marked as error or hashed
+    assert!(result[0].retry_count >= 1 || result[0].status == ImageStatus::Hashed);
+  }
+
+  #[test]
+  fn test_worker_implements_clone() {
+    let repo = Box::leak(Box::new(ImageRepository::new(
+      sqlx::SqlitePool::connect_lazy(":memory:").unwrap(),
+    )));
+    let worker = FileHashWorker::new(repo);
+    let _cloned = worker.clone();
+  }
+}
