@@ -1,168 +1,254 @@
-## NEXT — Backend Hardening & Deterministic Expansion
+# NEXT — Query Expansion, Tag System Expansion, and System Reliability Hardening
 
+> Context:
+> Core backend is complete and deterministic. Duplicate detection, tagging backend, and structured logging exist.
+>
+> This phase focuses on expanding query capabilities, improving tag system functionality, and strengthening system reliability.
+>
 > Rule:
 > Work top to bottom.
-> Do not start Part 2 before Part 1 is complete.
-> Do not start Part 3 before Part 2 is complete.
-> UI changes are out of scope unless required for backend validation.
+> Do not skip sections.
+> Do not introduce implicit behavior.
+> UI work is out of scope except UI data management layer integration.
 
 ---
 
-# Part 1 — Structured Error Handling & Logging 2.0
+# SECTION 1 — Image Query, Sorting, and Pagination Expansion
 
-Goal: Every failure is classifiable, observable, and reproducible.
-
-## 1. Error Taxonomy
-
-- [x] Introduce explicit error categories (enum or constants):
-  - SCAN_ERROR
-  - JOIN_ERROR
-  - THUMBNAIL_ERROR
-  - DATABASE_ERROR
-
-- [x] Ensure all existing error paths map to one of these categories
-- [x] Remove ad-hoc string-based error logging
+Goal: Provide complete, deterministic, and flexible image retrieval across all supported access patterns.
 
 ---
 
-## 2. Structured Error Context
+## Part 1.1 — Core Image Retrieval Expansion
 
-Every logged error must include:
+- [ ] Fetch image by ID
+- [ ] Fetch images by multiple IDs
+- [ ] Fetch images by name
+- [ ] Fetch images by multiple names
+- [ ] Fetch images by tag
+- [ ] Fetch images by multiple tags
+- [ ] Fetch favorite images
+- [ ] Fetch images in trash / bin
+- [ ] Support combined filtering (name, tags, favorites, trash)
 
-- [x] Image ID (if known)
+Completion Check:
 
-- [x] File path
-
-- [x] Operation stage (scan / metadata / thumbnail / db / view)
-
-- [x] Exception type
-
-- [x] Timestamp
-
-- [x] Standardize log format (structured object or consistent pattern)
-
-- [x] Ensure logs never include raw image data
-
----
-
-## 3. Recoverable vs Fatal Semantics
-
-- [x] Define what qualifies as recoverable
-- [x] Define what qualifies as fatal
-- [x] Ensure recoverable errors never abort full scans
-- [x] Ensure fatal errors terminate cleanly with clear logging
+- [ ] All image access patterns supported
+- [ ] All queries deterministic
+- [ ] No ambiguity in returned results
 
 ---
 
-## 4. Operation Summary Metrics
+## Part 1.2 — Sorting System Expansion
 
-At the end of every scan:
+- [ ] Sort images by name
+- [ ] Sort images by file size
+- [ ] Sort images by import date
+- [ ] Sort images by resolution
+- [ ] Support ascending sorting
+- [ ] Support descending sorting
+- [ ] Maintain deterministic ordering across all sorting modes
 
-- [x] Log total files visited
-- [x] Log valid images indexed
-- [x] Log skipped files (with count by category)
-- [x] Log metadata failures
-- [x] Log DB failures
-- [x] Log total duration
+Completion Check:
 
-System health must be visible from logs alone.
-
----
-
-### Completion Check (Part 1)
-
-- [x] All errors fall into explicit categories
-- [x] Logs are structured and consistent
-- [x] Scan results are diagnosable without reproducing manually
-- [x] No silent failures remain
+- [ ] Sorting consistent and stable
+- [ ] Sorting compatible with all filters
 
 ---
 
-# Part 2 — Deterministic Duplicate Detection (Hash-Based)
+## Part 1.3 — Pagination System Improvement
 
-Goal: Explicit, predictable duplicate identification.
+- [ ] Stable pagination across all queries
+- [ ] Pagination compatible with sorting
+- [ ] Pagination compatible with tag filtering
+- [ ] Pagination compatible with favorites
+- [ ] Pagination compatible with trash
+- [ ] Pagination compatible with duplicate queries
 
-## 1. Hashing Infrastructure
+Completion Check:
 
-- [x] Choose hashing algorithm (e.g., SHA-256)
-- [x] Compute hash from file content (streamed, not full memory load)
-- [x] Store hash in database
-- [x] Ensure hashing failures are logged with proper category
-
----
-
-## 2. Database Changes
-
-- [x] Add hash column to image table
-- [x] Backfill hash for existing records
-- [x] Ensure deterministic behavior on re-scan
-- [x] Validate performance impact on large datasets
+- [ ] Pagination stable under all sorting and filtering modes
+- [ ] No missing or duplicate results across pages
 
 ---
 
-## 3. Duplicate Query Capability
+## Part 1.4 — Favorites System
 
-- [x] Query images grouped by identical hash
-- [x] Expose duplicate detection at repository/service layer
-- [x] Ensure no silent merging or auto-resolution
-- [x] Log duplicate counts during scan (optional but visible)
+- [ ] Mark image as favorite
+- [ ] Remove favorite status
+- [ ] Retrieve favorite images
+- [ ] Combine favorites with sorting
+- [ ] Combine favorites with filtering
 
----
+Completion Check:
 
-### Completion Check (Part 2)
-
-- [x] Identical files are reliably detected
-- [x] No probabilistic matching involved
-- [x] Duplicate behavior is explicit and reversible
+- [ ] Favorite state reliable and persistent
+- [ ] Favorites integrate cleanly with queries
 
 ---
 
-# Part 3 — Minimal Tagging Backend
+# SECTION 2 — Tag System Expansion and Organization Improvements
 
-Goal: Introduce deterministic organization primitives.
-
-## 1. Schema Design
-
-- [x] Create tags table
-- [x] Create image_tags join table (many-to-many)
-- [x] Enforce referential integrity
-- [x] Add necessary indexes
+Goal: Provide complete and flexible tag management and tag-based organization.
 
 ---
 
-## 2. Tag Operations (Backend Only)
+## Part 2.1 — Tag Management Expansion
 
-- [x] Create tag
-- [x] Delete tag
-- [x] Attach tag to image
-- [x] Detach tag from image
-- [x] Prevent duplicate tag assignments
+- [ ] Create tag
+- [ ] Rename tag
+- [ ] Delete tag
+- [ ] Change tag color
+- [ ] Prevent duplicate tag names
 
----
+Completion Check:
 
-## 3. Query Capability
-
-- [x] Retrieve images by tag
-- [x] Support batch retrieval with tag filter
-- [x] Ensure deterministic ordering remains intact
+- [ ] Tag lifecycle fully supported
+- [ ] Tag identity remains stable
 
 ---
 
-### Completion Check (Part 3)
+## Part 2.2 — Tag Assignment Expansion
 
-- [x] Tags persist across restarts
-- [x] No UI assumptions baked into schema
-- [x] Tag queries scale with batch retrieval
+- [ ] Assign tag to image
+- [ ] Remove tag from image
+- [ ] Assign multiple tags to image
+- [ ] Remove multiple tags from image
+
+Completion Check:
+
+- [ ] Tag assignment reliable
+- [ ] Tag relationships consistent
+
+---
+
+## Part 2.3 — Tag Query and Insights Expansion
+
+- [ ] Retrieve all tags
+- [ ] Retrieve tag details
+- [ ] Retrieve images associated with tag
+- [ ] Retrieve image count per tag
+- [ ] Retrieve tag usage information
+
+Completion Check:
+
+- [ ] Tag queries complete and reliable
+- [ ] Tag data consistent across operations
+
+---
+
+## Part 2.4 — Tag-Based Filtering Expansion
+
+- [ ] Filter images by single tag
+- [ ] Filter images by multiple tags
+- [ ] Combine tag filtering with sorting
+- [ ] Combine tag filtering with favorites
+
+Completion Check:
+
+- [ ] Tag filtering reliable
+- [ ] Tag filtering compatible with all query modes
+
+---
+
+# SECTION 3 — System Reliability, Integrity, and Error Handling Enhancement
+
+Goal: Strengthen system robustness, reliability, and error handling coverage.
+
+---
+
+## Part 3.1 — Trash / Bin System
+
+- [ ] Move image to trash
+- [ ] Restore image from trash
+- [ ] Permanently delete image
+- [ ] Retrieve trash contents
+- [ ] Support sorting and pagination in trash
+
+Completion Check:
+
+- [ ] Trash state reliable
+- [ ] No unintended permanent data loss
+
+---
+
+## Part 3.2 — Duplicate Query Expansion
+
+- [ ] Retrieve duplicate images
+- [ ] Retrieve duplicate groups
+- [ ] Retrieve images in duplicate group
+- [ ] Support sorting and pagination of duplicates
+
+Completion Check:
+
+- [ ] Duplicate state fully observable
+- [ ] Duplicate queries reliable
+
+---
+
+## Part 3.3 — Error Handling Enhancement
+
+- [ ] Improve error classification coverage
+- [ ] Ensure consistent error reporting across all operations
+- [ ] Ensure recoverable errors do not break system state
+- [ ] Ensure graceful failure handling
+- [ ] Ensure safe handling of invalid queries
+- [ ] Ensure safe handling of missing files
+- [ ] Ensure safe handling of invalid tag operations
+- [ ] Ensure safe handling of invalid pagination states
+
+Completion Check:
+
+- [ ] System resilient to all supported operations
+- [ ] No silent failures
+- [ ] Errors observable and diagnosable
+
+---
+
+## Part 3.4 — Data Integrity and Consistency
+
+- [ ] Detect missing image files
+- [ ] Detect broken references
+- [ ] Ensure consistent relationships between images and tags
+- [ ] Ensure consistent duplicate state
+- [ ] Ensure reliable data retrieval under all conditions
+
+Completion Check:
+
+- [ ] System integrity maintained
+- [ ] Data state reliable and deterministic
+
+---
+
+## Part 3.5 — UI Data Management Layer Integration
+
+(UI data layer only — no UI features)
+
+- [ ] Integrate centralized UI data management layer
+- [ ] Ensure consistent data synchronization
+- [ ] Ensure safe handling of data updates
+- [ ] Ensure efficient data loading and caching
+
+Completion Check:
+
+- [ ] UI data layer stable
+- [ ] UI safely synchronized with backend state
 
 ---
 
 # Exit Rule
 
-When all three parts are complete:
+When all sections are complete:
 
 1. Update CAPABILITIES.md
-2. Update PROJECT_CONTEXT.md if direction has evolved
-3. Create a smaller NEXT.md focused on refinement or UI redesign
-4. Delete this file
+2. Declare backend query and organization system production-ready
+3. Create NEXT.md focused on advanced features or UI functionality
+4. Archive this file
 
-The system must remain deterministic, local-first, and explicit at every stage.
+System must remain:
+
+- Deterministic
+- Local-first
+- Explicit
+- Observable
+- Reliable
