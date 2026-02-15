@@ -1,10 +1,12 @@
 use crate::{
   application::{
-    services::image_query_service::ImageQueryService,
+    services::{
+      image_group_query_service::ImageGroupQueryService, image_query_service::ImageQueryService,
+    },
     workflow::scan_and_import_images::ScanAndImportImages,
   },
   error,
-  interface::dto::{ImageCursor, ImportSummaryDto, PaginatedImages},
+  interface::dto::{ImageCursor, ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages},
   setup::state::AppState,
 };
 
@@ -62,21 +64,28 @@ pub async fn fetch_images(
   }
 }
 
-// #[tauri::command]
-// pub async fn fetch_images_grouped_by_hash(
-//   state: State<'_, AppState>,
-// ) -> Result<Vec<Vec<Image>>, String> {
-//   let span = tracing::info_span!("fetch_images_grouped_by_hash");
-//   let _enter = span.enter();
+#[tauri::command]
+pub async fn fetch_images_grouped_by_hash(
+  state: State<'_, AppState>,
+  limit: i64,
+  next_cursor: Option<Vec<u8>>,
+) -> Result<PaginatedImageHashGroups, String> {
+  let span = tracing::info_span!("fetch_images_grouped_by_hash");
+  let _enter = span.enter();
 
-//   match library::list_images_grouped_by_hash(&state.db).await {
-//     Ok(groups) => {
-//       tracing::info!(groups = groups.len(), "Fetch grouped images completed");
-//       Ok(groups)
-//     }
-//     Err(err) => {
-//       tracing::error!(error = ?err, "Load failed");
-//       Err(error::user_friendly_message(&err))
-//     }
-//   }
-// }
+  let qs = ImageGroupQueryService::default();
+
+  match qs
+    .list_images_grouped_by_hash(&state.db, limit, next_cursor)
+    .await
+  {
+    Ok(groups) => {
+      tracing::info!(groups = groups.data.len(), "Fetch grouped images completed");
+      Ok(groups)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "Load failed");
+      Err(error::user_friendly_message(&err))
+    }
+  }
+}

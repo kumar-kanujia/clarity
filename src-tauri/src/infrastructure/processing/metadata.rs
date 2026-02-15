@@ -1,5 +1,3 @@
-use uuid::Uuid;
-
 use crate::{
   domain::file::file_scan::FileMetaData,
   infrastructure::{processing::error::ProcessingError, system::get_utc_timestamp},

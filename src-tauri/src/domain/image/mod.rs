@@ -90,7 +90,6 @@ impl Image {
     self.retry_count += 1;
   }
 
-  #[allow(dead_code)]
   pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
     if images.is_empty() {
       return Vec::new();

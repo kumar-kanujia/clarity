@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS images (
 
 CREATE INDEX IF NOT EXISTS idx_images_created_at_id ON images (created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_images_work_queue ON images (status, retry_count);
-CREATE INDEX IF NOT EXISTS idx_images_hash ON images (content_hash);
+CREATE INDEX IF NOT EXISTS idx_images_hash_created_at ON images (content_hash, created_at ASC);
 
 CREATE TRIGGER IF NOT EXISTS trg_images_updated_at
 AFTER UPDATE ON images

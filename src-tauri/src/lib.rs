@@ -8,7 +8,7 @@ mod setup;
 use tauri::{Manager, RunEvent};
 
 use crate::{
-  interface::commands::{fetch_images, import_images},
+  interface::commands::{fetch_images, fetch_images_grouped_by_hash, import_images},
   setup::{setup_app, state::AppState, tracesetup},
 };
 
@@ -24,7 +24,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       import_images,
       fetch_images,
-      // fetch_images_grouped_by_hash
+      fetch_images_grouped_by_hash
     ])
     .setup(setup_app)
     .build(tauri::generate_context!())

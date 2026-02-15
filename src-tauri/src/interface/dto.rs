@@ -3,6 +3,12 @@ use serde::{Deserialize, Serialize};
 use crate::domain::image::Image;
 
 #[derive(Serialize)]
+pub struct PaginatedImageHashGroups {
+  pub data: Vec<Vec<ImageDto>>,
+  pub next_cursor: Option<Vec<u8>>,
+}
+
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PaginatedImages {
   pub data: Vec<ImageDto>,
