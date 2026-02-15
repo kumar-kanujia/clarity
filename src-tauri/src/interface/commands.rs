@@ -1,6 +1,6 @@
 use crate::{
   application::{
-    services::{
+    query_service::{
       image_group_query_service::ImageGroupQueryService, image_query_service::ImageQueryService,
     },
     workflow::scan_and_import_images::ScanAndImportImages,
@@ -23,7 +23,9 @@ pub async fn import_images(
 
   let start = Instant::now();
 
-  match ScanAndImportImages::run(&state.db, &paths).await {
+  let wf = ScanAndImportImages::new(&state.db);
+
+  match wf.run(&paths).await {
     Ok(summary) => {
       tracing::info!("Import completed in {:?}", start.elapsed());
       Ok(summary.into())
@@ -47,9 +49,9 @@ pub async fn fetch_images(
   let span = tracing::info_span!("fetch_images", limit = limit);
   let _enter = span.enter();
 
-  let qs = ImageQueryService::default();
+  let qs = ImageQueryService::new(&state.db);
 
-  match qs.list_images_paginated(&state.db, limit, cursor).await {
+  match qs.list_images_paginated(limit, cursor).await {
     Ok(paginated_images) => {
       tracing::info!(
         data = paginated_images.data.len(),
@@ -73,12 +75,9 @@ pub async fn fetch_images_grouped_by_hash(
   let span = tracing::info_span!("fetch_images_grouped_by_hash");
   let _enter = span.enter();
 
-  let qs = ImageGroupQueryService::default();
+  let qs = ImageGroupQueryService::new(&state.db);
 
-  match qs
-    .list_images_grouped_by_hash(&state.db, limit, next_cursor)
-    .await
-  {
+  match qs.list_images_grouped_by_hash(limit, next_cursor).await {
     Ok(groups) => {
       tracing::info!(groups = groups.data.len(), "Fetch grouped images completed");
       Ok(groups)

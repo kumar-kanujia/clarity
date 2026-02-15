@@ -4,20 +4,31 @@ use crate::{
   },
   domain::file::file_scan::FileScanResult,
   error::AppError,
+  infrastructure::repo::image_repo::ImageRepository,
   interface::dto::ImportSummaryDto,
   setup::state::Db,
 };
 
-pub struct ScanAndImportImages;
+pub struct ScanAndImportImages {
+  import_service: ImageImportService,
+}
 
 impl ScanAndImportImages {
-  pub async fn run(db: &Db, paths: &[String]) -> Result<ImportSummaryDto, AppError> {
+  pub fn new(db: &Db) -> Self {
+    Self {
+      import_service: ImageImportService::new(ImageRepository::new(db.clone())),
+    }
+  }
+
+  pub async fn run(&self, paths: &[String]) -> Result<ImportSummaryDto, AppError> {
     let file_scan = FileScanService::scan_for_images(paths).await?;
 
     let metadata = FileScanService::extract_metadata_for_files(&file_scan.files).await?;
 
-    let imported_count =
-      ImageImportService::persist_file_metadata_for_images(db, &metadata).await?;
+    let imported_count = self
+      .import_service
+      .persist_file_metadata_for_images(&metadata)
+      .await?;
 
     Ok(Self::build_summary(
       &file_scan,

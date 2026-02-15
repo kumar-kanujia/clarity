@@ -1,11 +1,11 @@
+use crate::{domain::image::ImageMetadata, infrastructure::processing::error::ProcessingError};
+
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
 use image::{ImageFormat, ImageReader};
 use uuid::Uuid;
-
-use crate::{domain::image::ImageMetadata, infrastructure::processing::error::ProcessingError};
 
 /// Thumbnail size in pixels
 pub const THUMBNAIL_SIZE: u32 = 256;

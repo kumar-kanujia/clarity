@@ -1,23 +1,34 @@
 use crate::{
   domain::image::Image,
   error::AppError,
-  infrastructure::{fs::ops, models::image_model::ImageModel, repo::image_repo},
+  infrastructure::{fs::ops, models::image_model::ImageModel, repo::image_repo::ImageRepository},
   interface::dto::PaginatedImageHashGroups,
   setup::state::Db,
 };
 
-#[derive(Debug, Default)]
-pub struct ImageGroupQueryService;
+#[derive(Debug)]
+pub struct ImageGroupQueryService {
+  repo: ImageRepository,
+}
 
 impl ImageGroupQueryService {
+  pub fn new(db: &Db) -> Self {
+    Self {
+      repo: ImageRepository::new(db.clone()),
+    }
+  }
+
   #[tracing::instrument]
   pub async fn list_images_grouped_by_hash(
     &self,
-    db: &Db,
     limit: i64,
     next_cursor: Option<i64>,
   ) -> Result<PaginatedImageHashGroups, AppError> {
-    let raw_images = image_repo::list_images_grouped_by_hash(db, limit, next_cursor).await?;
+    let raw_images = self
+      .repo
+      .list_images_grouped_by_hash(limit, next_cursor)
+      .await?;
+
     let filtered_images = self.filter_image(raw_images);
 
     let id = filtered_images.last().map(|i| i.id);

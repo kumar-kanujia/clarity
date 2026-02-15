@@ -3,13 +3,20 @@ use crate::{
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,
-    repo::{error::DatabaseError, image_repo},
+    repo::{error::DatabaseError, image_repo::ImageRepository},
   },
-  setup::state::Db,
 };
 
-#[derive(Debug, Default, Clone)]
-pub struct FileHashWorker;
+#[derive(Debug, Clone)]
+pub struct FileHashWorker {
+  repo: &'static ImageRepository,
+}
+
+impl FileHashWorker {
+  pub fn new(repo: &'static ImageRepository) -> Self {
+    Self { repo }
+  }
+}
 
 impl Worker for FileHashWorker {
   fn name(&self) -> &'static str {
@@ -20,8 +27,11 @@ impl Worker for FileHashWorker {
     4
   }
 
-  async fn fetch_batch(&self, db: &Db, limit: i64) -> Result<Vec<Image>, DatabaseError> {
-    let models = image_repo::list_images_by_status(db, limit, ImageStatus::Pending).await?;
+  async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
+    let models = self
+      .repo
+      .list_images_by_status(limit, ImageStatus::Pending)
+      .await?;
     Ok(models.into_iter().map(Image::from).collect())
   }
 
@@ -30,8 +40,8 @@ impl Worker for FileHashWorker {
     items
   }
 
-  async fn update_batch(&self, db: &Db, items: &Vec<Image>) -> Result<u64, DatabaseError> {
-    let count = image_repo::update_images_hash(db, items).await?;
+  async fn update_batch(&self, items: &Vec<Image>) -> Result<u64, DatabaseError> {
+    let count = self.repo.update_images_hash(items).await?;
     Ok(count)
   }
 }

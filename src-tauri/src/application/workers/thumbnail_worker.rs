@@ -3,9 +3,8 @@ use crate::{
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,
-    repo::{error::DatabaseError, image_repo},
+    repo::{error::DatabaseError, image_repo::ImageRepository},
   },
-  setup::state::Db,
 };
 
 use std::path::PathBuf;
@@ -15,13 +14,15 @@ use tauri::AppHandle;
 #[derive(Debug, Clone)]
 pub struct ThumbnailWorker {
   pub thumbnail_target: PathBuf,
+  repo: &'static ImageRepository,
 }
 
 impl ThumbnailWorker {
-  pub fn new(app: &AppHandle) -> Option<Self> {
+  pub fn new(app: &AppHandle, repo: &'static ImageRepository) -> Option<Self> {
     match ThumbnailService::get_thumbnail_target(app) {
       Ok(path) => Some(Self {
         thumbnail_target: path,
+        repo: repo,
       }),
       Err(e) => {
         tracing::error!(error = ?e, "Thumbnail worker failed to lock cache directory");
@@ -40,8 +41,11 @@ impl Worker for ThumbnailWorker {
     2
   }
 
-  async fn fetch_batch(&self, db: &Db, limit: i64) -> Result<Vec<Image>, DatabaseError> {
-    let models = image_repo::list_images_by_status(db, limit, ImageStatus::Hashed).await?;
+  async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
+    let models = self
+      .repo
+      .list_images_by_status(limit, ImageStatus::Hashed)
+      .await?;
     Ok(models.into_iter().map(Image::from).collect())
   }
 
@@ -50,8 +54,8 @@ impl Worker for ThumbnailWorker {
     items
   }
 
-  async fn update_batch(&self, db: &Db, items: &Vec<Image>) -> Result<u64, DatabaseError> {
-    let count = image_repo::update_images_metadata(db, items).await?;
+  async fn update_batch(&self, items: &Vec<Image>) -> Result<u64, DatabaseError> {
+    let count = self.repo.update_images_metadata(items).await?;
     Ok(count)
   }
 }

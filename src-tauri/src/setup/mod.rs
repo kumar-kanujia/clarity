@@ -6,7 +6,7 @@ use crate::{
   application::workers::{
     Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
   },
-  infrastructure::system::get_num_threads,
+  infrastructure::{repo::image_repo::ImageRepository, system::get_num_threads},
   setup::{dbsetup::setup_db, state::AppState},
 };
 
@@ -49,13 +49,15 @@ pub fn setup_app(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   tracing::info!("Setting up Workers");
 
-  let shutdown_clone = shutdown.clone();
-  let db_clone = db.clone();
-  let worker = FileHashWorker;
-  tauri::async_runtime::spawn(async move { worker.run(db_clone, shutdown_clone).await });
+  let image_repo: &'static ImageRepository = Box::leak(Box::new(ImageRepository::new(db)));
 
-  if let Some(worker) = ThumbnailWorker::new(app_handle) {
-    tauri::async_runtime::spawn(async move { worker.run(db, shutdown).await });
+  let shutdown_clone = shutdown.clone();
+
+  let worker = FileHashWorker::new(image_repo);
+  tauri::async_runtime::spawn(async move { worker.run(shutdown_clone).await });
+
+  if let Some(worker) = ThumbnailWorker::new(app_handle, image_repo) {
+    tauri::async_runtime::spawn(async move { worker.run(shutdown).await });
   }
 
   tracing::info!("Workers setup complete");

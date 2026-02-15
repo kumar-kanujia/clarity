@@ -1,4 +1,4 @@
-use crate::{infrastructure::fs::ops, interface::error::DbInitError};
+use crate::{infrastructure::fs::ops, interface::error::DBInitError};
 
 use tauri::{AppHandle, Manager};
 
@@ -11,11 +11,11 @@ pub const DB_DIR: &str = "db";
 pub const DB_FILE: &str = "clarity.sqlite3";
 pub const MAX_POOL_SIZE: u32 = 5;
 
-pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DbInitError> {
+pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DBInitError> {
   let app_data = app
     .path()
     .app_data_dir()
-    .map_err(|_| DbInitError::MissingAppDataDir)?;
+    .map_err(|_| DBInitError::MissingAppDataDir)?;
 
   let db_dir = app_data.join(DB_DIR);
 
@@ -52,17 +52,17 @@ pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DbInitError> {
     })
     .connect_with(db_opts)
     .await
-    .map_err(DbInitError::Connect)?;
+    .map_err(DBInitError::Connect)?;
 
   migrate!("./migrations")
     .run(&pool)
     .await
-    .map_err(|err| DbInitError::Migration(err))?;
+    .map_err(|err| DBInitError::Migration(err))?;
 
   sqlx::query("PRAGMA optimize;")
     .execute(&pool)
     .await
-    .map_err(DbInitError::Optimize)?;
+    .map_err(DBInitError::Optimize)?;
 
   Ok(pool)
 }

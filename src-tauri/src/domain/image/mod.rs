@@ -32,6 +32,8 @@ pub struct Image {
   pub updated_at: String,
 }
 
+pub const MAX_WORKER_RETRIES: i32 = 3;
+
 static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
 impl Image {

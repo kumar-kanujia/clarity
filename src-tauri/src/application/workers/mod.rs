@@ -5,7 +5,6 @@ use std::{cmp, time::Duration};
 use tokio_util::sync::CancellationToken;
 
 use crate::infrastructure::repo::error::DatabaseError;
-use crate::setup::state::Db;
 
 use crate::domain::image::Image;
 
@@ -20,14 +19,14 @@ pub trait Worker: Clone + Send + Sync + 'static {
   fn batch_factor(&self) -> usize;
 
   /// Step 1: Fetch data from DB
-  async fn fetch_batch(&self, db: &Db, limit: i64) -> Result<Vec<Image>, DatabaseError>;
+  async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError>;
 
   /// Step 2: CPU-bound processing (Sync function, not Async)
   /// This is run inside a blocking thread automatically by the run() method.
   fn process_batch(&self, items: Vec<Image>) -> Vec<Image>;
 
   /// Step 3: Update DB with results
-  async fn update_batch(&self, db: &Db, items: &Vec<Image>) -> Result<u64, DatabaseError>;
+  async fn update_batch(&self, items: &Vec<Image>) -> Result<u64, DatabaseError>;
 
   /// Helper: Calculate dynamic batch size
   fn get_batch_size(&self) -> i64 {
@@ -42,7 +41,7 @@ pub trait Worker: Clone + Send + Sync + 'static {
     }
   }
 
-  async fn run(self, db: Db, shutdown: CancellationToken) {
+  async fn run(self, shutdown: CancellationToken) {
     let name = self.name();
     let batch_size = self.get_batch_size();
 
@@ -50,12 +49,12 @@ pub trait Worker: Clone + Send + Sync + 'static {
     let _enter = span.enter();
 
     loop {
-      let batch_span = tracing::info_span!("worker_batch", worker = name);
+      let batch_span = tracing::info_span!("worker", worker = name);
       let _guard = batch_span.enter();
       let start_time = std::time::Instant::now();
 
       // --- 1. FETCH ---
-      let mut items = match self.fetch_batch(&db, batch_size).await {
+      let mut items = match self.fetch_batch(batch_size).await {
         Ok(items) if items.is_empty() => {
           if Self::sleep_or_shutdown(IDEAL_WAIT_TIME, &shutdown).await {
             tracing::info!("{} shutting down", name);
@@ -92,7 +91,7 @@ pub trait Worker: Clone + Send + Sync + 'static {
       };
 
       // --- 3. UPDATE ---
-      match self.update_batch(&db, &items).await {
+      match self.update_batch(&items).await {
         Ok(updated) => {
           tracing::info!(
             processed = items.len(),
