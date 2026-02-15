@@ -1,4 +1,5 @@
 use crate::{
+  domain::tag::Tag,
   error::AppError,
   infrastructure::{models::tag_model::TagType, repo::tag_repo::TagRepository},
   interface::dto::TagDto,
@@ -17,7 +18,7 @@ impl TagService {
   }
 
   pub async fn create_new_tag(&self, tag_text: &str) -> Result<i64, AppError> {
-    let tag_text = tag_text.to_ascii_lowercase();
+    let tag_text = Tag::normalize_text(tag_text);
     let new_tag_id = self.repo.save_new_tag(&tag_text, TagType::User).await?;
     Ok(new_tag_id)
   }

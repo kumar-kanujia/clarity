@@ -8,6 +8,7 @@ pub enum TagType {
   System,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, FromRow)]
 pub struct TagRow {
   pub id: i64,
@@ -15,8 +16,6 @@ pub struct TagRow {
   pub color: String,
   pub image_count: i64,
   pub tag_type: TagType,
-  pub is_deleted: i64,
-  pub is_hidden: i64,
   pub created_at: NaiveDateTime,
   pub updated_at: NaiveDateTime,
 }

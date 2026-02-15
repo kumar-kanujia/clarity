@@ -6,7 +6,6 @@ use crate::{
     },
     workflow::scan_and_import_images::ScanAndImportImages,
   },
-  error::{self},
   interface::dto::{
     ImageCursor, ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages, TagDto,
   },
@@ -35,7 +34,7 @@ pub async fn import_images(
           error = ?err,
           "Import failed"
       );
-      Err(error::user_friendly_message(&err))
+      Err(err.user_message())
     }
   }
 }
@@ -61,7 +60,7 @@ pub async fn fetch_images(
     }
     Err(err) => {
       tracing::error!(error = ?err, "fetch_image failed");
-      Err(error::user_friendly_message(&err))
+      Err(err.user_message())
     }
   }
 }
@@ -84,7 +83,7 @@ pub async fn fetch_images_grouped_by_hash(
     }
     Err(err) => {
       tracing::error!(error = ?err, "Load failed");
-      Err(error::user_friendly_message(&err))
+      Err(err.user_message())
     }
   }
 }

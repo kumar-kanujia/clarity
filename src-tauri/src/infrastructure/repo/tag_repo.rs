@@ -25,7 +25,15 @@ impl TagRepository {
       .bind(text)
       .bind(tag_type)
       .execute(&self.db)
-      .await?;
+      .await
+      .map_err(|err| match &err {
+        sqlx::Error::Database(db_err)
+          if matches!(db_err.code().as_deref(), Some("1555") | Some("2067")) =>
+        {
+          DatabaseError::RecordAlreadyExists(format!("Tag \"{}\"", text))
+        }
+        _ => DatabaseError::Connection(err),
+      })?;
 
     Ok(result.last_insert_rowid())
   }

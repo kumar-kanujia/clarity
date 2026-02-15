@@ -1,4 +1,4 @@
-use crate::{infrastructure::fs::ops, interface::error::DBInitError};
+use crate::{infrastructure::fs::ops, setup::error::DBInitError};
 
 use tauri::{AppHandle, Manager};
 

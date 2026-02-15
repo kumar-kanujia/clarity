@@ -48,7 +48,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
     try {
       const params: app.FetchImagesParams = {
         limit: BATCH_SIZE,
-        cursor: isReset ? undefined : (nextCursor ?? undefined),
+        cursor: isReset ? undefined : (nextCursor ?? undefined)
       };
 
       const result = await app.fetchImages(params);
@@ -62,7 +62,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
           images: updatedImages,
           nextCursor: result.nextCursor ?? null,
           hasMore: !!result.nextCursor,
-          isLoading: false,
+          isLoading: false
         };
       });
     } catch (error) {
@@ -81,7 +81,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
     try {
       const params: app.FetchImagesGroupedByHashParams = {
         limit: 10,
-        nextCursor: isReset ? undefined : (nextGroupCursor ?? undefined),
+        nextCursor: isReset ? undefined : (nextGroupCursor ?? undefined)
       };
 
       const result = await app.fetchImagesGroupedByHash(params);
@@ -95,7 +95,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
           groupedImages: updatedGroups,
           nextGroupCursor: result.next_cursor ?? null,
           hasMoreGroups: !!result.next_cursor,
-          isScansLoading: false,
+          isScansLoading: false
         };
       });
     } catch (error) {
@@ -111,7 +111,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       if (files && files.length > 0) {
         set({ isLoading: true, importSummary: null });
         const summary = await app.importImages({
-          paths: files,
+          paths: files
         });
         set({ importSummary: summary });
         await get().loadImages(true);
@@ -127,7 +127,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       if (path) {
         set({ isLoading: true, importSummary: null });
         const summary = await app.importImages({
-          paths: typeof path === "string" ? [path] : path,
+          paths: typeof path === "string" ? [path] : path
         });
         set({ importSummary: summary });
         await get().loadImages(true);
@@ -141,7 +141,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
     try {
       const [userTags, systemTags] = await Promise.all([
         app.fetchUserTags(),
-        app.fetchSystemTags(),
+        app.fetchSystemTags()
       ]);
       set({ userTags, systemTags });
     } catch (error) {
@@ -156,9 +156,9 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       toast.success("Tag created successfully");
     } catch (error) {
       console.error("Failed to create tag: this", error);
-      toast.error("Failed to create tag");
+      toast.error(`Failed to create tag: ${error}`);
     }
   },
 
-  clearImportSummary: () => set({ importSummary: null }),
+  clearImportSummary: () => set({ importSummary: null })
 }));

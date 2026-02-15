@@ -27,15 +27,3 @@ impl AppError {
     }
   }
 }
-
-pub fn user_friendly_message(err: &AppError) -> String {
-  match err {
-    AppError::Scan(_) => "Scan failed due to filesystem error.".into(),
-    AppError::Join(_) => "Internal scan task failed.".into(),
-    AppError::Database(db_err) => match db_err {
-      DatabaseError::RecordAlreadyExists { .. } => "This item already exists.".into(),
-      DatabaseError::Connection(_) => "Database connection failed.".into(),
-    },
-    AppError::Internal(_) => "Internal error.".into(),
-  }
-}

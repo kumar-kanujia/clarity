@@ -1,4 +1,5 @@
 pub mod dbsetup;
+pub mod error;
 pub mod state;
 pub mod tracesetup;
 
