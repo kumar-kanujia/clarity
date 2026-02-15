@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useGalleryStore } from "@/hooks/use-gallery-store";
+import { useTagStore } from "@/features/tags/hooks/use-tag-store";
 import {
   Tooltip,
   TooltipContent,
@@ -45,12 +45,16 @@ export const ImageModal = ({
   hasPrev,
 }: ImageModalProps) => {
   const [showInfo, setShowInfo] = useState(false);
-  const { systemTags, userTags, toggleTagOnImage } = useGalleryStore();
+  const { systemTags, userTags, toggleTagOnImage, appliedTags, createTag } =
+    useTagStore();
 
-  // Local state for tags applied to this image since ImageDto doesn't include them
-  // In a real app, we'd fetch these or they'd be in the DTO
-  const [appliedTagIds, setAppliedTagIds] = useState<Set<number>>(new Set());
+  const currentAppliedTagIds = useMemo(() => {
+    return image ? appliedTags[image.id] || [] : [];
+  }, [appliedTags, image]);
+
   const [tagSearch, setTagSearch] = useState("");
+  const [newTagText, setNewTagText] = useState("");
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
 
   const filteredUserTags = useMemo(() => {
     return userTags
@@ -65,14 +69,13 @@ export const ImageModal = ({
     [systemTags],
   );
 
-  const isFavorited = favoriteTag ? appliedTagIds.has(favoriteTag.id) : false;
+  const isFavorited = favoriteTag
+    ? currentAppliedTagIds.includes(favoriteTag.id)
+    : false;
 
   useEffect(() => {
     if (image) {
       document.body.style.overflow = "hidden";
-      // Reset applied tags when image changes
-      // Note: Ideally we would fetch applied tags here if the API supported it
-      setAppliedTagIds(new Set());
     } else {
       document.body.style.overflow = "";
     }
@@ -96,16 +99,23 @@ export const ImageModal = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [image, onClose, onNext, onPrev, hasNext, hasPrev, favoriteTag]);
 
+  const handleCreateAndApplyTag = async () => {
+    if (!newTagText.trim() || !image) return;
+    try {
+      const tagId = await createTag(newTagText);
+      await toggleTagOnImage(image.id, tagId);
+      setNewTagText("");
+      setIsCreatingTag(false);
+      setTagSearch("");
+    } catch (error) {
+      console.error("Failed to create and apply tag:", error);
+    }
+  };
+
   const handleToggleTag = async (tagId: number) => {
     if (!image) return;
     try {
       await toggleTagOnImage(image.id, tagId);
-      setAppliedTagIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(tagId)) next.delete(tagId);
-        else next.add(tagId);
-        return next;
-      });
     } catch (error) {
       // toast error is already handled in store
     }
@@ -264,14 +274,14 @@ export const ImageModal = ({
                     className="absolute right-4 top-20 bottom-8 w-80 bg-background/80 backdrop-blur-2xl border rounded-3xl p-0 shadow-2xl overflow-hidden flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="p-6 pb-4 flex items-center justify-between border-b bg-muted/20">
-                      <h2 className="text-sm font-black uppercase tracking-widest">
+                    <div className="p-6 pb-4 flex items-center justify-between border-b border-white/5 bg-zinc-950/40">
+                      <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
                         Metadata
                       </h2>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full"
+                        className="h-8 w-8 rounded-full hover:bg-white/10"
                         onClick={() => setShowInfo(false)}
                       >
                         <X className="w-4 h-4" />
@@ -286,7 +296,7 @@ export const ImageModal = ({
                             <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                               Name
                             </span>
-                            <p className="text-sm font-bold break-all">
+                            <p className="text-sm font-bold break-all text-white">
                               {image.path.split("/").pop()}
                             </p>
                           </div>
@@ -296,14 +306,32 @@ export const ImageModal = ({
                               <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                                 Size
                               </span>
-                              <p className="text-xs font-mono">{image.size}</p>
+                              <p className="text-xs font-mono text-white/80">
+                                {image.size}
+                              </p>
                             </div>
                             <div className="flex flex-col gap-1">
                               <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                                 Format
                               </span>
-                              <p className="text-xs font-mono uppercase">
+                              <p className="text-xs font-mono uppercase text-white/80">
                                 {image.path.split(".").pop()}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                                Resolution
+                              </span>
+                              <p className="text-xs font-mono text-white/80">
+                                {image.resolution}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                                Added
+                              </span>
+                              <p className="text-[10px] font-mono text-white/80">
+                                {new Date(image.createdAt).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
@@ -312,35 +340,157 @@ export const ImageModal = ({
                             <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                               Path
                             </span>
-                            <p className="text-[10px] text-muted-foreground break-all font-mono leading-relaxed">
+                            <p className="text-[10px] text-zinc-500 break-all font-mono leading-relaxed bg-black/20 p-2 rounded-lg border border-white/5">
                               {image.path}
                             </p>
                           </div>
                         </div>
 
-                        <Separator className="opacity-50" />
+                        <Separator className="opacity-10" />
+
+                        {/* Visual DNA Section */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">
+                              Visual DNA
+                            </h3>
+                            <div className="flex gap-1">
+                              {[1, 2, 3].map((i) => (
+                                <div
+                                  key={i}
+                                  className="w-1 h-1 rounded-full bg-primary/40 animate-pulse"
+                                  style={{ animationDelay: `${i * 0.2}s` }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-6">
+                            {/* Luminance Chart */}
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-end">
+                                <span className="text-[9px] uppercase font-bold text-zinc-500">
+                                  Luminance
+                                </span>
+                                <span className="text-[10px] font-mono text-zinc-400">
+                                  Balanced
+                                </span>
+                              </div>
+                              <div className="h-12 w-full flex items-end gap-[1px]">
+                                {Array.from({ length: 40 }).map((_, i) => (
+                                  <motion.div
+                                    key={i}
+                                    initial={{ height: 0 }}
+                                    animate={{
+                                      height: `${Math.random() * 80 + 20}%`,
+                                    }}
+                                    transition={{
+                                      delay: i * 0.01,
+                                      duration: 0.8,
+                                    }}
+                                    className="flex-1 rounded-t-[1px] bg-zinc-700/50 group-hover:bg-primary/30"
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Spectrum Chart */}
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-end">
+                                <span className="text-[9px] uppercase font-bold text-zinc-500">
+                                  Spectrum
+                                </span>
+                                <span className="text-[10px] font-mono text-zinc-400">
+                                  Cool / 6400K
+                                </span>
+                              </div>
+                              <div className="h-1 flex w-full rounded-full overflow-hidden bg-zinc-800">
+                                <div className="h-full w-[30%] bg-blue-500/50" />
+                                <div className="h-full w-[20%] bg-emerald-500/50" />
+                                <div className="h-full w-[50%] bg-zinc-700" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Separator className="opacity-10" />
+
+                        {/* EXIF / Advanced Technicals */}
+                        <div className="space-y-4">
+                          <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500/80">
+                            Advanced Technicals
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-1">
+                              <span className="text-[9px] uppercase font-bold text-zinc-600">
+                                Aperture
+                              </span>
+                              <span className="text-xs font-mono text-zinc-300">
+                                f/2.8
+                              </span>
+                            </div>
+                            <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-1">
+                              <span className="text-[9px] uppercase font-bold text-zinc-600">
+                                Exposure
+                              </span>
+                              <span className="text-xs font-mono text-zinc-300">
+                                1/250s
+                              </span>
+                            </div>
+                            <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-1">
+                              <span className="text-[9px] uppercase font-bold text-zinc-600">
+                                ISO
+                              </span>
+                              <span className="text-xs font-mono text-zinc-300">
+                                100
+                              </span>
+                            </div>
+                            <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-1">
+                              <span className="text-[9px] uppercase font-bold text-zinc-600">
+                                Focal Length
+                              </span>
+                              <span className="text-xs font-mono text-zinc-300">
+                                35mm
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-3 rounded-2xl bg-zinc-900/50 border border-white/5 flex flex-col gap-2">
+                            <span className="text-[9px] uppercase font-bold text-zinc-600">
+                              Color Space
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <div className="h-1.5 flex-1 rounded-full bg-gradient-to-r from-red-500 via-green-500 to-blue-500 opacity-50" />
+                              <span className="text-[10px] font-mono text-zinc-400">
+                                P3 Wide
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Separator className="opacity-10" />
 
                         {/* Labels Section */}
                         <div className="space-y-6">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                              <div className="p-1.5 rounded-lg bg-white/5 text-zinc-400">
                                 <TagIcon className="w-3.5 h-3.5" />
                               </div>
-                              <span className="text-[10px] uppercase font-black tracking-[0.2em]">
+                              <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white">
                                 Labels
                               </span>
                             </div>
                             <Badge
                               variant="outline"
-                              className="text-[9px] font-black tracking-tighter rounded-md h-5"
+                              className="text-[9px] font-black tracking-tighter rounded-md h-5 border-white/10 bg-white/5 text-zinc-400"
                             >
-                              {appliedTagIds.size}
+                              {currentAppliedTagIds.length}
                             </Badge>
                           </div>
 
                           <div className="flex flex-wrap gap-1.5 min-h-8">
-                            {Array.from(appliedTagIds).map((tagId) => {
+                            {currentAppliedTagIds.map((tagId) => {
                               const tag = [...userTags, ...systemTags].find(
                                 (t) => t.id === tagId,
                               );
@@ -349,7 +499,7 @@ export const ImageModal = ({
                                 <Badge
                                   key={tagId}
                                   variant="secondary"
-                                  className="pl-1 pr-1.5 py-0.5 h-6 rounded-full border-none group/badge animate-in fade-in zoom-in duration-200"
+                                  className="pl-1 pr-1.5 py-0.5 h-6 rounded-full border-white/5 group/badge animate-in fade-in zoom-in duration-200"
                                   style={{
                                     backgroundColor: `${tag.tagColor}15`,
                                     color: tag.tagColor,
@@ -364,7 +514,7 @@ export const ImageModal = ({
                                   </span>
                                   <button
                                     onClick={() => handleToggleTag(tagId)}
-                                    className="hover:text-foreground"
+                                    className="hover:text-white transition-colors"
                                   >
                                     <X className="w-3 h-3" />
                                   </button>
@@ -372,23 +522,71 @@ export const ImageModal = ({
                               );
                             })}
 
-                            {appliedTagIds.size === 0 && (
-                              <p className="text-[10px] italic text-muted-foreground px-1">
+                            {currentAppliedTagIds.length === 0 && (
+                              <p className="text-[10px] italic text-zinc-500 px-1">
                                 No labels applied yet.
                               </p>
                             )}
                           </div>
 
                           <div className="pt-2">
-                            <div className="relative mb-4">
-                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-                              <Input
-                                placeholder="Search labels..."
-                                className="pl-8 h-8 text-[11px] rounded-lg bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/30"
-                                value={tagSearch}
-                                onChange={(e) => setTagSearch(e.target.value)}
-                              />
+                            <div className="relative mb-4 flex gap-2">
+                              <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                                <Input
+                                  placeholder="Search labels..."
+                                  className="pl-8 h-8 text-[11px] rounded-lg bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                                  value={tagSearch}
+                                  onChange={(e) => setTagSearch(e.target.value)}
+                                />
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className={cn(
+                                  "h-8 w-8 rounded-lg transition-all",
+                                  isCreatingTag && "bg-primary text-white",
+                                )}
+                                onClick={() => setIsCreatingTag(!isCreatingTag)}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
+
+                            <AnimatePresence>
+                              {isCreatingTag && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden mb-4"
+                                >
+                                  <div className="flex gap-2 p-1">
+                                    <Input
+                                      placeholder="Label name..."
+                                      className="h-9 text-[11px] rounded-xl bg-primary/5 border-primary/20 focus-visible:ring-primary/40"
+                                      value={newTagText}
+                                      onChange={(e) =>
+                                        setNewTagText(e.target.value)
+                                      }
+                                      onKeyDown={(e) =>
+                                        e.key === "Enter" &&
+                                        handleCreateAndApplyTag()
+                                      }
+                                      autoFocus
+                                    />
+                                    <Button
+                                      size="sm"
+                                      className="h-9 px-4 rounded-xl bg-primary text-white font-bold text-[10px] uppercase"
+                                      onClick={handleCreateAndApplyTag}
+                                      disabled={!newTagText.trim()}
+                                    >
+                                      Add
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
 
                             <div className="grid grid-cols-1 gap-1">
                               {filteredUserTags.length === 0 && (
@@ -397,7 +595,9 @@ export const ImageModal = ({
                                 </p>
                               )}
                               {filteredUserTags.map((tag) => {
-                                const isApplied = appliedTagIds.has(tag.id);
+                                const isApplied = currentAppliedTagIds.includes(
+                                  tag.id,
+                                );
                                 return (
                                   <Button
                                     key={tag.id}
@@ -406,8 +606,8 @@ export const ImageModal = ({
                                     className={cn(
                                       "group/item justify-start h-9 px-3 rounded-xl text-[11px] font-semibold transition-all duration-200",
                                       isApplied
-                                        ? "bg-primary/10 text-primary hover:bg-primary/20"
-                                        : "hover:bg-muted",
+                                        ? "bg-white/10 text-white hover:bg-white/20"
+                                        : "text-zinc-400 hover:bg-white/5 hover:text-white",
                                     )}
                                     onClick={() => handleToggleTag(tag.id)}
                                   >

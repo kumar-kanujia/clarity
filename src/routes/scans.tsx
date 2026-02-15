@@ -1,9 +1,9 @@
 import { ImageDto } from "@/services/tauri";
 import { getFileURI } from "@/services/tauri/tauri-api";
-import { ImageModal } from "@/components/elements/image-modal";
+import { ImageModal } from "@/features/gallery/components/image-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGalleryStore } from "@/hooks/use-gallery-store";
+import { useScanStore } from "@/features/scans/hooks/use-scan-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { Layers, Maximize2, Scan, CheckCircle2 } from "lucide-react";
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/scans")({
 
 function ScansPage() {
   const { groupedImages, isScansLoading, hasMoreGroups, loadGroupedImages } =
-    useGalleryStore();
+    useScanStore();
 
   const [previewImage, setPreviewImage] = useState<ImageDto | null>(null);
   const [hasScanned, setHasScanned] = useState(false);
@@ -29,36 +29,51 @@ function ScansPage() {
   return (
     <div className="flex flex-col h-full bg-zinc-950 overflow-hidden">
       {/* Page Header Toolbar */}
-      <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-zinc-900/30 backdrop-blur-md sticky top-0 z-30">
-        <div className="flex flex-col">
-          <h1 className="text-sm font-bold tracking-widest text-white uppercase">
-            Identity Scans
-          </h1>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">
-            Discover exact duplicates in your collection
-          </p>
+      <header className="h-14 flex items-center justify-between px-8 bg-zinc-950/20 backdrop-blur-md relative z-30">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-4 bg-primary rounded-full" />
+          <span className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-black">
+            Scan Engine Ready
+          </span>
         </div>
 
         <Button
           onClick={handleScan}
           disabled={isScansLoading}
-          className="rounded-full bg-primary h-9 px-6 hover:scale-105 transition-transform font-bold text-xs uppercase tracking-widest"
+          className="rounded-full bg-white text-zinc-950 hover:bg-zinc-200 h-9 px-6 transition-all font-bold text-[10px] uppercase tracking-widest active:scale-95"
         >
-          {isScansLoading ? "Scanning..." : "Start Scan"}
+          {isScansLoading ? "Working..." : "Trigger Scan"}
         </Button>
       </header>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
         {!hasScanned ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8">
-            <div className="w-16 h-16 bg-zinc-900 border border-white/5 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
-              <Scan className="w-8 h-8 text-zinc-600" />
-            </div>
-            <h2 className="text-xl font-bold mb-2 text-white">Ready to scan</h2>
-            <p className="text-zinc-500 max-w-sm text-sm mb-8">
-              Click the button above to analyze your library for duplicate
-              images. This may take a moment.
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8 relative overflow-hidden">
+            {/* Ambient background glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 bg-primary/5 rounded-full blur-[120px] -z-10" />
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              className="w-20 h-20 bg-zinc-900 border border-white/5 rounded-[40px] flex items-center justify-center mb-8 shadow-2xl relative"
+            >
+              <Scan className="w-10 h-10 text-zinc-500" />
+            </motion.div>
+            <h2 className="text-2xl font-black mb-3 text-white tracking-tight uppercase">
+              Ready for Ignition
+            </h2>
+            <p className="text-zinc-500 max-w-sm text-sm mb-10 leading-relaxed font-medium">
+              Initialize the discovery engine to identify exact byte-for-byte
+              duplicates within your library.
             </p>
+            <Button
+              onClick={handleScan}
+              disabled={isScansLoading}
+              className="rounded-full bg-white text-zinc-950 hover:bg-zinc-200 h-12 px-10 transition-all font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-white/5"
+            >
+              {isScansLoading ? "Working..." : "Trigger Discovery"}
+            </Button>
           </div>
         ) : (
           <div className="p-8">

@@ -1,6 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
-
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/features/ui/components/app-sidebar";
+import { PanelView } from "@/features/ui/components/panel-view";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
@@ -9,15 +9,10 @@ const RootLayout = () => {
     <SidebarProvider>
       <div className="flex h-screen w-screen overflow-hidden bg-background">
         <AppSidebar />
+        <PanelView />
         <main className="flex-1 flex flex-col relative overflow-hidden">
           {/* Top Banner */}
-          <div className="h-14 border-b border-white/5 flex items-center px-6 bg-zinc-950/50 backdrop-blur-md z-40">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="font-bold tracking-widest text-white uppercase text-xs">
-                Clarity
-              </span>
-            </div>
+          <div className="h-14 flex items-center px-6 bg-zinc-950/20 backdrop-blur-md z-40 relative">
             <div className="ml-auto flex items-center gap-4">
               {/* Optional top-right actions could go here */}
             </div>

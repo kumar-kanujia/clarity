@@ -11,7 +11,7 @@ import {
   Edit2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useGalleryStore } from "@/hooks/use-gallery-store";
+import { useTagStore } from "@/features/tags/hooks/use-tag-store";
 import { useState } from "react";
 import {
   Dialog,
@@ -58,7 +58,7 @@ const TAG_COLORS = [
 ];
 
 function TagsPage() {
-  const { userTags, systemTags, createTag, deleteTag } = useGalleryStore();
+  const { userTags, systemTags, createTag, deleteTag } = useTagStore();
   const [newTagName, setNewTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(TAG_COLORS[0]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -324,35 +324,6 @@ function TagsPage() {
                 </div>
               </section>
             )}
-            {/* Danger Zone */}
-            <section className="bg-destructive/5 border border-destructive/20 rounded-[32px] p-10 mt-20">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
-                    <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black uppercase tracking-widest text-destructive">
-                      Danger Zone
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-md">
-                      Managing labels is an atomic operation. Deleting a label
-                      will remove it from all associated images across your
-                      library.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-4">
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all h-12 px-6 font-bold"
-                  >
-                    Cleanup Unused Labels
-                  </Button>
-                </div>
-              </div>
-            </section>
           </div>
         )}
       </div>
@@ -361,23 +332,29 @@ function TagsPage() {
         open={tagToDelete !== null}
         onOpenChange={(open) => !open && setTagToDelete(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[32px] border-white/5 bg-zinc-950/90 backdrop-blur-2xl p-8 max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Tag</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this tag? This action cannot be
-              undone and will remove the label from all associated images.
+            <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <AlertDialogTitle className="text-xl font-black uppercase tracking-widest text-destructive">
+              Delete Label?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400 text-sm leading-relaxed mt-2">
+              Managing labels is an atomic operation. Deleting this label will
+              remove it from all associated images across your library. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">
+          <AlertDialogFooter className="mt-8 flex gap-3">
+            <AlertDialogCancel className="rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10 h-12 flex-1 font-bold">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className="bg-destructive hover:bg-destructive/90 rounded-full"
+              className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 flex-1 font-bold shadow-xl shadow-destructive/20"
             >
-              Delete
+              Delete Permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

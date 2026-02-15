@@ -4,23 +4,20 @@ import { CheckCircle2, X, Home } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
-import { ImageModal } from "@/components/elements/image-modal";
+import { ImageModal } from "@/features/gallery/components/image-modal";
 import { ImageGrid } from "@/features/gallery/components/image-grid";
-import { useGalleryStore } from "@/hooks/use-gallery-store";
+import { useImageStore } from "@/features/gallery/hooks/use-image-store";
+import { useImportStore } from "@/features/import/hooks/use-import-store";
+import { BinBar } from "@/features/ui/components/bin-bar";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const {
-    images,
-    isLoading,
-    hasMore,
-    loadImages,
-    importSummary,
-    clearImportSummary,
-  } = useGalleryStore();
+  const { images, isLoading, hasMore, loadImages } = useImageStore();
+
+  const { importSummary, clearImportSummary } = useImportStore();
 
   const [previewImage, setPreviewImage] = useState<ImageDto | null>(null);
 
@@ -39,7 +36,7 @@ function Index() {
       setPreviewImage(images[currentIndex + 1]);
     } else if (hasMore && !isLoading) {
       await loadImages(false);
-      const updatedImages = useGalleryStore.getState().images;
+      const updatedImages = useImageStore.getState().images;
       const newCurrentIndex = updatedImages.findIndex(
         (img) => img.path === previewImage.path,
       );
@@ -130,6 +127,8 @@ function Index() {
           images.findIndex((img) => img.path === previewImage.path) > 0
         }
       />
+
+      <BinBar />
     </div>
   );
 }

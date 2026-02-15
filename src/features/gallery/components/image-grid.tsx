@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatePresence } from "motion/react";
 import { useEffect, useRef } from "react";
 import { ImageCard } from "./image-card";
-import { useGalleryStore } from "@/hooks/use-gallery-store";
+import { useTagStore } from "@/features/tags/hooks/use-tag-store";
 
 interface ImageGridProps {
   images: ImageDto[];
@@ -21,7 +21,7 @@ export const ImageGrid = ({
   onPreview,
 }: ImageGridProps) => {
   const loaderRef = useRef<HTMLDivElement>(null);
-  const { systemTags } = useGalleryStore();
+  const { systemTags } = useTagStore();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
