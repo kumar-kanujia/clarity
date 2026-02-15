@@ -1,5 +1,5 @@
 use crate::{
-  application::{services::thumbnail_service::ThumbnailService, workers::Worker},
+  application::{service::thumbnail_service::ThumbnailService, worker::Worker},
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,

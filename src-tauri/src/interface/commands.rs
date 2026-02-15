@@ -1,6 +1,6 @@
 use crate::{
   application::{
-    query_service::{
+    service::{
       image_group_query_service::ImageGroupQueryService, image_query_service::ImageQueryService,
     },
     workflow::scan_and_import_images::ScanAndImportImages,

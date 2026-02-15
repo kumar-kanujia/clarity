@@ -1,5 +1,5 @@
 use crate::{
-  application::{services::file_hash_service::FileHashService, workers::Worker},
+  application::{service::file_hash_service::FileHashService, worker::Worker},
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,

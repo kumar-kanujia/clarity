@@ -1,5 +1,5 @@
 use crate::{
-  application::services::{
+  application::service::{
     file_scan_service::FileScanService, image_import_service::ImageImportService,
   },
   domain::file::file_scan::FileScanResult,
