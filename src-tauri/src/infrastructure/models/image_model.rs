@@ -11,7 +11,7 @@ pub enum ImageStatus {
 }
 
 #[derive(Debug, FromRow, Clone)]
-pub struct ImageModel {
+pub struct ImageRow {
   pub id: i64,
   pub path: String,
   pub size_bytes: i64,

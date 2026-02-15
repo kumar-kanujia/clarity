@@ -1,12 +1,16 @@
 use crate::{
   infrastructure::{
-    models::image_model::{ImageModel, ImageStatus},
+    models::image_model::{ImageRow, ImageStatus},
     system::format_datetime,
   },
   interface::dto::ImageDto,
 };
 
 use std::sync::OnceLock;
+
+pub const MAX_WORKER_RETRIES: i32 = 3;
+
+static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
 #[derive(Debug, Clone, Default)]
 pub struct ImageMetadata {
@@ -31,10 +35,6 @@ pub struct Image {
   #[allow(dead_code)]
   pub updated_at: String,
 }
-
-pub const MAX_WORKER_RETRIES: i32 = 3;
-
-static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
 impl Image {
   pub fn get_extensions() -> &'static [&'static str] {
@@ -125,21 +125,21 @@ impl Image {
   }
 }
 
-impl From<ImageModel> for Image {
-  fn from(model: ImageModel) -> Self {
+impl From<ImageRow> for Image {
+  fn from(row: ImageRow) -> Self {
     Self {
-      id: model.id,
-      path: model.path,
-      size_bytes: model.size_bytes,
-      content_hash: model.content_hash.unwrap_or_default(),
-      width: model.width.unwrap_or_default(),
-      height: model.height.unwrap_or_default(),
-      thumbnail_path: model.thumbnail_path.unwrap_or_default(),
-      status: model.status,
-      retry_count: model.retry_count,
-      error_message: model.error_message,
-      created_at: format_datetime(model.created_at),
-      updated_at: format_datetime(model.updated_at),
+      id: row.id,
+      path: row.path,
+      size_bytes: row.size_bytes,
+      content_hash: row.content_hash.unwrap_or_default(),
+      width: row.width.unwrap_or_default(),
+      height: row.height.unwrap_or_default(),
+      thumbnail_path: row.thumbnail_path.unwrap_or_default(),
+      status: row.status,
+      retry_count: row.retry_count,
+      error_message: row.error_message,
+      created_at: format_datetime(row.created_at),
+      updated_at: format_datetime(row.updated_at),
     }
   }
 }

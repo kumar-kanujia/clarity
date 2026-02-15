@@ -1,5 +1,5 @@
 use crate::{
-  domain::file::file_scan::FileMetaData,
+  domain::file::FileMetaData,
   infrastructure::{processing::error::ProcessingError, system::get_utc_timestamp},
 };
 

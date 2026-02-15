@@ -1,5 +1,5 @@
 use crate::{
-  domain::{file::file_scan::FileScanResult, image::Image},
+  domain::{file::FileScanResult, image::Image},
   infrastructure::fs::error::FSError,
 };
 

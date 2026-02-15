@@ -1,6 +1,5 @@
 use crate::{
-  domain::file::file_scan::FileMetaData, error::AppError,
-  infrastructure::repo::image_repo::ImageRepository,
+  domain::file::FileMetaData, error::AppError, infrastructure::repo::image_repo::ImageRepository,
 };
 
 pub const CHUNK_SIZE: usize = 50;

@@ -1,7 +1,7 @@
 use crate::{
   domain::image::Image,
   error::AppError,
-  infrastructure::{fs::ops, models::image_model::ImageModel, repo::image_repo::ImageRepository},
+  infrastructure::{fs::ops, models::image_model::ImageRow, repo::image_repo::ImageRepository},
   interface::dto::PaginatedImageHashGroups,
   setup::state::Db,
 };
@@ -44,7 +44,7 @@ impl ImageGroupQueryService {
     Ok(PaginatedImageHashGroups { data, next_cursor })
   }
 
-  fn filter_image(&self, images: Vec<ImageModel>) -> Vec<Image> {
+  fn filter_image(&self, images: Vec<ImageRow>) -> Vec<Image> {
     images
       .into_iter()
       .filter_map(|raw| {

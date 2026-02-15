@@ -1,5 +1,5 @@
 use crate::{
-  domain::file::file_scan::{FileMetaData, FileScanResult},
+  domain::file::{FileMetaData, FileScanResult},
   error::AppError,
   infrastructure::{fs::fs_scanner::FileScanner, processing::metadata::MetadataP},
 };

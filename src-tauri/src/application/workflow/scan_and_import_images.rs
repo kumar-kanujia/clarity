@@ -2,7 +2,7 @@ use crate::{
   application::service::{
     file_scan_service::FileScanService, image_import_service::ImageImportService,
   },
-  domain::file::file_scan::FileScanResult,
+  domain::file::FileScanResult,
   error::AppError,
   infrastructure::repo::image_repo::ImageRepository,
   interface::dto::ImportSummaryDto,

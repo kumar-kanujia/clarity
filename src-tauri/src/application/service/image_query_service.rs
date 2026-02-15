@@ -2,7 +2,7 @@ use crate::{
   domain::image::Image,
   error::AppError,
   infrastructure::{
-    fs::ops, models::image_model::ImageModel, repo::image_repo::ImageRepository,
+    fs::ops, models::image_model::ImageRow, repo::image_repo::ImageRepository,
     system::format_datetime,
   },
   interface::dto::{ImageCursor, ImageDto, PaginatedImages},
@@ -36,7 +36,7 @@ impl ImageQueryService {
     Ok(PaginatedImages { data, next_cursor })
   }
 
-  fn filter_image(&self, images: Vec<ImageModel>) -> Vec<ImageDto> {
+  fn filter_image(&self, images: Vec<ImageRow>) -> Vec<ImageDto> {
     images
       .into_iter()
       .filter_map(|raw| {
@@ -55,9 +55,9 @@ impl ImageQueryService {
 
   fn split_for_pagination(
     &self,
-    mut images: Vec<ImageModel>,
+    mut images: Vec<ImageRow>,
     limit: i64,
-  ) -> (Option<ImageCursor>, Vec<ImageModel>) {
+  ) -> (Option<ImageCursor>, Vec<ImageRow>) {
     if images.len() > limit as usize {
       let next_item = images.pop().unwrap(); // Remove the 11th item
       let cursor = Some(ImageCursor {
