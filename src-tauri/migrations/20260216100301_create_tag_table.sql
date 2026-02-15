@@ -23,7 +23,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS trg_prevent_system_tag_delete
 BEFORE DELETE ON tags
 FOR EACH ROW
-WHEN OLD.type = 'system'
+WHEN OLD.tag_type = 'system'
 BEGIN
     SELECT RAISE(ABORT, 'Cannot delete system tag');
 END;
@@ -31,7 +31,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS trg_prevent_system_tag_rename
 BEFORE UPDATE OF text ON tags
 FOR EACH ROW
-WHEN OLD.type = 'system'
+WHEN OLD.tag_type = 'system'
 BEGIN
     SELECT RAISE(ABORT, 'Cannot rename system tag');
 END;
@@ -39,7 +39,7 @@ END;
 CREATE INDEX IF NOT EXISTS idx_tags_image_count
 ON tags(image_count DESC);
 
-INSERT INTO tags (text, color, type)
+INSERT INTO tags (text, color, tag_type)
 VALUES
   ('favorite', '#FFD700', 'system'),
   ('bin',      '#FF3B30', 'system')

@@ -123,10 +123,10 @@ Goal: Introduce deterministic organization primitives.
 
 ## 1. Schema Design
 
-- [ ] Create tags table
-- [ ] Create image_tags join table (many-to-many)
-- [ ] Enforce referential integrity
-- [ ] Add necessary indexes
+- [x] Create tags table
+- [x] Create image_tags join table (many-to-many)
+- [x] Enforce referential integrity
+- [x] Add necessary indexes
 
 ---
 

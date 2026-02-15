@@ -5,12 +5,15 @@ mod infrastructure;
 mod interface;
 mod setup;
 
-use tauri::{Manager, RunEvent};
-
 use crate::{
-  interface::commands::{fetch_images, fetch_images_grouped_by_hash, import_images},
+  interface::command::{
+    image_commands::{fetch_images, fetch_images_grouped_by_hash, import_images},
+    tag_commands::{create_tag, fetch_system_tags, fetch_user_tags},
+  },
   setup::{setup_app, state::AppState, tracesetup},
 };
+
+use tauri::{Manager, RunEvent};
 
 pub static IMAGE_DIR: &str = "images";
 
@@ -24,7 +27,12 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       import_images,
       fetch_images,
-      fetch_images_grouped_by_hash
+      fetch_images_grouped_by_hash,
+    ])
+    .invoke_handler(tauri::generate_handler![
+      create_tag,
+      fetch_user_tags,
+      fetch_system_tags
     ])
     .setup(setup_app)
     .build(tauri::generate_context!())

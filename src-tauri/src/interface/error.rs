@@ -1,3 +1,5 @@
+use sqlx::migrate;
+
 use crate::infrastructure::fs::error::FSError;
 
 #[derive(Debug, thiserror::Error)]
@@ -12,7 +14,7 @@ pub enum DBInitError {
   Connect(#[source] sqlx::Error),
 
   #[error("Database migration failed")]
-  Migration(#[source] sqlx::migrate::MigrateError),
+  Migration(#[source] migrate::MigrateError),
 
   #[error("Database optimization failed")]
   Optimize(#[source] sqlx::Error),

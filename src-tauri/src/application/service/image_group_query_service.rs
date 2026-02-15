@@ -12,9 +12,9 @@ pub struct ImageGroupQueryService {
 }
 
 impl ImageGroupQueryService {
-  pub fn new(db: &Db) -> Self {
+  pub fn new(db: Db) -> Self {
     Self {
-      repo: ImageRepository::new(db.clone()),
+      repo: ImageRepository::new(db),
     }
   }
 

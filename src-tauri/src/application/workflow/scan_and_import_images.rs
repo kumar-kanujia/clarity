@@ -14,9 +14,9 @@ pub struct ScanAndImportImages {
 }
 
 impl ScanAndImportImages {
-  pub fn new(db: &Db) -> Self {
+  pub fn new(db: Db) -> Self {
     Self {
-      import_service: ImageImportService::new(ImageRepository::new(db.clone())),
+      import_service: ImageImportService::new(ImageRepository::new(db)),
     }
   }
 

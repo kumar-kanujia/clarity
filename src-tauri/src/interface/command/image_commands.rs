@@ -20,7 +20,7 @@ pub async fn import_images(
   let span = tracing::info_span!("import_images", paths = paths.len());
   let _enter = span.enter();
 
-  let wf = ScanAndImportImages::new(&state.db);
+  let wf = ScanAndImportImages::new(state.db.clone());
 
   match wf.run(&paths).await {
     Ok(summary) => {
@@ -46,7 +46,7 @@ pub async fn fetch_images(
   let span = tracing::info_span!("fetch_images", limit = limit);
   let _enter = span.enter();
 
-  let qs = ImageQueryService::new(&state.db);
+  let qs = ImageQueryService::new(state.db.clone());
 
   match qs.list_images_paginated(limit, cursor).await {
     Ok(paginated_images) => {
@@ -72,7 +72,7 @@ pub async fn fetch_images_grouped_by_hash(
   let span = tracing::info_span!("fetch_images_grouped_by_hash");
   let _enter = span.enter();
 
-  let qs = ImageGroupQueryService::new(&state.db);
+  let qs = ImageGroupQueryService::new(state.db.clone());
 
   match qs.list_images_grouped_by_hash(limit, next_cursor).await {
     Ok(groups) => {
