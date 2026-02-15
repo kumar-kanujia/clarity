@@ -1,3 +1,2 @@
-pub mod commands;
+pub mod command;
 pub mod dto;
-pub mod error;

@@ -1,8 +1,8 @@
 use crate::{
-  application::services::{
+  application::service::{
     file_scan_service::FileScanService, image_import_service::ImageImportService,
   },
-  domain::file::file_scan::FileScanResult,
+  domain::file::FileScanResult,
   error::AppError,
   infrastructure::repo::image_repo::ImageRepository,
   interface::dto::ImportSummaryDto,
@@ -14,9 +14,9 @@ pub struct ScanAndImportImages {
 }
 
 impl ScanAndImportImages {
-  pub fn new(db: &Db) -> Self {
+  pub fn new(db: Db) -> Self {
     Self {
-      import_service: ImageImportService::new(ImageRepository::new(db.clone())),
+      import_service: ImageImportService::new(ImageRepository::new(db)),
     }
   }
 

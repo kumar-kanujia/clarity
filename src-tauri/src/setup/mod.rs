@@ -1,9 +1,10 @@
 pub mod dbsetup;
+pub mod error;
 pub mod state;
 pub mod tracesetup;
 
 use crate::{
-  application::workers::{
+  application::worker::{
     Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
   },
   infrastructure::{repo::image_repo::ImageRepository, system::get_num_threads},

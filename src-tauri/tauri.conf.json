@@ -21,7 +21,11 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost",
       "assetProtocol": {
         "enable": true,
-        "scope": ["$HOME/**", "*", "**/.thumbnails/**"]
+        "scope": [
+          "$HOME/**",
+          "*",
+          "**/.thumbnails/**"
+        ]
       }
     }
   },
@@ -42,7 +46,7 @@
       "force": false,
       "includePatterns": null,
       "includePrivate": false,
-      "outputPath": "./src/app",
+      "outputPath": "./src/services/tauri",
       "projectPath": "./src-tauri",
       "typeMappings": null,
       "validationLibrary": "zod",

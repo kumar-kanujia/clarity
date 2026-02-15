@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScansRouteImport } from './routes/scans'
+import { Route as RecentRouteImport } from './routes/recent'
+import { Route as MapViewRouteImport } from './routes/map-view'
+import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as AiFeaturesRouteImport } from './routes/ai-features'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TagsRoute = TagsRouteImport.update({
@@ -29,6 +33,26 @@ const ScansRoute = ScansRouteImport.update({
   path: '/scans',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecentRoute = RecentRouteImport.update({
+  id: '/recent',
+  path: '/recent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapViewRoute = MapViewRouteImport.update({
+  id: '/map-view',
+  path: '/map-view',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiFeaturesRoute = AiFeaturesRouteImport.update({
+  id: '/ai-features',
+  path: '/ai-features',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +61,20 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-features': typeof AiFeaturesRoute
+  '/insights': typeof InsightsRoute
+  '/map-view': typeof MapViewRoute
+  '/recent': typeof RecentRoute
   '/scans': typeof ScansRoute
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-features': typeof AiFeaturesRoute
+  '/insights': typeof InsightsRoute
+  '/map-view': typeof MapViewRoute
+  '/recent': typeof RecentRoute
   '/scans': typeof ScansRoute
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
@@ -50,20 +82,53 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-features': typeof AiFeaturesRoute
+  '/insights': typeof InsightsRoute
+  '/map-view': typeof MapViewRoute
+  '/recent': typeof RecentRoute
   '/scans': typeof ScansRoute
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/scans' | '/settings' | '/tags'
+  fullPaths:
+    | '/'
+    | '/ai-features'
+    | '/insights'
+    | '/map-view'
+    | '/recent'
+    | '/scans'
+    | '/settings'
+    | '/tags'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/scans' | '/settings' | '/tags'
-  id: '__root__' | '/' | '/scans' | '/settings' | '/tags'
+  to:
+    | '/'
+    | '/ai-features'
+    | '/insights'
+    | '/map-view'
+    | '/recent'
+    | '/scans'
+    | '/settings'
+    | '/tags'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai-features'
+    | '/insights'
+    | '/map-view'
+    | '/recent'
+    | '/scans'
+    | '/settings'
+    | '/tags'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiFeaturesRoute: typeof AiFeaturesRoute
+  InsightsRoute: typeof InsightsRoute
+  MapViewRoute: typeof MapViewRoute
+  RecentRoute: typeof RecentRoute
   ScansRoute: typeof ScansRoute
   SettingsRoute: typeof SettingsRoute
   TagsRoute: typeof TagsRoute
@@ -92,6 +157,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScansRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recent': {
+      id: '/recent'
+      path: '/recent'
+      fullPath: '/recent'
+      preLoaderRoute: typeof RecentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map-view': {
+      id: '/map-view'
+      path: '/map-view'
+      fullPath: '/map-view'
+      preLoaderRoute: typeof MapViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-features': {
+      id: '/ai-features'
+      path: '/ai-features'
+      fullPath: '/ai-features'
+      preLoaderRoute: typeof AiFeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +197,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiFeaturesRoute: AiFeaturesRoute,
+  InsightsRoute: InsightsRoute,
+  MapViewRoute: MapViewRoute,
+  RecentRoute: RecentRoute,
   ScansRoute: ScansRoute,
   SettingsRoute: SettingsRoute,
   TagsRoute: TagsRoute,

@@ -123,36 +123,36 @@ Goal: Introduce deterministic organization primitives.
 
 ## 1. Schema Design
 
-- [ ] Create tags table
-- [ ] Create image_tags join table (many-to-many)
-- [ ] Enforce referential integrity
-- [ ] Add necessary indexes
+- [x] Create tags table
+- [x] Create image_tags join table (many-to-many)
+- [x] Enforce referential integrity
+- [x] Add necessary indexes
 
 ---
 
 ## 2. Tag Operations (Backend Only)
 
-- [ ] Create tag
-- [ ] Delete tag
-- [ ] Attach tag to image
-- [ ] Detach tag from image
-- [ ] Prevent duplicate tag assignments
+- [x] Create tag
+- [x] Delete tag
+- [x] Attach tag to image
+- [x] Detach tag from image
+- [x] Prevent duplicate tag assignments
 
 ---
 
 ## 3. Query Capability
 
-- [ ] Retrieve images by tag
-- [ ] Support batch retrieval with tag filter
-- [ ] Ensure deterministic ordering remains intact
+- [x] Retrieve images by tag
+- [x] Support batch retrieval with tag filter
+- [x] Ensure deterministic ordering remains intact
 
 ---
 
 ### Completion Check (Part 3)
 
-- [ ] Tags persist across restarts
-- [ ] No UI assumptions baked into schema
-- [ ] Tag queries scale with batch retrieval
+- [x] Tags persist across restarts
+- [x] No UI assumptions baked into schema
+- [x] Tag queries scale with batch retrieval
 
 ---
 

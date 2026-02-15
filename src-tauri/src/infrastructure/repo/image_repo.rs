@@ -1,11 +1,11 @@
 #[allow(clippy::needless_raw_strings)]
 use crate::{
   domain::{
-    file::file_scan::FileMetaData,
+    file::FileMetaData,
     image::{Image, MAX_WORKER_RETRIES},
   },
   infrastructure::{
-    models::image_model::{ImageModel, ImageStatus},
+    models::image_model::{ImageRow, ImageStatus},
     repo::error::DatabaseError,
   },
   interface::dto::ImageCursor,
@@ -45,11 +45,47 @@ impl ImageRepository {
     Ok(result.rows_affected())
   }
 
+  pub async fn list_images_with_tag_id_paginated(
+    &self,
+    tag_id: i64,
+    limit: i64,
+    cursor: Option<ImageCursor>,
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
+    let mut query_builder = QueryBuilder::new(
+      r#"
+            SELECT i.*
+            FROM images i
+            JOIN image_tags it ON it.image_id = i.id
+            WHERE it.tag_id =
+            "#,
+    );
+
+    query_builder.push_bind(tag_id);
+
+    if let Some(cursor) = cursor {
+      query_builder.push(" AND (created_at, id) < (");
+      query_builder.push_bind(cursor.created_at);
+      query_builder.push(", ");
+      query_builder.push_bind(cursor.id);
+      query_builder.push(")");
+    }
+
+    query_builder.push(" ORDER BY created_at DESC, id DESC LIMIT ");
+    query_builder.push_bind(limit);
+
+    let result = query_builder
+      .build_query_as::<ImageRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(result)
+  }
+
   pub async fn list_images_paginated(
     &self,
     limit: i64,
     cursor: Option<ImageCursor>,
-  ) -> Result<Vec<ImageModel>, DatabaseError> {
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
     let mut query_builder = QueryBuilder::new("SELECT * FROM images");
 
     if let Some(cursor) = cursor {
@@ -64,7 +100,7 @@ impl ImageRepository {
     query_builder.push_bind(limit);
 
     let result = query_builder
-      .build_query_as::<ImageModel>()
+      .build_query_as::<ImageRow>()
       .fetch_all(&self.db)
       .await?;
 
@@ -75,8 +111,8 @@ impl ImageRepository {
     &self,
     limit: i64,
     process_status: ImageStatus,
-  ) -> Result<Vec<ImageModel>, DatabaseError> {
-    let result = sqlx::query_as::<_, ImageModel>(
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
+    let result = sqlx::query_as::<_, ImageRow>(
       r#"
         SELECT * FROM images
         WHERE status = ?1 AND retry_count < ?2
@@ -169,7 +205,7 @@ impl ImageRepository {
     &self,
     limit: i64,
     cursor_id: Option<i64>,
-  ) -> Result<Vec<ImageModel>, DatabaseError> {
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
     let where_clause = if cursor_id.is_some() {
       "WHERE content_hash > COALESCE((SELECT content_hash FROM images WHERE id = ?), x'') AND content_hash IS NOT NULL"
     } else {
@@ -193,7 +229,7 @@ impl ImageRepository {
               "#
     );
 
-    let mut q = sqlx::query_as::<_, ImageModel>(&query);
+    let mut q = sqlx::query_as::<_, ImageRow>(&query);
 
     if let Some(id) = cursor_id {
       q = q.bind(id);
