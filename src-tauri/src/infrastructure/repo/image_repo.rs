@@ -147,7 +147,7 @@ pub async fn update_images_metadata(db: &Db, images: &[Image]) -> Result<u64, Da
               retry_count = ?5,
               error_message = ?6
             WHERE id = ?7
-            "#,
+          "#,
     )
     .bind(image.width)
     .bind(image.height)
@@ -170,49 +170,49 @@ pub async fn update_images_metadata(db: &Db, images: &[Image]) -> Result<u64, Da
 pub async fn list_images_grouped_by_hash(
   db: &Db,
   limit: i64,
-  cursor: Option<Vec<u8>>,
+  cursor: Option<i64>,
 ) -> Result<Vec<ImageModel>, DatabaseError> {
   let result = match cursor {
     None => {
       sqlx::query_as::<_, ImageModel>(
         r#"
-                SELECT *
+            SELECT *
+            FROM images
+            WHERE content_hash IN (
+                SELECT content_hash
                 FROM images
-                WHERE content_hash IN (
-                    SELECT content_hash
-                    FROM images
-                    WHERE content_hash IS NOT NULL
-                    GROUP BY content_hash
-                    HAVING COUNT(*) > 1
-                    ORDER BY content_hash ASC
-                    LIMIT ?1
-                )
-                ORDER BY content_hash ASC, created_at ASC;
+                WHERE content_hash IS NOT NULL
+                GROUP BY content_hash
+                HAVING COUNT(*) > 1
+                ORDER BY content_hash ASC
+                LIMIT ?1
+            )
+            ORDER BY content_hash ASC, created_at ASC;
             "#,
       )
       .bind(limit)
       .fetch_all(db)
       .await?
     }
-    Some(blob) => {
+    Some(id) => {
       sqlx::query_as::<_, ImageModel>(
         r#"
-              SELECT *
-              FROM images
-              WHERE content_hash IN (
-                  SELECT content_hash
-                  FROM images
-                  WHERE content_hash > ?1
-                  AND content_hash IS NOT NULL
-                  GROUP BY content_hash
-                  HAVING COUNT(*) > 1
-                  ORDER BY content_hash ASC
-                  LIMIT ?2
-              )
-              ORDER BY content_hash ASC, created_at ASC;
-            "#,
+        SELECT *
+        FROM images
+        WHERE content_hash IN (
+            SELECT content_hash
+            FROM images
+            WHERE content_hash > COALESCE((SELECT content_hash FROM images WHERE id = ?1), x'')
+            AND content_hash IS NOT NULL
+            GROUP BY content_hash
+            HAVING COUNT(*) > 1
+            ORDER BY content_hash ASC
+            LIMIT ?2
+        )
+        ORDER BY content_hash ASC, created_at ASC;
+        "#,
       )
-      .bind(blob)
+      .bind(id)
       .bind(limit)
       .fetch_all(db)
       .await?

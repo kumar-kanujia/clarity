@@ -68,7 +68,7 @@ pub async fn fetch_images(
 pub async fn fetch_images_grouped_by_hash(
   state: State<'_, AppState>,
   limit: i64,
-  next_cursor: Option<Vec<u8>>,
+  next_cursor: Option<i64>,
 ) -> Result<PaginatedImageHashGroups, String> {
   let span = tracing::info_span!("fetch_images_grouped_by_hash");
   let _enter = span.enter();

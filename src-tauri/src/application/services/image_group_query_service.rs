@@ -15,16 +15,21 @@ impl ImageGroupQueryService {
     &self,
     db: &Db,
     limit: i64,
-    next_cursor: Option<Vec<u8>>,
+    next_cursor: Option<i64>,
   ) -> Result<PaginatedImageHashGroups, AppError> {
     let raw_images = image_repo::list_images_grouped_by_hash(db, limit, next_cursor).await?;
     let filtered_images = self.filter_image(raw_images);
 
-    let next_cursor = filtered_images
-      .last()
-      .map(|image| image.content_hash.clone());
+    let id = filtered_images.last().map(|i| i.id);
 
     let data = Image::group_by_hash(filtered_images);
+
+    let next_cursor = if data.len() == limit as usize {
+      id
+    } else {
+      None
+    };
+
     Ok(PaginatedImageHashGroups { data, next_cursor })
   }
 

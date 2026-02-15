@@ -5,7 +5,7 @@ use crate::domain::image::Image;
 #[derive(Serialize)]
 pub struct PaginatedImageHashGroups {
   pub data: Vec<Vec<ImageDto>>,
-  pub next_cursor: Option<Vec<u8>>,
+  pub next_cursor: Option<i64>,
 }
 
 #[derive(Serialize)]
