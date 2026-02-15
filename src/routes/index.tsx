@@ -1,4 +1,4 @@
-import { ImageDto } from "@/app";
+import { ImageDto } from "@/services/tauri";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, X, Home } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";

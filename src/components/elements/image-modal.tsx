@@ -1,5 +1,5 @@
-import { ImageDto } from "@/app";
-import { getFileURI } from "@/app/tauri-api";
+import { ImageDto } from "@/services/tauri";
+import { getFileURI } from "@/services/tauri/tauri-api";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight, Info, X } from "lucide-react";

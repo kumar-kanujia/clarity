@@ -1,5 +1,5 @@
 import { ImageDto } from "@/app";
-import { getFileURI } from "@/app/tauri-api";
+import { getFileURI } from "@/services/tauri/tauri-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Maximize2, MoreHorizontal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";

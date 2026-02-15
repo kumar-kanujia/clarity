@@ -1,5 +1,5 @@
-import { ImageDto } from "@/app";
-import { getFileURI } from "@/app/tauri-api";
+import { ImageDto } from "@/services/tauri";
+import { getFileURI } from "@/services/tauri/tauri-api";
 import { ImageModal } from "@/components/elements/image-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

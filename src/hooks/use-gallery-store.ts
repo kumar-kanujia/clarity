@@ -1,5 +1,5 @@
-import * as app from "@/app";
-import { selectDirs, selectImages } from "@/app/tauri-api";
+import * as app from "@/services/tauri";
+import { selectDirs, selectImages } from "@/services/tauri/tauri-api";
 import { toast } from "sonner";
 import { create } from "zustand";
 
@@ -12,9 +12,13 @@ interface GalleryState {
   hasMoreGroups: boolean;
   nextCursor: app.ImageCursor | null;
   nextGroupCursor: number | null;
+  userTags: app.TagDto[];
+  systemTags: app.TagDto[];
   importSummary: app.ImportSummaryDto | null;
   loadImages: (isReset?: boolean) => Promise<void>;
   loadGroupedImages: (isReset?: boolean) => Promise<void>;
+  fetchTags: () => Promise<void>;
+  createTag: (text: string) => Promise<void>;
   importImages: () => Promise<void>;
   importFolder: () => Promise<void>;
   clearImportSummary: () => void;
@@ -31,6 +35,8 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
   hasMoreGroups: true,
   nextCursor: null,
   nextGroupCursor: null,
+  userTags: [],
+  systemTags: [],
   importSummary: null,
 
   loadImages: async (isReset = false) => {
@@ -128,6 +134,29 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       }
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  fetchTags: async () => {
+    try {
+      const [userTags, systemTags] = await Promise.all([
+        app.fetchUserTags(),
+        app.fetchSystemTags(),
+      ]);
+      set({ userTags, systemTags });
+    } catch (error) {
+      console.error("Failed to fetch tags:", error);
+    }
+  },
+
+  createTag: async (text: string) => {
+    try {
+      await app.createTag({ tagText: text });
+      await get().fetchTags();
+      toast.success("Tag created successfully");
+    } catch (error) {
+      console.error("Failed to create tag: this", error);
+      toast.error("Failed to create tag");
     }
   },
 

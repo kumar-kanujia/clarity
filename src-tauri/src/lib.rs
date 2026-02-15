@@ -7,8 +7,8 @@ mod setup;
 
 use crate::{
   interface::command::{
-    image_commands::{fetch_images, fetch_images_grouped_by_hash, import_images},
-    tag_commands::{create_tag, fetch_system_tags, fetch_user_tags},
+    create_tag, fetch_images, fetch_images_grouped_by_hash, fetch_system_tags, fetch_user_tags,
+    import_images,
   },
   setup::{setup_app, state::AppState, tracesetup},
 };
@@ -28,11 +28,9 @@ pub fn run() {
       import_images,
       fetch_images,
       fetch_images_grouped_by_hash,
-    ])
-    .invoke_handler(tauri::generate_handler![
       create_tag,
       fetch_user_tags,
-      fetch_system_tags
+      fetch_system_tags,
     ])
     .setup(setup_app)
     .build(tauri::generate_context!())

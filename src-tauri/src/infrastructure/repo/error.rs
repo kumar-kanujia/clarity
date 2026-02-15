@@ -23,7 +23,6 @@ impl From<sqlx::Error> for DatabaseError {
         };
       }
     }
-
     DatabaseError::Connection(err)
   }
 }

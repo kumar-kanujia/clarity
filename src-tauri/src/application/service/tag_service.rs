@@ -34,13 +34,13 @@ impl TagService {
   }
 
   pub async fn get_system_tags(&self) -> Result<Vec<TagDto>, AppError> {
-    let user_tags = self
+    let system_tags = self
       .repo
-      .list_tags(TagType::User)
+      .list_tags(TagType::System)
       .await?
       .into_iter()
       .map(TagDto::from)
       .collect();
-    Ok(user_tags)
+    Ok(system_tags)
   }
 }

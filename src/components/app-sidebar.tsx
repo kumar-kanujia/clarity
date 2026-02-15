@@ -1,4 +1,14 @@
-import { Home, Settings, Scan, Tag, ImagePlus, FolderPlus } from "lucide-react";
+import {
+  Home,
+  Settings,
+  Scan,
+  Tag,
+  ImagePlus,
+  FolderPlus,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { useEffect } from "react";
 
 import {
   Sidebar,
@@ -32,7 +42,12 @@ const items = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const { importImages, importFolder } = useGalleryStore();
+  const { importImages, importFolder, systemTags, userTags, fetchTags } =
+    useGalleryStore();
+
+  useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
 
   return (
     <Sidebar
@@ -67,6 +82,47 @@ export function AppSidebar() {
               </SidebarMenuItem>
             );
           })}
+        </div>
+
+        <div className="mt-4 w-10 h-px bg-white/5 mx-auto" />
+
+        {/* System Tags */}
+        <div className="flex flex-col gap-2 w-full px-2">
+          {systemTags.map((tag) => {
+            const Icon =
+              tag.tagName.toLowerCase() === "favorite" ? Star : Trash2;
+            return (
+              <SidebarMenuItem key={tag.id} className="list-none w-full">
+                <button
+                  className="flex items-center justify-center w-12 h-12 rounded-xl text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all duration-200 group relative"
+                  title={`${tag.tagName} (${tag.imageCount})`}
+                >
+                  <Icon className="w-6 h-6 shrink-0" />
+                </button>
+              </SidebarMenuItem>
+            );
+          })}
+        </div>
+
+        {systemTags.length > 0 && (
+          <div className="mt-4 w-10 h-px bg-white/5 mx-auto" />
+        )}
+
+        {/* User Tags */}
+        <div className="flex flex-col gap-2 w-full px-2 overflow-y-auto max-h-[30vh] custom-scrollbar">
+          {userTags.map((tag) => (
+            <SidebarMenuItem key={tag.id} className="list-none w-full">
+              <button
+                className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-white/5 transition-all duration-200 group relative"
+                title={`${tag.tagName} (${tag.imageCount})`}
+              >
+                <div
+                  className="w-4 h-4 rounded-full border border-white/10"
+                  style={{ backgroundColor: tag.tagColor }}
+                />
+              </button>
+            </SidebarMenuItem>
+          ))}
         </div>
 
         <div className="mt-4 w-10 h-px bg-white/5 mx-auto" />
