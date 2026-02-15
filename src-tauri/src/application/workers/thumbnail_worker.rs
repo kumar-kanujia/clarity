@@ -1,126 +1,65 @@
 use crate::{
-  application::workers::Worker,
-  domain::{imagefile::ProcessStatus, imagemetadata::ImageMetadata},
-  error::AppError,
+  application::{services::thumbnail_service::ThumbnailService, workers::Worker},
+  domain::image::Image,
   infrastructure::{
-    fs::ops,
-    processing::metadata,
-    repo::image_repo::{bulk_update_image_metadata, list_image_paths_by_status},
+    models::image_model::ImageStatus,
+    repo::{error::DatabaseError, image_repo::ImageRepository},
   },
-  setup::state::Db,
 };
 
-use std::{
-  path::{Path, PathBuf},
-  time::Instant,
-};
+use std::path::PathBuf;
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use tauri::{AppHandle, Manager};
-use tracing::Instrument;
+use tauri::AppHandle;
 
-#[derive(Debug, Default)]
-pub struct ThumbnailWorker;
+#[derive(Debug, Clone)]
+pub struct ThumbnailWorker {
+  pub thumbnail_target: PathBuf,
+  repo: &'static ImageRepository,
+}
 
 impl ThumbnailWorker {
-  fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
-    let cache_dir = app.path().app_data_dir().map_err(AppError::Internal)?;
-    let target_dir = cache_dir.join("org.clarity").join(".thumbnails");
-    ops::ensure_dir(&target_dir)?;
-    Ok(target_dir)
-  }
-
-  fn work(files_data: Vec<(i64, String)>, thumbnail_target: &Path) -> Vec<(i64, ImageMetadata)> {
-    files_data
-      .into_par_iter()
-      .filter_map(|(seq_id, file_path)| {
-        match metadata::create_image_metadata(&file_path, thumbnail_target) {
-          Ok(image_metadata) => Some((seq_id, image_metadata)),
-          Err(err) => {
-            tracing::error!(
-              error = ?err,
-              %file_path,
-              "Failed to generate image metadata"
-            );
-            None
-          }
-        }
-      })
-      .collect()
+  pub fn new(app: &AppHandle, repo: &'static ImageRepository) -> Option<Self> {
+    match ThumbnailService::get_thumbnail_target(app) {
+      Ok(path) => Some(Self {
+        thumbnail_target: path,
+        repo: repo,
+      }),
+      Err(e) => {
+        tracing::error!(error = ?e, "Thumbnail worker failed to lock cache directory");
+        None
+      }
+    }
   }
 }
 
 impl Worker for ThumbnailWorker {
-  fn spawn(self, app: &AppHandle, db: Db) {
-    let max_batch_size = Self::get_batch_size(2);
+  type Input = Image;
+  type Output = Image;
+  type Error = DatabaseError;
 
-    let span = tracing::info_span!("thumbnail_worker", %max_batch_size);
-    let _enter = span.enter();
+  fn name(&self) -> &'static str {
+    "thumbnail_worker"
+  }
 
-    let thumbnail_target = match Self::get_thumbnail_target(app) {
-      Ok(path) => path,
-      Err(e) => {
-        tracing::error!(error = ?e, "Thumbnail worker failed to lock cache directory");
-        return;
-      }
-    };
+  fn batch_factor(&self) -> usize {
+    2
+  }
 
-    tauri::async_runtime::spawn(
-      async move {
-        loop {
-          let start = Instant::now();
+  async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
+    let models = self
+      .repo
+      .list_images_by_status(limit, ImageStatus::Hashed)
+      .await?;
+    Ok(models.into_iter().map(Image::from).collect())
+  }
 
-          let thumbnail_target = thumbnail_target.clone();
+  fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
+    ThumbnailService::process_batch(&mut items, &self.thumbnail_target);
+    items
+  }
 
-          let files_data =
-            match list_image_paths_by_status(&db, max_batch_size, ProcessStatus::Hashed).await {
-              Ok(f) if f.is_empty() => {
-                tracing::debug!("No pending thumbnails");
-                Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-                continue;
-              }
-              Ok(f) => f,
-              Err(e) => {
-                tracing::error!(error = ?e, "DB Fetch failed");
-                Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-                continue;
-              }
-            };
-
-          tracing::info!(files = files_data.len(), "Thumbnail batch fetched");
-
-          let updated_files = match tauri::async_runtime::spawn_blocking(move || {
-            Self::work(files_data, &thumbnail_target)
-          })
-          .await
-          {
-            Ok(f) => f,
-            Err(e) => {
-              tracing::error!(error = ?e, "Thumbnail worker task panicked");
-              Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-              continue;
-            }
-          };
-
-          if !updated_files.is_empty()
-            && let Err(e) = bulk_update_image_metadata(&db, &updated_files).await
-          {
-            tracing::error!(
-                error = ?e,
-                updated = updated_files.len(),
-                "Failed to persist thumbnail metadata updates"
-            );
-            Self::wait_for(Self::IDEAL_WAIT_TIME).await;
-          }
-          let end = start.elapsed().as_secs();
-          tracing::info!(
-            "Batch Done | Count: {} | Time: {}s",
-            updated_files.len(),
-            end
-          );
-        }
-      }
-      .instrument(span.clone()),
-    );
+  async fn update_batch(&self, items: &[Image]) -> Result<u64, DatabaseError> {
+    let count = self.repo.update_images_metadata(items).await?;
+    Ok(count)
   }
 }

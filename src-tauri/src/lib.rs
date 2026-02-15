@@ -5,9 +5,11 @@ mod infrastructure;
 mod interface;
 mod setup;
 
+use tauri::{Manager, RunEvent};
+
 use crate::{
-  interface::commands::{fetch_images_grouped_by_hash, fetch_scanned_images, save_images},
-  setup::{setup_app, tracesetup},
+  interface::commands::{fetch_images, fetch_images_grouped_by_hash, import_images},
+  setup::{setup_app, state::AppState, tracesetup},
 };
 
 pub static IMAGE_DIR: &str = "images";
@@ -16,15 +18,22 @@ pub static IMAGE_DIR: &str = "images";
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tracesetup::init_tracing();
-  tauri::Builder::default()
+  let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![
-      save_images,
-      fetch_scanned_images,
+      import_images,
+      fetch_images,
       fetch_images_grouped_by_hash
     ])
     .setup(setup_app)
-    .run(tauri::generate_context!())
+    .build(tauri::generate_context!())
     .expect("error while running tauri application");
+
+  app.run(|app_handle, event| {
+    if let RunEvent::ExitRequested { .. } = event {
+      let state = app_handle.state::<AppState>();
+      state.shutdown.cancel();
+    }
+  });
 }

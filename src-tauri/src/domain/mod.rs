@@ -1,3 +1,2 @@
-pub mod filemetadata;
-pub mod imagefile;
-pub mod imagemetadata;
+pub mod file;
+pub mod image;

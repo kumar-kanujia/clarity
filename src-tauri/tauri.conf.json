@@ -35,5 +35,19 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "typegen": {
+      "excludePatterns": null,
+      "force": false,
+      "includePatterns": null,
+      "includePrivate": false,
+      "outputPath": "./src/app",
+      "projectPath": "./src-tauri",
+      "typeMappings": null,
+      "validationLibrary": "zod",
+      "verbose": false,
+      "visualizeDeps": false
+    }
   }
 }

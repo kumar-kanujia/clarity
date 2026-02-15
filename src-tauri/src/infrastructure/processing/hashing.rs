@@ -2,13 +2,13 @@ use crate::infrastructure::processing::error::ProcessingError;
 
 use std::{fs::File, io::BufReader, path::Path};
 
-const PARALLEL_THRESHOLD_SIZE: i64 = 24 * 1024 * 1024;
+const PARALLEL_THRESHOLD_SIZE: i64 = 20 * 1024 * 1024;
 const FILE_BUFFER_CAPACITY: usize = 128 * 1024;
 
 pub fn generate_file_hash<P: AsRef<Path>>(
   path: P,
   file_size: i64,
-) -> Result<String, ProcessingError> {
+) -> Result<Vec<u8>, ProcessingError> {
   if file_size > PARALLEL_THRESHOLD_SIZE {
     let mut hasher = blake3::Hasher::new();
 
@@ -16,7 +16,7 @@ pub fn generate_file_hash<P: AsRef<Path>>(
 
     let hash = hasher.finalize();
 
-    Ok(hash.to_hex().to_string())
+    Ok(hash.as_bytes().to_vec())
   } else {
     let file = File::open(path)?;
 
@@ -25,6 +25,8 @@ pub fn generate_file_hash<P: AsRef<Path>>(
 
     std::io::copy(&mut reader, &mut hasher)?;
 
-    Ok(hasher.finalize().to_hex().to_string())
+    let hash = hasher.finalize();
+
+    Ok(hash.as_bytes().to_vec())
   }
 }

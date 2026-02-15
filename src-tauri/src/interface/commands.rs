@@ -1,42 +1,31 @@
 use crate::{
   application::{
-    dtos::{Image, ImportSummary},
-    importer, library,
+    query_service::{
+      image_group_query_service::ImageGroupQueryService, image_query_service::ImageQueryService,
+    },
+    workflow::scan_and_import_images::ScanAndImportImages,
   },
   error,
+  interface::dto::{ImageCursor, ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages},
   setup::state::AppState,
 };
 
-use std::path::PathBuf;
-use std::time::Instant;
 use tauri::State;
 
 #[tauri::command]
-pub async fn save_images(
+pub async fn import_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
-) -> Result<ImportSummary, String> {
-  let span = tracing::info_span!("save_image", paths = paths.len());
+) -> Result<ImportSummaryDto, String> {
+  let span = tracing::info_span!("import_images", paths = paths.len());
   let _enter = span.enter();
 
-  let t0 = Instant::now();
-  let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+  let wf = ScanAndImportImages::new(&state.db);
 
-  match importer::scan_and_import_images(&state.db, paths).await {
+  match wf.run(&paths).await {
     Ok(summary) => {
-      tracing::info!("Import completed in {:?}", t0.elapsed());
-      tracing::info!(
-        discovered = summary.discovered,
-        processed = summary.processed,
-        imported = summary.imported,
-        skipped = summary.skipped,
-        metadata_not_found = summary.not_found,
-        metadata_permission_denied = summary.permission_denied,
-        metadata_io_errors = summary.io_errors,
-        walk_errors = summary.walk_errors,
-        "Import completed"
-      );
-      Ok(summary)
+      tracing::info!("Import completed");
+      Ok(summary.into())
     }
     Err(err) => {
       tracing::error!(
@@ -49,27 +38,26 @@ pub async fn save_images(
 }
 
 #[tauri::command]
-pub async fn fetch_scanned_images(
+pub async fn fetch_images(
   state: State<'_, AppState>,
-  last_max_tx: i64,
-  last_seq_id: i64,
   limit: i64,
-) -> Result<Vec<Image>, String> {
-  let span = tracing::info_span!(
-    "fetch_scanned_images",
-    last_max_tx = last_max_tx,
-    last_seq_id = last_seq_id,
-    limit = limit
-  );
+  cursor: Option<ImageCursor>,
+) -> Result<PaginatedImages, String> {
+  let span = tracing::info_span!("fetch_images", limit = limit);
   let _enter = span.enter();
 
-  match library::list_scanned_images(&state.db, last_max_tx, last_seq_id, limit).await {
-    Ok(images) => {
-      tracing::info!(images = images.len(), "Fetch scanned images completed");
-      Ok(images)
+  let qs = ImageQueryService::new(&state.db);
+
+  match qs.list_images_paginated(limit, cursor).await {
+    Ok(paginated_images) => {
+      tracing::info!(
+        data = paginated_images.data.len(),
+        "Fetch images completed:"
+      );
+      Ok(paginated_images)
     }
     Err(err) => {
-      tracing::error!(error = ?err, "Load failed");
+      tracing::error!(error = ?err, "fetch_image failed");
       Err(error::user_friendly_message(&err))
     }
   }
@@ -78,13 +66,17 @@ pub async fn fetch_scanned_images(
 #[tauri::command]
 pub async fn fetch_images_grouped_by_hash(
   state: State<'_, AppState>,
-) -> Result<Vec<Vec<Image>>, String> {
+  limit: i64,
+  next_cursor: Option<i64>,
+) -> Result<PaginatedImageHashGroups, String> {
   let span = tracing::info_span!("fetch_images_grouped_by_hash");
   let _enter = span.enter();
 
-  match library::list_images_grouped_by_hash(&state.db).await {
+  let qs = ImageGroupQueryService::new(&state.db);
+
+  match qs.list_images_grouped_by_hash(limit, next_cursor).await {
     Ok(groups) => {
-      tracing::info!(groups = groups.len(), "Fetch grouped images completed");
+      tracing::info!(groups = groups.data.len(), "Fetch grouped images completed");
       Ok(groups)
     }
     Err(err) => {

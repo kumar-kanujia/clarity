@@ -1,7 +1,7 @@
 use crate::infrastructure::fs::error::FSError;
 
 #[derive(Debug, thiserror::Error)]
-pub enum DbInitError {
+pub enum DBInitError {
   #[error("Failed to resolve app data directory")]
   MissingAppDataDir,
 

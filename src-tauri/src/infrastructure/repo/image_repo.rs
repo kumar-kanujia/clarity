@@ -1,183 +1,207 @@
 #[allow(clippy::needless_raw_strings)]
 use crate::{
-  domain::{filemetadata::FileMetadata, imagefile::ImageFile},
-  infrastructure::repo::error::DatabaseError,
-};
-use crate::{
-  domain::{imagefile::ProcessStatus, imagemetadata::ImageMetadata},
-  infrastructure::system::get_unix_timestamp,
+  domain::{
+    file::file_scan::FileMetaData,
+    image::{Image, MAX_WORKER_RETRIES},
+  },
+  infrastructure::{
+    models::image_model::{ImageModel, ImageStatus},
+    repo::error::DatabaseError,
+  },
+  interface::dto::ImageCursor,
   setup::state::Db,
 };
 
-pub async fn list_images_grouped_by_hash(db: &Db) -> Result<Vec<ImageFile>, DatabaseError> {
-  let result = sqlx::query_as::<_, ImageFile>(
-    r#"
-      SELECT * FROM image_file
-      WHERE file_hash IN (
-      SELECT file_hash
-          FROM image_file
-          WHERE file_hash IS NOT NULL
-          GROUP BY file_hash
-          HAVING COUNT(*) > 1
-      )
-      ORDER BY file_hash, max_tx ASC
-    "#,
-  )
-  .fetch_all(db)
-  .await?;
-  Ok(result)
+use sqlx::QueryBuilder;
+
+#[derive(Clone, Debug)]
+pub struct ImageRepository {
+  db: Db,
 }
 
-pub async fn list_images_paginated(
-  db: &Db,
-  last_max_tx: i64,
-  last_seq_id: i64,
-  limit: i64,
-) -> Result<Vec<ImageFile>, DatabaseError> {
-  let result = sqlx::query_as::<_, ImageFile>(
-    r#"
-        SELECT *
-        FROM image_file
-        WHERE (max_tx, seq_id) < (?1, ?2)
-        ORDER BY max_tx DESC, seq_id DESC
+impl ImageRepository {
+  pub fn new(db: Db) -> Self {
+    Self { db }
+  }
+
+  pub async fn create_images_by_file_metadata(
+    &self,
+    files: &[FileMetaData],
+  ) -> Result<u64, DatabaseError> {
+    if files.is_empty() {
+      return Ok(0);
+    }
+
+    let mut query_builder =
+      QueryBuilder::new("INSERT OR IGNORE INTO images (path, size_bytes, created_at) ");
+
+    query_builder.push_values(files, |mut b, file| {
+      b.push_bind(&file.path)
+        .push_bind(file.size_bytes)
+        .push_bind(&file.created_at);
+    });
+
+    let result = query_builder.build().execute(&self.db).await?;
+    Ok(result.rows_affected())
+  }
+
+  pub async fn list_images_paginated(
+    &self,
+    limit: i64,
+    cursor: Option<ImageCursor>,
+  ) -> Result<Vec<ImageModel>, DatabaseError> {
+    let mut query_builder = QueryBuilder::new("SELECT * FROM images");
+
+    if let Some(cursor) = cursor {
+      query_builder.push(" WHERE (created_at, id) < (");
+      query_builder.push_bind(cursor.created_at);
+      query_builder.push(", ");
+      query_builder.push_bind(cursor.id);
+      query_builder.push(")");
+    }
+
+    query_builder.push(" ORDER BY created_at DESC, id DESC LIMIT ");
+    query_builder.push_bind(limit);
+
+    let result = query_builder
+      .build_query_as::<ImageModel>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(result)
+  }
+
+  pub async fn list_images_by_status(
+    &self,
+    limit: i64,
+    process_status: ImageStatus,
+  ) -> Result<Vec<ImageModel>, DatabaseError> {
+    let result = sqlx::query_as::<_, ImageModel>(
+      r#"
+        SELECT * FROM images
+        WHERE status = ?1 AND retry_count < ?2
         LIMIT ?3
-        "#,
-  )
-  .bind(last_max_tx)
-  .bind(last_seq_id)
-  .bind(limit)
-  .fetch_all(db)
-  .await?;
-  Ok(result)
-}
-
-pub async fn list_image_paths_by_status(
-  db: &Db,
-  limit: i64,
-  process_status: ProcessStatus,
-) -> Result<Vec<(i64, String)>, DatabaseError> {
-  let result = sqlx::query_as::<_, (i64, String)>(
-    r#"
-        SELECT
-          seq_id, file_path
-        FROM image_file
-        WHERE process_status = ?1
-        LIMIT ?2
-        "#,
-  )
-  .bind(process_status as i32)
-  .bind(limit)
-  .fetch_all(db)
-  .await?;
-  Ok(result)
-}
-
-pub async fn list_image_files_by_status(
-  db: &Db,
-  limit: i64,
-  process_status: ProcessStatus,
-) -> Result<Vec<ImageFile>, DatabaseError> {
-  let result = sqlx::query_as::<_, ImageFile>(
-    r#"
-        SELECT *
-        FROM image_file
-        WHERE process_status = ?1
-        LIMIT ?2
-        "#,
-  )
-  .bind(process_status as i32)
-  .bind(limit)
-  .fetch_all(db)
-  .await?;
-  Ok(result)
-}
-
-pub async fn bulk_insert_image(db: &Db, files: &[FileMetadata]) -> Result<u64, DatabaseError> {
-  if files.is_empty() {
-    return Ok(0);
-  }
-
-  let mut query_builder =
-    sqlx::QueryBuilder::new("INSERT OR IGNORE INTO image_file (file_path, file_size, ctx, mtx) ");
-
-  query_builder.push_values(files, |mut b, file| {
-    b.push_bind(&file.file_path)
-      .push_bind(file.file_size.cast_signed())
-      .push_bind(file.ctx.map(u64::cast_signed))
-      .push_bind(file.mtx.map(u64::cast_signed));
-  });
-
-  let result = query_builder.build().execute(db).await?;
-
-  Ok(result.rows_affected())
-}
-
-pub async fn bulk_update_image_metadata(
-  pool: &Db,
-  updated_metadata: &[(i64, ImageMetadata)],
-) -> Result<u64, DatabaseError> {
-  let mut tx = pool.begin().await?;
-
-  let mut total_rows = 0;
-
-  for (seq_id, meta_data) in updated_metadata {
-    let result = sqlx::query(
-      r#"
-            UPDATE image_file
-            SET
-                thumbnail_path = ?1,
-                dim_x = ?2,
-                dim_y = ?3,
-                process_status = ?4
-            WHERE seq_id = ?5
-            "#,
+      "#,
     )
-    .bind(&meta_data.thumbnail_path)
-    .bind(meta_data.dim_x)
-    .bind(meta_data.dim_y)
-    .bind(ProcessStatus::Complete as i32)
-    .bind(seq_id)
-    .execute(&mut *tx)
+    .bind(process_status)
+    .bind(MAX_WORKER_RETRIES)
+    .bind(limit)
+    .fetch_all(&self.db)
     .await?;
 
-    total_rows += result.rows_affected();
+    Ok(result)
   }
 
-  tx.commit().await?;
+  pub async fn update_images_hash(&self, updates: &[Image]) -> Result<u64, DatabaseError> {
+    if updates.is_empty() {
+      return Ok(0);
+    }
 
-  Ok(total_rows)
-}
+    let mut tx = self.db.begin().await?;
+    let mut total_updated = 0;
 
-pub async fn bulk_update_image_hash(
-  pool: &Db,
-  data: &[(i64, String)],
-) -> Result<u64, DatabaseError> {
-  let mut tx = pool.begin().await?;
-
-  let mut total_rows = 0;
-
-  for (seq_id, file_hash) in data {
-    let result = sqlx::query(
-      r#"
-            UPDATE image_file
+    let query_str = r#"
+            UPDATE images
             SET
-                file_hash = ?1,
-                process_status = ?2,
-                updated_at = ?3
-            WHERE seq_id = ?4
-            "#,
-    )
-    .bind(file_hash)
-    .bind(ProcessStatus::Hashed as i32)
-    .bind(get_unix_timestamp())
-    .bind(seq_id)
-    .execute(&mut *tx)
-    .await?;
+              content_hash = ?1,
+              status = ?2,
+              retry_count = ?3,
+              error_message = ?4
+            WHERE id = ?5
+        "#;
 
-    total_rows += result.rows_affected();
+    for update in updates {
+      let result = sqlx::query(query_str)
+        .bind(&update.content_hash)
+        .bind(update.status)
+        .bind(update.retry_count)
+        .bind(&update.error_message)
+        .bind(update.id)
+        .execute(&mut *tx)
+        .await?;
+      total_updated += result.rows_affected();
+    }
+
+    tx.commit().await?;
+    Ok(total_updated)
   }
 
-  tx.commit().await?;
+  pub async fn update_images_metadata(&self, updates: &[Image]) -> Result<u64, DatabaseError> {
+    if updates.is_empty() {
+      return Ok(0);
+    }
 
-  Ok(total_rows)
+    let mut tx = self.db.begin().await?;
+    let mut total_updated = 0;
+
+    let query_str = r#"
+              UPDATE images
+              SET
+                width = ?1,
+                height = ?2,
+                thumbnail_path = ?3,
+                status = ?4,
+                retry_count = ?5,
+                error_message = ?6
+              WHERE id = ?7
+            "#;
+
+    for update in updates {
+      let result = sqlx::query(query_str)
+        .bind(update.width)
+        .bind(update.height)
+        .bind(&update.thumbnail_path)
+        .bind(update.status)
+        .bind(update.retry_count)
+        .bind(&update.error_message)
+        .bind(update.id)
+        .execute(&mut *tx)
+        .await?;
+
+      total_updated += result.rows_affected();
+    }
+
+    tx.commit().await?;
+    Ok(total_updated)
+  }
+
+  pub async fn list_images_grouped_by_hash(
+    &self,
+    limit: i64,
+    cursor_id: Option<i64>,
+  ) -> Result<Vec<ImageModel>, DatabaseError> {
+    let where_clause = if cursor_id.is_some() {
+      "WHERE content_hash > COALESCE((SELECT content_hash FROM images WHERE id = ?), x'') AND content_hash IS NOT NULL"
+    } else {
+      "WHERE content_hash IS NOT NULL"
+    };
+
+    let query = format!(
+      r#"
+              SELECT *
+              FROM images
+              WHERE content_hash IN (
+                  SELECT content_hash
+                  FROM images
+                  {where_clause}
+                  GROUP BY content_hash
+                  HAVING COUNT(*) > 1
+                  ORDER BY content_hash ASC
+                  LIMIT ?
+              )
+              ORDER BY content_hash ASC, created_at ASC;
+              "#
+    );
+
+    let mut q = sqlx::query_as::<_, ImageModel>(&query);
+
+    if let Some(id) = cursor_id {
+      q = q.bind(id);
+    }
+
+    q = q.bind(limit);
+
+    let result = q.fetch_all(&self.db).await?;
+    Ok(result)
+  }
 }
