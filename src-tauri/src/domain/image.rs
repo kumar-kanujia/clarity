@@ -3,7 +3,7 @@ use crate::{
     models::image_model::{ImageRow, ImageStatus},
     system::format_datetime,
   },
-  interface::dto::ImageDto,
+  interface::dtos::image_dto::ImageDto,
 };
 
 use std::sync::OnceLock;

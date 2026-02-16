@@ -8,7 +8,7 @@ use crate::{
     models::image_model::{ImageRow, ImageStatus},
     repo::error::DatabaseError,
   },
-  interface::dto::ImageCursor,
+  interface::dtos::image_dto::ImageCursor,
   state::Db,
 };
 

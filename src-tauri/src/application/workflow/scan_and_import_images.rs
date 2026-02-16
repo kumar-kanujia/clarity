@@ -5,7 +5,7 @@ use crate::{
   domain::file::FileScanResult,
   error::AppError,
   infrastructure::repo::image_repo::ImageRepository,
-  interface::dto::ImportSummaryDto,
+  interface::dtos::image_dto::ImportSummaryDto,
   state::Db,
 };
 

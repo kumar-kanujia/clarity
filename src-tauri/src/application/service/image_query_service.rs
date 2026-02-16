@@ -5,7 +5,7 @@ use crate::{
     fs::ops, models::image_model::ImageRow, repo::image_repo::ImageRepository,
     system::format_datetime,
   },
-  interface::dto::{ImageCursor, ImageDto, PaginatedImageHashGroups, PaginatedImages},
+  interface::dtos::image_dto::{ImageCursor, ImageDto, PaginatedImageHashGroups, PaginatedImages},
   state::Db,
 };
 
