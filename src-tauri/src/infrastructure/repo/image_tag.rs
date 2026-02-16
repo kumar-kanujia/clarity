@@ -1,4 +1,4 @@
-use crate::{infrastructure::repo::error::DatabaseError, setup::state::Db};
+use crate::{infrastructure::repo::error::DatabaseError, state::Db};
 
 #[derive(Debug, Clone)]
 pub struct ImageTagRepository {

@@ -6,7 +6,7 @@ use crate::{
   error::AppError,
   infrastructure::repo::image_repo::ImageRepository,
   interface::dto::ImportSummaryDto,
-  setup::state::Db,
+  state::Db,
 };
 
 pub struct ScanAndImportImages {

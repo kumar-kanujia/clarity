@@ -1,6 +1,4 @@
-use crate::{
-  error::AppError, infrastructure::repo::image_tag::ImageTagRepository, setup::state::Db,
-};
+use crate::{error::AppError, infrastructure::repo::image_tag::ImageTagRepository, state::Db};
 
 pub struct ImageTagService {
   repo: ImageTagRepository,

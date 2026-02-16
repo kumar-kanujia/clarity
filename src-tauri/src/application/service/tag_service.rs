@@ -3,7 +3,7 @@ use crate::{
   error::AppError,
   infrastructure::{models::tag_model::TagType, repo::tag_repo::TagRepository},
   interface::dto::TagDto,
-  setup::state::Db,
+  state::Db,
 };
 
 pub struct TagService {

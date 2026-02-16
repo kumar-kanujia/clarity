@@ -9,7 +9,7 @@ use crate::{
   interface::dto::{
     ImageCursor, ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages, TagDto,
   },
-  setup::state::AppState,
+  state::AppState,
 };
 
 use tauri::State;
@@ -34,7 +34,7 @@ pub async fn import_images(
           error = ?err,
           "Import failed"
       );
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -60,7 +60,7 @@ pub async fn fetch_images(
     }
     Err(err) => {
       tracing::error!(error = ?err, "fetch_image failed");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -90,7 +90,7 @@ pub async fn fetch_images_with_tag(
     }
     Err(err) => {
       tracing::error!(error = ?err, "fetch_images_with_tag failed");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -113,7 +113,7 @@ pub async fn fetch_images_grouped_by_hash(
     }
     Err(err) => {
       tracing::error!(error = ?err, "Load failed");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -132,7 +132,7 @@ pub async fn create_tag(state: State<'_, AppState>, tag_text: &str) -> Result<i6
     }
     Err(err) => {
       tracing::error!(error = ?err, "DB error");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -151,7 +151,7 @@ pub async fn fetch_user_tags(state: State<'_, AppState>) -> Result<Vec<TagDto>, 
     }
     Err(err) => {
       tracing::error!(error = ?err, "DB error");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -170,7 +170,7 @@ pub async fn fetch_system_tags(state: State<'_, AppState>) -> Result<Vec<TagDto>
     }
     Err(err) => {
       tracing::error!(error = ?err, "DB error");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -189,7 +189,7 @@ pub async fn delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<(), S
     }
     Err(err) => {
       tracing::error!(error = ?err, "DB error");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }
@@ -212,7 +212,7 @@ pub async fn toggle_tag_on_image(
     }
     Err(err) => {
       tracing::error!(error = ?err, "DB error");
-      Err(err.user_message())
+      Err(err.into())
     }
   }
 }

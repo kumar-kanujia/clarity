@@ -6,7 +6,7 @@ use crate::{
     system::format_datetime,
   },
   interface::dto::{ImageCursor, ImageDto, PaginatedImageHashGroups, PaginatedImages},
-  setup::state::Db,
+  state::Db,
 };
 
 #[derive(Debug)]

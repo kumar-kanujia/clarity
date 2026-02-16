@@ -9,7 +9,7 @@ use crate::{
     repo::error::DatabaseError,
   },
   interface::dto::ImageCursor,
-  setup::state::Db,
+  state::Db,
 };
 
 use sqlx::QueryBuilder;

@@ -1,14 +1,14 @@
 pub mod dbsetup;
 pub mod error;
 pub mod logger;
-pub mod state;
 
 use crate::{
   application::worker::{
     Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
   },
   infrastructure::{repo::image_repo::ImageRepository, system::get_num_threads},
-  setup::{dbsetup::setup_db, state::AppState},
+  setup::dbsetup::setup_db,
+  state::AppState,
 };
 
 use std::error::Error;
