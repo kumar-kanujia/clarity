@@ -1,6 +1,38 @@
-use crate::domain::image::Image;
+use crate::{domain::image::Image, interface::dtos::SearchOrderBy};
 
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ImageSearchCursor {
+  pub last_value: String,
+  pub id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ImageFilters {
+  pub file_names: Vec<String>,
+  pub tag_ids: Vec<i64>,
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ImageSortBy {
+  FileName,
+  Size,
+  CreatedAt,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ImageSearchQuery {
+  pub filters: ImageFilters,
+  pub sort_by: Option<ImageSortBy>,
+  pub order: Option<SearchOrderBy>,
+  pub limit: i64,
+}
+
+#[derive(Serialize)]
+pub struct ImageSearchResult {
+  pub next_cursor: Option<ImageSearchCursor>,
+  pub data: Vec<ImageDto>,
+}
 
 #[derive(Serialize)]
 pub struct PaginatedImageHashGroups {

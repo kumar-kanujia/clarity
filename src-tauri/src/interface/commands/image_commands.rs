@@ -4,7 +4,8 @@ use crate::{
     workflow::scan_and_import_images::ScanAndImportImages,
   },
   interface::dtos::image_dto::{
-    ImageCursor, ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages,
+    ImageCursor, ImageDto, ImageSearchCursor, ImageSearchQuery, ImageSearchResult,
+    ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages,
   },
   state::AppState,
 };
@@ -31,6 +32,55 @@ pub async fn import_images(
           error = ?err,
           "Import failed"
       );
+      Err(err.into())
+    }
+  }
+}
+
+#[tauri::command]
+pub async fn search_images(
+  state: State<'_, AppState>,
+  query: ImageSearchQuery,
+  cursor: Option<ImageSearchCursor>,
+) -> Result<ImageSearchResult, String> {
+  let span = tracing::info_span!("search_images", query = ?query);
+  let _enter = span.enter();
+
+  let qs = ImageQueryService::new(state.db.clone());
+
+  match qs.get_images_with_search_query(query, cursor).await {
+    Ok(images) => {
+      tracing::info!(total = images.data.len(), "Fetch image by ids completed:");
+      Ok(images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "fetch_image_by_ids failed");
+      Err(err.into())
+    }
+  }
+}
+
+#[tauri::command]
+pub async fn fetch_image_by_ids(
+  state: State<'_, AppState>,
+  image_ids: Vec<i64>,
+) -> Result<Vec<ImageDto>, String> {
+  let span = tracing::info_span!("fetch_image_by_ids", image_ids = ?image_ids);
+  let _enter = span.enter();
+
+  let qs = ImageQueryService::new(state.db.clone());
+
+  match qs.get_images_with_ids(&image_ids).await {
+    Ok(images) => {
+      tracing::info!(
+        asked = image_ids.len(),
+        data = images.len(),
+        "Fetch image by ids completed:"
+      );
+      Ok(images)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "fetch_image_by_ids failed");
       Err(err.into())
     }
   }
