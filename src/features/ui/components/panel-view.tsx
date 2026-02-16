@@ -10,7 +10,6 @@ import {
   Layers,
   Heart,
   Plus,
-  Calendar,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
@@ -33,7 +32,16 @@ export function PanelView() {
     fetchTags,
     createTag,
   } = useTagStore();
-  const { loadImages } = useImageStore();
+  const {
+    searchQuery,
+    sortBy,
+    order,
+    setSearchQuery,
+    setSortBy,
+    setOrder,
+    loadImages,
+  } = useImageStore();
+
   const { isPanelCollapsed, togglePanel } = useUiStore();
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagName, setNewTagName] = useState("");
@@ -103,167 +111,226 @@ export function PanelView() {
               <div className="flex flex-col gap-9 pb-12">
                 {isTagsPage && (
                   <>
-                    {/* System Tags (Shortcuts) */}
-                    <div className="flex flex-col gap-4">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600 px-3">
-                        Global Filters
-                      </span>
-                      <div className="flex flex-col gap-1.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTagClick(null)}
-                          className={cn(
-                            "justify-start gap-4 rounded-2xl h-11 px-4 transition-all group",
-                            currentTagId === null
-                              ? "bg-white/10 text-white shadow-xl shadow-black/20"
-                              : "text-zinc-500 hover:bg-white/5 hover:text-zinc-100",
-                          )}
-                        >
-                          <Layers className="w-4 h-4" />
-                          <span className="flex-1 text-left text-xs font-bold">
-                            All Library
-                          </span>
-                        </Button>
-
-                        {systemTags.map((tag) => {
-                          const isFav =
-                            tag.tagName.toLowerCase() === "favorite";
-                          const isTrash = tag.tagName.toLowerCase() === "trash";
-                          // Skip Trash in Panel, will move to sidebar
-                          if (isTrash) return null;
-
-                          const Icon = isFav ? Heart : TagIcon;
-                          const isActive = currentTagId === tag.id;
-
-                          return (
-                            <Button
-                              key={tag.id}
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleTagClick(tag.id)}
-                              className={cn(
-                                "justify-start gap-4 rounded-2xl h-11 px-4 transition-all group",
-                                isActive
-                                  ? "bg-white/10 text-white shadow-xl shadow-black/20"
-                                  : "text-zinc-500 hover:bg-white/5 hover:text-zinc-100",
-                              )}
-                            >
-                              <Icon
-                                className={cn(
-                                  "w-4 h-4 transition-transform group-hover:scale-110",
-                                  isFav &&
-                                    tag.imageCount > 0 &&
-                                    "fill-current text-red-500",
-                                  isActive && "scale-110",
-                                )}
-                              />
-                              <span className="flex-1 text-left text-xs font-bold">
-                                {tag.tagName}
-                              </span>
-                              {tag.imageCount > 0 && (
-                                <span className="text-[10px] font-mono opacity-40">
-                                  {tag.imageCount}
-                                </span>
-                              )}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* User Tags */}
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between px-3">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                          Custom Labels
+                    {/* Search & Sort */}
+                    <div className="flex flex-col gap-6">
+                      <div className="flex flex-col gap-3 px-1">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600 px-2">
+                          Search & Sort
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setIsAddingTag(!isAddingTag)}
-                          className={cn(
-                            "w-5 h-5 rounded-md transition-all",
-                            isAddingTag
-                              ? "bg-primary text-white rotate-45"
-                              : "hover:bg-white/10",
-                          )}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
+                        <div className="relative group/search">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 group-focus-within/search:text-primary transition-colors" />
+                          <Input
+                            placeholder="Filter by name..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              loadImages(true);
+                            }}
+                            className="h-9 pl-9 rounded-xl bg-white/5 border-none focus-visible:ring-1 focus-visible:ring-primary/40 text-[11px] text-white"
+                          />
+                        </div>
+
+                        <div className="flex gap-2">
+                          <select
+                            className="flex-1 h-9 rounded-xl bg-white/5 border-none text-[10px] text-zinc-400 px-3 focus:ring-1 focus:ring-primary/40 outline-none appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                            value={sortBy}
+                            onChange={(e) => {
+                              setSortBy(e.target.value as any);
+                              loadImages(true);
+                            }}
+                          >
+                            <option value="CreatedAt">Date</option>
+                            <option value="FileName">Name</option>
+                            <option value="Size">Size</option>
+                          </select>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const newOrder = order === "Asc" ? "Desc" : "Asc";
+                              setOrder(newOrder);
+                              loadImages(true);
+                            }}
+                            className="h-9 w-9 rounded-xl bg-white/5 text-zinc-400 hover:text-white"
+                          >
+                            {order === "Asc" ? (
+                              <ChevronRight className="w-4 h-4 -rotate-90" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 rotate-90" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
 
-                      <AnimatePresence>
-                        {isAddingTag && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="px-1 overflow-hidden"
-                          >
-                            <div className="flex gap-2 pb-3">
-                              <Input
-                                placeholder="New label..."
-                                value={newTagName}
-                                onChange={(e) => setNewTagName(e.target.value)}
-                                onKeyDown={(e) =>
-                                  e.key === "Enter" && handleCreateTag()
-                                }
-                                className="h-9 bg-white/5 border-white/10 text-[11px] rounded-xl focus-visible:ring-primary/30"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                onClick={handleCreateTag}
-                                className="h-9 px-3 rounded-xl bg-primary text-white font-bold text-[10px]"
-                                disabled={!newTagName.trim()}
-                              >
-                                Add
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <Separator className="opacity-5 mx-1" />
 
-                      <div className="flex flex-col gap-1.5">
-                        {userTags.map((tag) => {
-                          const isActive = currentTagId === tag.id;
-                          return (
-                            <Button
-                              key={tag.id}
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleTagClick(tag.id)}
-                              className={cn(
-                                "justify-start gap-4 rounded-2xl h-11 px-4 transition-all group",
-                                isActive
-                                  ? "bg-white/10 text-white shadow-xl shadow-black/20"
-                                  : "text-zinc-500 hover:bg-white/5 hover:text-zinc-100",
-                              )}
-                            >
-                              <div
+                      {/* System Tags (Shortcuts) */}
+                      <div className="flex flex-col gap-4">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600 px-3">
+                          Quick Filters
+                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTagClick(null)}
+                            className={cn(
+                              "justify-start gap-4 rounded-2xl h-11 px-4 transition-all group",
+                              currentTagId === null
+                                ? "bg-white/10 text-white shadow-xl shadow-black/20"
+                                : "text-zinc-500 hover:bg-white/5 hover:text-zinc-100",
+                            )}
+                          >
+                            <Layers className="w-4 h-4" />
+                            <span className="flex-1 text-left text-xs font-bold">
+                              All Library
+                            </span>
+                          </Button>
+
+                          {systemTags.map((tag) => {
+                            const isFav =
+                              tag.tagName.toLowerCase() === "favorite";
+                            const isTrash =
+                              tag.tagName.toLowerCase() === "trash";
+                            // Skip Trash in Panel, will move to sidebar
+                            if (isTrash) return null;
+
+                            const Icon = isFav ? Heart : TagIcon;
+                            const isActive = currentTagId === tag.id;
+
+                            return (
+                              <Button
+                                key={tag.id}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleTagClick(tag.id)}
                                 className={cn(
-                                  "w-2.5 h-2.5 rounded-full shadow-sm group-hover:scale-125 transition-transform",
-                                  isActive && "scale-125 ring-2 ring-white/20",
+                                  "justify-start gap-4 rounded-2xl h-11 px-4 transition-all group",
+                                  isActive
+                                    ? "bg-white/10 text-white shadow-xl shadow-black/20"
+                                    : "text-zinc-500 hover:bg-white/5 hover:text-zinc-100",
                                 )}
-                                style={{ backgroundColor: tag.tagColor }}
-                              />
-                              <span className="flex-1 text-left text-xs font-bold">
-                                {tag.tagName}
-                              </span>
-                              {tag.imageCount > 0 && (
-                                <span className="text-[10px] font-mono opacity-40">
-                                  {tag.imageCount}
+                              >
+                                <Icon
+                                  className={cn(
+                                    "w-4 h-4 transition-transform group-hover:scale-110",
+                                    isFav &&
+                                      tag.imageCount > 0 &&
+                                      "fill-current text-red-500",
+                                    isActive && "scale-110",
+                                  )}
+                                />
+                                <span className="flex-1 text-left text-xs font-bold">
+                                  {tag.tagName}
                                 </span>
-                              )}
-                            </Button>
-                          );
-                        })}
-                        {userTags.length === 0 && (
-                          <p className="text-[10px] italic text-zinc-600 px-4 py-3 bg-zinc-900/40 rounded-2xl border border-white/5 mx-1">
-                            Create tags in management to start organizing
-                          </p>
-                        )}
+                                {tag.imageCount > 0 && (
+                                  <span className="text-[10px] font-mono opacity-40">
+                                    {tag.imageCount}
+                                  </span>
+                                )}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* User Tags */}
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between px-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">
+                            Custom Labels
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsAddingTag(!isAddingTag)}
+                            className={cn(
+                              "w-5 h-5 rounded-md transition-all",
+                              isAddingTag
+                                ? "bg-primary text-white rotate-45"
+                                : "hover:bg-white/10",
+                            )}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+
+                        <AnimatePresence>
+                          {isAddingTag && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="px-1 overflow-hidden"
+                            >
+                              <div className="flex gap-2 pb-3">
+                                <Input
+                                  placeholder="New label..."
+                                  value={newTagName}
+                                  onChange={(e) =>
+                                    setNewTagName(e.target.value)
+                                  }
+                                  onKeyDown={(e) =>
+                                    e.key === "Enter" && handleCreateTag()
+                                  }
+                                  className="h-9 bg-white/5 border-white/10 text-[11px] rounded-xl focus-visible:ring-primary/30"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={handleCreateTag}
+                                  className="h-9 px-3 rounded-xl bg-primary text-white font-bold text-[10px]"
+                                  disabled={!newTagName.trim()}
+                                >
+                                  Add
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        <div className="flex flex-col gap-1.5">
+                          {userTags.map((tag) => {
+                            const isActive = currentTagId === tag.id;
+                            return (
+                              <Button
+                                key={tag.id}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleTagClick(tag.id)}
+                                className={cn(
+                                  "justify-start gap-4 rounded-2xl h-11 px-4 transition-all group",
+                                  isActive
+                                    ? "bg-white/10 text-white shadow-xl shadow-black/20"
+                                    : "text-zinc-500 hover:bg-white/5 hover:text-zinc-100",
+                                )}
+                              >
+                                <div
+                                  className={cn(
+                                    "w-2.5 h-2.5 rounded-full shadow-sm group-hover:scale-125 transition-transform",
+                                    isActive &&
+                                      "scale-125 ring-2 ring-white/20",
+                                  )}
+                                  style={{ backgroundColor: tag.tagColor }}
+                                />
+                                <span className="flex-1 text-left text-xs font-bold">
+                                  {tag.tagName}
+                                </span>
+                                {tag.imageCount > 0 && (
+                                  <span className="text-[10px] font-mono opacity-40">
+                                    {tag.imageCount}
+                                  </span>
+                                )}
+                              </Button>
+                            );
+                          })}
+                          {userTags.length === 0 && (
+                            <p className="text-[10px] italic text-zinc-600 px-4 py-3 bg-zinc-900/40 rounded-2xl border border-white/5 mx-1">
+                              Create tags in management to start organizing
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </>

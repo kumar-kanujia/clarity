@@ -10,10 +10,18 @@ interface ImageState {
   images: app.ImageDto[];
   isLoading: boolean;
   hasMore: boolean;
-  nextCursor: app.ImageCursor | null;
+  nextSearchCursor: app.ImageSearchCursor | null;
+
+  // Filters & Sorting
+  searchQuery: string;
+  sortBy: app.ImageSortBy;
+  order: app.SearchOrderBy;
 
   // Actions
   loadImages: (isReset?: boolean) => Promise<void>;
+  setSearchQuery: (query: string) => void;
+  setSortBy: (sortBy: app.ImageSortBy) => void;
+  setOrder: (order: app.SearchOrderBy) => void;
 }
 
 export const useImageStore = create<ImageState>()(
@@ -21,36 +29,64 @@ export const useImageStore = create<ImageState>()(
     images: [],
     isLoading: false,
     hasMore: true,
-    nextCursor: null,
+    nextSearchCursor: null,
+
+    searchQuery: "",
+    sortBy: "CreatedAt",
+    order: "Desc",
+
+    setSearchQuery: (query: string) => {
+      set({ searchQuery: query }, false, "setSearchQuery");
+    },
+    setSortBy: (sortBy: app.ImageSortBy) => {
+      set({ sortBy }, false, "setSortBy");
+    },
+    setOrder: (order: app.SearchOrderBy) => {
+      set({ order }, false, "setOrder");
+    },
 
     loadImages: async (isReset = false) => {
-      const { isLoading, nextCursor, hasMore } = get();
+      const {
+        isLoading,
+        nextSearchCursor,
+        hasMore,
+        searchQuery,
+        sortBy,
+        order,
+      } = get();
+
       if (isLoading || (!hasMore && !isReset)) return;
 
       set({ isLoading: true }, false, "loadImages/start");
 
       try {
         const { currentTagId } = useTagStore.getState();
-        let result: app.PaginatedImages;
 
-        if (currentTagId) {
-          result = await app.fetchImagesWithTag({
-            tagId: currentTagId,
-            limit: BATCH_SIZE,
-            cursor: isReset ? undefined : (nextCursor ?? undefined),
-          });
-        } else {
-          result = await app.fetchImages({
-            limit: BATCH_SIZE,
-            cursor: isReset ? undefined : (nextCursor ?? undefined),
-          });
-        }
+        // Use search_images if we have search query, special sorting, or if it's just more robust
+        // Actually, search_images is more flexible as it handles tags too.
+
+        const filters: app.ImageFilters = {
+          file_names: searchQuery ? [searchQuery] : [],
+          tag_ids: currentTagId ? [currentTagId] : [],
+        };
+
+        const query: app.ImageSearchQuery = {
+          filters,
+          sort_by: sortBy,
+          order: order,
+          limit: BATCH_SIZE,
+        };
+
+        const result = await app.searchImages({
+          query,
+          cursor: isReset ? undefined : (nextSearchCursor ?? undefined),
+        });
 
         set(
           (state) => ({
             images: isReset ? result.data : [...state.images, ...result.data],
-            nextCursor: result.nextCursor ?? null,
-            hasMore: !!result.nextCursor,
+            nextSearchCursor: result.next_cursor ?? null,
+            hasMore: !!result.next_cursor,
             isLoading: false,
           }),
           false,
