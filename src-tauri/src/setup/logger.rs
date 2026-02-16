@@ -2,7 +2,7 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::fmt::time::ChronoLocal;
 
-pub fn init_tracing() {
+pub fn init_log() {
   // This allows "info" generally, but suppresses noisy third-party crates
   // unless you explicitly set RUST_LOG=debug.
   let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,sqlx=warn".into());

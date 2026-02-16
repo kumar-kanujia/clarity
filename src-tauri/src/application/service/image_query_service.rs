@@ -5,7 +5,7 @@ use crate::{
     fs::ops, models::image_model::ImageRow, repo::image_repo::ImageRepository,
     system::format_datetime,
   },
-  interface::dto::{ImageCursor, ImageDto, PaginatedImages},
+  interface::dto::{ImageCursor, ImageDto, PaginatedImageHashGroups, PaginatedImages},
   setup::state::Db,
 };
 
@@ -19,6 +19,32 @@ impl ImageQueryService {
     Self {
       repo: ImageRepository::new(db),
     }
+  }
+
+  #[tracing::instrument]
+  pub async fn list_images_grouped_by_hash(
+    &self,
+    limit: i64,
+    next_cursor: Option<i64>,
+  ) -> Result<PaginatedImageHashGroups, AppError> {
+    let raw_images = self
+      .repo
+      .list_images_grouped_by_hash(limit, next_cursor)
+      .await?;
+
+    let filtered_images = self.filter_image(raw_images);
+
+    let id = filtered_images.last().map(|i| i.id);
+
+    let data = Image::group_by_hash(filtered_images);
+
+    let next_cursor = if data.len() == limit as usize {
+      id
+    } else {
+      None
+    };
+
+    Ok(PaginatedImageHashGroups { data, next_cursor })
   }
 
   #[tracing::instrument(skip(self))]
@@ -35,7 +61,11 @@ impl ImageQueryService {
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
 
-    let data = self.filter_image(images_to_process);
+    let data = self
+      .filter_image(images_to_process)
+      .into_iter()
+      .map(ImageDto::from)
+      .collect();
 
     Ok(PaginatedImages { data, next_cursor })
   }
@@ -50,12 +80,16 @@ impl ImageQueryService {
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
 
-    let data = self.filter_image(images_to_process);
+    let data = self
+      .filter_image(images_to_process)
+      .into_iter()
+      .map(ImageDto::from)
+      .collect();
 
     Ok(PaginatedImages { data, next_cursor })
   }
 
-  fn filter_image(&self, images: Vec<ImageRow>) -> Vec<ImageDto> {
+  fn filter_image(&self, images: Vec<ImageRow>) -> Vec<Image> {
     images
       .into_iter()
       .filter_map(|raw| {
@@ -67,7 +101,7 @@ impl ImageQueryService {
           );
           return None;
         }
-        Some(ImageDto::from(Image::from(raw)))
+        Some(Image::from(raw))
       })
       .collect()
   }

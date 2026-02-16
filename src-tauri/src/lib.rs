@@ -10,7 +10,7 @@ use crate::{
     create_tag, delete_tag, fetch_images, fetch_images_grouped_by_hash, fetch_images_with_tag,
     fetch_system_tags, fetch_user_tags, import_images, toggle_tag_on_image,
   },
-  setup::{setup_app, state::AppState, tracesetup},
+  setup::{logger, setup_app, state::AppState},
 };
 
 use tauri::{Manager, RunEvent};
@@ -20,7 +20,8 @@ pub static IMAGE_DIR: &str = "images";
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tracesetup::init_tracing();
+  logger::init_log();
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())

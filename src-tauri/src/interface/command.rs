@@ -1,8 +1,8 @@
 use crate::{
   application::{
     service::{
-      image_group_query_service::ImageGroupQueryService, image_query_service::ImageQueryService,
-      image_tag_service::ImageTagService, tag_service::TagService,
+      image_query_service::ImageQueryService, image_tag_service::ImageTagService,
+      tag_service::TagService,
     },
     workflow::scan_and_import_images::ScanAndImportImages,
   },
@@ -104,7 +104,7 @@ pub async fn fetch_images_grouped_by_hash(
   let span = tracing::info_span!("fetch_images_grouped_by_hash");
   let _enter = span.enter();
 
-  let qs = ImageGroupQueryService::new(state.db.clone());
+  let qs = ImageQueryService::new(state.db.clone());
 
   match qs.list_images_grouped_by_hash(limit, next_cursor).await {
     Ok(groups) => {

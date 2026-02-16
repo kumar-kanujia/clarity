@@ -1,7 +1,7 @@
 pub mod dbsetup;
 pub mod error;
+pub mod logger;
 pub mod state;
-pub mod tracesetup;
 
 use crate::{
   application::worker::{
