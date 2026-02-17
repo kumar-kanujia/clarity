@@ -6,9 +6,7 @@ export const AppHeader = () => {
   return (
     <header className="flex py-2 px-3 items-center justify-between border-b gap-4">
       <div className="flex-1">
-        <Button size={"icon"} variant={"ghost"}>
-          <SidebarTrigger />
-        </Button>
+        <SidebarTrigger />
       </div>
       <div className="flex gap-3">
         <Button size={"icon"} variant={"outline"}>

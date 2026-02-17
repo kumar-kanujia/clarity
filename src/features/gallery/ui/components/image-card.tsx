@@ -11,10 +11,12 @@ import { useMoveToBin } from "../../hooks/use-move-to-bin"
 
 export const ImageCard = ({
   image,
-  index
+  index,
+  onClick
 }: {
   image: GalleryImage
   index: number
+  onClick?: () => void
 }) => {
   const { isDeleted, moveToBin } = useMoveToBin(image.imageId)
 
@@ -25,6 +27,12 @@ export const ImageCard = ({
     e.stopPropagation()
     const newFavoriteStatus = await toggleFavorite()
     setIsFavorite(newFavoriteStatus)
+  }
+
+  const handleMoveToBin = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    moveToBin()
   }
 
   return (
@@ -41,7 +49,8 @@ export const ImageCard = ({
         stiffness: 400,
         delay: Math.min(index * 0.005, 0.1)
       }}
-      className={cn("group relative cursor-pointer", isDeleted && "opacity-50")}
+      onClick={onClick}
+      className={cn("group relative", isDeleted && "opacity-50")}
     >
       <div className="relative aspect-square rounded-3xl overflow-hidden bg-zinc-900 border border-white/5 shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] group-hover:border-white/10 transition-all duration-700">
         <img
@@ -72,7 +81,7 @@ export const ImageCard = ({
           className={cn(
             "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300"
           )}
-          onClick={() => moveToBin()}
+          onClick={handleMoveToBin}
         >
           <Trash className={cn("w-4.5 h-4.5")} />
         </Button>

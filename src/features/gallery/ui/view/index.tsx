@@ -6,6 +6,7 @@ import {
 import { ImageCard } from "../components/image-card"
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
+import { useImageModal } from "@/features/shared/store/use-image-model-store"
 
 type Cursor = ImageCursor | null
 
@@ -49,14 +50,21 @@ export const GalleryView = () => {
     return () => observer.disconnect()
   }, [isLoading, hasNextPage])
 
+  const openModal = useImageModal((s) => s.open)
+
+  const getImages = () => data?.pages.flatMap((page) => page.data) ?? []
+
   return (
     <div className="py-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
-        {data?.pages.map((page) =>
-          page.data.map((image, idx) => (
-            <ImageCard key={image.imageId} image={image} index={idx} />
-          ))
-        )}
+        {getImages().map((image, idx) => (
+          <ImageCard
+            key={image.imageId}
+            image={image}
+            index={idx}
+            onClick={() => openModal(getImages, idx)}
+          />
+        ))}
       </div>
       <div ref={loaderRef} className="h-20 w-full" />
     </div>
