@@ -18,15 +18,18 @@ impl GalleryQueryService {
   }
 
   #[tracing::instrument(skip(self))]
+  pub async fn change_image_is_favorite(&self, image_id: i64) -> Result<bool, AppError> {
+    let is_favorite = self.repo.update_image_is_favorite(image_id).await?;
+    Ok(is_favorite)
+  }
+
+  #[tracing::instrument(skip(self))]
   pub async fn get_gallery_images(
     &self,
     limit: i64,
     cursor: Option<ImageCursor>,
   ) -> Result<GalleryImageResult, AppError> {
-    let raw_images = self
-      .repo
-      .get_gallery_image_paginated(limit + 1, cursor)
-      .await?;
+    let raw_images = self.repo.get_gallery_images(limit + 1, cursor).await?;
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
 

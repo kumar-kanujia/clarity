@@ -28,7 +28,7 @@ impl ImageRepository {
     Self { db }
   }
 
-  pub async fn get_gallery_image_paginated(
+  pub async fn get_gallery_images(
     &self,
     limit: i64,
     cursor: Option<ImageCursor>,
@@ -59,6 +59,22 @@ impl ImageRepository {
       .await?;
 
     Ok(result)
+  }
+
+  pub async fn update_image_is_favorite(&self, image_id: i64) -> Result<bool, DatabaseError> {
+    let result = sqlx::query_scalar::<_, i64>(
+      r#"
+            UPDATE images
+            SET is_favorite = NOT is_favorite
+            WHERE id = ?1
+            RETURNING is_favorite
+      "#,
+    )
+    .bind(image_id)
+    .fetch_one(&self.db)
+    .await?;
+
+    Ok(result == 1)
   }
 
   pub async fn create_images_by_file_metadata(

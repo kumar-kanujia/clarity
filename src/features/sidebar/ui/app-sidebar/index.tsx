@@ -18,79 +18,73 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
   const uploadImage = useUploadImage()
 
   return (
-    <>
-      <Sidebar
-        collapsible="icon"
-        variant="floating"
-        className="py-2 select-none"
-      >
-        <SidebarHeader className="border-b h-12 mb-4">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <div className="flex cursor-default  items-center justify-between rounded-lg overflow-hidden ps-0.5">
-                <div className="flex items-center gap-3 ps-0">
-                  <Avatar>
-                    <AvatarFallback>C</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-semibold tracking-tight truncate">
-                    Clarity
-                  </span>
-                </div>
-                <KbdGroup className="opacity-70 group-hover:opacity-100 transition-opacity">
-                  <Kbd className="h-5 px-1.5 text-xs">⌘</Kbd>
-                  <span className="text-xs text-muted-foreground">+</span>
-                  <Kbd className="h-5 px-1.5 text-xs">B</Kbd>
-                </KbdGroup>
+    <Sidebar collapsible="icon" variant="floating" className="py-2 select-none">
+      <SidebarHeader className="border-b h-12 mb-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="flex cursor-default  items-center justify-between rounded-lg overflow-hidden ps-0.5">
+              <div className="flex items-center gap-3 ps-0">
+                <Avatar>
+                  <AvatarFallback>C</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-semibold tracking-tight truncate">
+                  Clarity
+                </span>
               </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <Link to="/">
-                  <SidebarMenuButton tooltip={"Gallery"}>
-                    <Aperture /> Gallery
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="border-t">
+              <KbdGroup className="opacity-70 group-hover:opacity-100 transition-opacity">
+                <Kbd className="h-5 px-1.5 text-xs">⌘</Kbd>
+                <span className="text-xs text-muted-foreground">+</span>
+                <Kbd className="h-5 px-1.5 text-xs">B</Kbd>
+              </KbdGroup>
+            </div>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                tooltip={"Add Image"}
-                onClick={() => uploadImage("file")}
-              >
-                <ImagePlusIcon />
-                Add Image
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                tooltip={"Add Folder"}
-                onClick={() => uploadImage("directory")}
-              >
-                <FolderPlus /> Add Folder
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <Link to="/settings">
-                <SidebarMenuButton tooltip={"Settings"}>
-                  <Settings /> Settings
+              <Link to="/">
+                <SidebarMenuButton tooltip={"Gallery"}>
+                  <Aperture /> Gallery
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-    </>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="border-t">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={"Add Image"}
+              onClick={() => uploadImage("file")}
+            >
+              <ImagePlusIcon />
+              Add Image
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={"Add Folder"}
+              onClick={() => uploadImage("directory")}
+            >
+              <FolderPlus /> Add Folder
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Link to="/settings">
+              <SidebarMenuButton tooltip={"Settings"}>
+                <Settings /> Settings
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
   )
 }

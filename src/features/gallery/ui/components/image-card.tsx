@@ -5,6 +5,8 @@ import { convertFileSrc } from "@tauri-apps/api/core"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Heart } from "lucide-react"
+import { useToggleFavorite } from "../../hooks/use-toggle-favorite"
+import { useState } from "react"
 
 export const ImageCard = ({
   image,
@@ -13,6 +15,15 @@ export const ImageCard = ({
   image: GalleryImage
   index: number
 }) => {
+  const [isFavorite, setIsFavorite] = useState(image.isFavorite)
+  const toggleFavorite = useToggleFavorite(image.imageId)
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const newFavoriteStatus = await toggleFavorite()
+    setIsFavorite(newFavoriteStatus)
+  }
+
   return (
     <motion.div
       layout
@@ -45,13 +56,12 @@ export const ImageCard = ({
           variant="secondary"
           className={cn(
             "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300",
-            image.isFavorite &&
+            isFavorite &&
               "bg-red-500 text-white border-red-500 hover:bg-red-600 hover:text-white"
           )}
+          onClick={handleToggleFavorite}
         >
-          <Heart
-            className={cn("w-4.5 h-4.5", image.isFavorite && "fill-current")}
-          />
+          <Heart className={cn("w-4.5 h-4.5", isFavorite && "fill-current")} />
         </Button>
       </div>
       <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2.5 group-hover:translate-y-0">

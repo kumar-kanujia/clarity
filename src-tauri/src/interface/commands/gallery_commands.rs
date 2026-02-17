@@ -34,3 +34,24 @@ pub async fn fetch_gallery(
     }
   }
 }
+
+#[tauri::command]
+pub async fn toggle_favorite(state: State<'_, AppState>, image_id: i64) -> Result<bool, String> {
+  let span = tracing::info_span!("toggle_favorite", image_id);
+  let _enter = span.enter();
+
+  let repo = ImageRepository::new(state.db.clone());
+
+  let qs = GalleryQueryService::new(repo);
+
+  match qs.change_image_is_favorite(image_id).await {
+    Ok(is_favorite) => {
+      tracing::info!(is_favorite, "Toggle favorite status changed:");
+      Ok(is_favorite)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, image_id = image_id, "toggle_favorite failed");
+      Err(err.into())
+    }
+  }
+}
