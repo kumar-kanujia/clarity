@@ -18,6 +18,19 @@ impl GalleryQueryService {
   }
 
   #[tracing::instrument(skip(self))]
+  pub async fn change_image_is_deleted(
+    &self,
+    image_id: i64,
+    is_deleted: bool,
+  ) -> Result<bool, AppError> {
+    let is_deleted = self
+      .repo
+      .update_image_is_deleted(image_id, is_deleted)
+      .await?;
+    Ok(is_deleted)
+  }
+
+  #[tracing::instrument(skip(self))]
   pub async fn change_image_is_favorite(&self, image_id: i64) -> Result<bool, AppError> {
     let is_favorite = self.repo.update_image_is_favorite(image_id).await?;
     Ok(is_favorite)

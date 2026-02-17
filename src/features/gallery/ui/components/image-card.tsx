@@ -4,9 +4,10 @@ import type { GalleryImage } from "@/services/tauri"
 import { convertFileSrc } from "@tauri-apps/api/core"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Heart } from "lucide-react"
+import { Heart, Trash } from "lucide-react"
 import { useToggleFavorite } from "../../hooks/use-toggle-favorite"
 import { useState } from "react"
+import { useMoveToBin } from "../../hooks/use-move-to-bin"
 
 export const ImageCard = ({
   image,
@@ -15,6 +16,8 @@ export const ImageCard = ({
   image: GalleryImage
   index: number
 }) => {
+  const { isDeleted, moveToBin } = useMoveToBin(image.imageId)
+
   const [isFavorite, setIsFavorite] = useState(image.isFavorite)
   const toggleFavorite = useToggleFavorite(image.imageId)
 
@@ -38,7 +41,7 @@ export const ImageCard = ({
         stiffness: 400,
         delay: Math.min(index * 0.005, 0.1)
       }}
-      className="group relative cursor-pointer"
+      className={cn("group relative cursor-pointer", isDeleted && "opacity-50")}
     >
       <div className="relative aspect-square rounded-3xl overflow-hidden bg-zinc-900 border border-white/5 shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] group-hover:border-white/10 transition-all duration-700">
         <img
@@ -63,7 +66,18 @@ export const ImageCard = ({
         >
           <Heart className={cn("w-4.5 h-4.5", isFavorite && "fill-current")} />
         </Button>
+        <Button
+          size="icon"
+          variant="secondary"
+          className={cn(
+            "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300"
+          )}
+          onClick={() => moveToBin()}
+        >
+          <Trash className={cn("w-4.5 h-4.5")} />
+        </Button>
       </div>
+
       <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2.5 group-hover:translate-y-0">
         <div className="flex flex-col gap-1">
           <p className="text-[11px] text-white font-black truncate tracking-wide">

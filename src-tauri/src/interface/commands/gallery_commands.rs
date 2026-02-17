@@ -1,5 +1,5 @@
 use crate::{
-  application::service::gallery_query_service::GalleryQueryService,
+  application::service::gallery_service::GalleryQueryService,
   infrastructure::repo::image_repo::ImageRepository,
   interface::dtos::image_dto::{GalleryImageResult, ImageCursor},
   setup::settings::GALLERY_FETCH_LIMIT,
@@ -51,6 +51,27 @@ pub async fn toggle_favorite(state: State<'_, AppState>, image_id: i64) -> Resul
     }
     Err(err) => {
       tracing::error!(error = ?err, image_id = image_id, "toggle_favorite failed");
+      Err(err.into())
+    }
+  }
+}
+
+#[tauri::command]
+pub async fn mark_image_deleted(state: State<'_, AppState>, image_id: i64) -> Result<bool, String> {
+  let span = tracing::info_span!("mark_image_deleted", image_id);
+  let _enter = span.enter();
+
+  let repo = ImageRepository::new(state.db.clone());
+
+  let qs = GalleryQueryService::new(repo);
+
+  match qs.change_image_is_deleted(image_id, true).await {
+    Ok(is_deleted) => {
+      tracing::info!(is_deleted, "Image marked as deleted:");
+      Ok(is_deleted)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, image_id = image_id, "mark_image_deleted failed");
       Err(err.into())
     }
   }

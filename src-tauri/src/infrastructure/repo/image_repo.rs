@@ -77,6 +77,26 @@ impl ImageRepository {
     Ok(result == 1)
   }
 
+  pub async fn update_image_is_deleted(
+    &self,
+    image_id: i64,
+    is_deleted: bool,
+  ) -> Result<bool, DatabaseError> {
+    let result = sqlx::query(
+      r#"
+            UPDATE images
+            SET is_deleted = ?1
+            WHERE id = ?2
+      "#,
+    )
+    .bind(is_deleted)
+    .bind(image_id)
+    .execute(&self.db)
+    .await?;
+
+    Ok(result.rows_affected() > 0)
+  }
+
   pub async fn create_images_by_file_metadata(
     &self,
     files: &[FileMetaData],

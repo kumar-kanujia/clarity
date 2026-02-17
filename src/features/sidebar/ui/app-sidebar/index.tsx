@@ -12,14 +12,20 @@ import {
 } from "@/components/ui/sidebar"
 import { useUploadImage } from "@/features/gallery/hooks/use-upload-image"
 import { Link } from "@tanstack/react-router"
-import { Aperture, FolderPlus, ImagePlusIcon, Settings } from "lucide-react"
+import {
+  Aperture,
+  FolderPlus,
+  ImagePlusIcon,
+  Settings,
+  Trash2
+} from "lucide-react"
 
 export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
   const uploadImage = useUploadImage()
 
   return (
     <Sidebar collapsible="icon" variant="floating" className="py-2 select-none">
-      <SidebarHeader className="border-b h-12 mb-4">
+      <SidebarHeader className=" h-12 mb-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex cursor-default  items-center justify-between rounded-lg overflow-hidden ps-0.5">
@@ -28,7 +34,7 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
                   <AvatarFallback>C</AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-semibold tracking-tight truncate">
-                  Clarity
+                  Clarity /
                 </span>
               </div>
               <KbdGroup className="opacity-70 group-hover:opacity-100 transition-opacity">
@@ -44,9 +50,28 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={"Add Image"}
+                onClick={() => uploadImage("file")}
+              >
+                <ImagePlusIcon />
+                <p className="text-nowrap">Add Image</p>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={"Add Folder"}
+                onClick={() => uploadImage("directory")}
+              >
+                <FolderPlus /> 
+                <p className="text-nowrap">Add Folder</p>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <Link to="/">
                 <SidebarMenuButton tooltip={"Gallery"}>
-                  <Aperture /> Gallery
+                  <Aperture /> 
+                  <p className="text-nowrap">Gallery</p>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -56,30 +81,18 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
       <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip={"Add Image"}
-              onClick={() => uploadImage("file")}
-            >
-              <ImagePlusIcon />
-              Add Image
-            </SidebarMenuButton>
+            <Link to="/bin">
+              <SidebarMenuButton tooltip={"Bin"}>
+                <Trash2 /> 
+                <p className="text-nowrap">Bin</p>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip={"Add Folder"}
-              onClick={() => uploadImage("directory")}
-            >
-              <FolderPlus /> Add Folder
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
           <SidebarMenuItem>
             <Link to="/settings">
               <SidebarMenuButton tooltip={"Settings"}>
-                <Settings /> Settings
+                <Settings /> 
+                <p className="text-nowrap">Settings</p>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>

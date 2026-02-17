@@ -8,7 +8,7 @@ mod state;
 
 use crate::{
   interface::commands::{
-    gallery_commands::{fetch_gallery, toggle_favorite},
+    gallery_commands::{fetch_gallery, mark_image_deleted, toggle_favorite},
     image_commands::{
       fetch_image_by_ids, fetch_images, fetch_images_grouped_by_hash, fetch_images_with_tag,
       import_images, search_images,
@@ -46,7 +46,8 @@ pub fn run() {
       fetch_image_by_ids,
       search_images,
       fetch_gallery,
-      toggle_favorite
+      toggle_favorite,
+      mark_image_deleted
     ])
     .setup(setup_app)
     .build(tauri::generate_context!())
