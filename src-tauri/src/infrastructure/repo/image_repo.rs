@@ -9,7 +9,7 @@ use crate::{
     image::{Image, MAX_WORKER_RETRIES},
   },
   infrastructure::{
-    models::image_model::{ImageRow, ImageStatus},
+    models::image_model::{GalleryImageRow, ImageRow, ImageStatus},
     repo::error::DatabaseError,
   },
   interface::dtos::image_dto::ImageCursor,
@@ -26,6 +26,39 @@ pub struct ImageRepository {
 impl ImageRepository {
   pub fn new(db: Db) -> Self {
     Self { db }
+  }
+
+  pub async fn get_gallery_image_paginated(
+    &self,
+    limit: i64,
+    cursor: Option<ImageCursor>,
+  ) -> Result<Vec<GalleryImageRow>, DatabaseError> {
+    let mut qb = QueryBuilder::new(
+      r#" 
+        SELECT id, file_name, path, size_bytes, width,
+        height, thumbnail_path, created_at, is_favorite 
+        FROM images
+        WHERE is_deleted = 0
+    "#,
+    );
+
+    if let Some(cursor) = cursor {
+      qb.push(" AND (created_at, id) < (");
+      qb.push_bind(cursor.created_at);
+      qb.push(", ");
+      qb.push_bind(cursor.id);
+      qb.push(")");
+    }
+
+    qb.push(" ORDER BY created_at DESC, id DESC LIMIT ");
+    qb.push_bind(limit);
+
+    let result = qb
+      .build_query_as::<GalleryImageRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(result)
   }
 
   pub async fn create_images_by_file_metadata(

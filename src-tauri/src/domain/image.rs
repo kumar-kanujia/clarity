@@ -44,21 +44,21 @@ impl Image {
     IMAGE_EXTENSIONS.get_or_init(|| vec!["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"])
   }
 
-  pub fn resolution(&self) -> String {
-    format!("{}x{}", self.width, self.height)
+  pub fn make_resolution_string(width: i64, height: i64) -> String {
+    format!("{}x{}", width, height)
   }
 
-  // pub fn get_file_name(&self) -> String {
+  pub fn resolution(&self) -> String {
+    Self::make_resolution_string(self.width, self.height)
+  }
 
-  // }
-
-  pub fn size_string(&self) -> String {
+  pub fn make_size_string(size_bytes: i64) -> String {
     const KB: f64 = 1_000.0;
     const MB: f64 = 1_000_000.0;
     const GB: f64 = 1_000_000_000.0;
 
     #[allow(clippy::cast_precision_loss)]
-    let bytes = self.size_bytes as f64;
+    let bytes = size_bytes as f64;
 
     let (value, unit) = if bytes < MB {
       (bytes / KB, "KB")
@@ -69,6 +69,10 @@ impl Image {
     };
 
     format!("{value:.2} {unit}")
+  }
+
+  pub fn size_string(&self) -> String {
+    Self::make_size_string(self.size_bytes)
   }
 
   pub fn update_hash(&mut self, content_hash: Vec<u8>) {

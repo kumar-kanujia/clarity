@@ -1,4 +1,8 @@
-use crate::{domain::image::Image, interface::dtos::SearchOrderBy};
+use crate::{
+  domain::image::Image,
+  infrastructure::{models::image_model::GalleryImageRow, system::format_datetime},
+  interface::dtos::SearchOrderBy,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +17,7 @@ pub struct ImageFilters {
   pub file_names: Vec<String>,
   pub tag_ids: Vec<i64>,
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ImageSortBy {
   FileName,
@@ -87,4 +92,41 @@ pub struct ImportSummaryDto {
   pub total_imported: i64,
   pub failed: i64,
   pub skipped: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GalleryImageResult {
+  pub data: Vec<GalleryImage>,
+  pub next_cursor: Option<ImageCursor>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GalleryImage {
+  pub image_id: i64,
+  pub file_name: String,
+  pub image_path: String,
+  pub image_size: String,
+  pub resolution: String,
+  pub thumbnail_path: String,
+  pub created_at: String,
+  pub is_favorite: bool,
+}
+
+impl From<GalleryImageRow> for GalleryImage {
+  fn from(row: GalleryImageRow) -> Self {
+    let width = row.width.unwrap_or_default();
+    let height = row.height.unwrap_or_default();
+    Self {
+      image_id: row.id,
+      file_name: row.file_name,
+      image_path: row.path,
+      image_size: Image::make_size_string(row.size_bytes),
+      resolution: Image::make_resolution_string(width, height),
+      thumbnail_path: row.thumbnail_path.unwrap_or_default(),
+      created_at: format_datetime(row.created_at),
+      is_favorite: row.is_favorite == 1,
+    }
+  }
 }

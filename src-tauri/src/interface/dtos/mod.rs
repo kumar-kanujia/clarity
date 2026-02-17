@@ -1,4 +1,3 @@
-pub mod gallery_dto;
 pub mod image_dto;
 pub mod tag_dto;
 

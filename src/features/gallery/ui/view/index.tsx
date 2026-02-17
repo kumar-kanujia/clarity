@@ -1,7 +1,7 @@
 import {
-  fetchImages,
-  type ImageCursor,
-  type PaginatedImages
+  fetchGallery,
+  type GalleryImageResult,
+  type ImageCursor
 } from "@/services/tauri"
 import { ImageCard } from "../components/image-card"
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query"
@@ -13,16 +13,15 @@ export const GalleryView = () => {
   const loaderRef = useRef<HTMLDivElement>(null)
 
   const { data, fetchNextPage, isLoading, hasNextPage } = useInfiniteQuery<
-    PaginatedImages,
+    GalleryImageResult,
     Error,
-    InfiniteData<PaginatedImages>,
+    InfiniteData<GalleryImageResult>,
     string[],
     Cursor
   >({
-    queryKey: ["images"],
+    queryKey: ["gallery"],
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchImages({
-        limit: 12,
+      const res = await fetchGallery({
         cursor: pageParam ?? undefined
       })
       return res
@@ -54,8 +53,8 @@ export const GalleryView = () => {
     <div className="py-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
         {data?.pages.map((page) =>
-          page.data.map((image) => (
-            <ImageCard key={image.path} image={image} index={image.id} />
+          page.data.map((image, idx) => (
+            <ImageCard key={image.imageId} image={image} index={idx} />
           ))
         )}
       </div>

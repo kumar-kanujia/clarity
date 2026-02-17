@@ -1,6 +1,7 @@
 pub mod dbsetup;
 pub mod error;
 pub mod logger;
+pub mod settings;
 
 use crate::{
   application::worker::{

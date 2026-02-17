@@ -27,14 +27,11 @@ impl ScanAndImportImages {
       .file_service
       .extract_metadata_for_files(&file_scan.files)
       .await?;
-    tracing::error!(?metadata);
 
     let imported_count = self
       .import_service
       .persist_file_metadata_for_images(&metadata)
       .await?;
-
-    tracing::error!(imported_count);
 
     Ok(Self::build_summary(
       &file_scan,
