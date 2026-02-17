@@ -13,6 +13,7 @@ pub enum ImageStatus {
 #[derive(Debug, FromRow, Clone)]
 pub struct ImageRow {
   pub id: i64,
+  pub file_name: String,
   pub path: String,
   pub size_bytes: i64,
   pub content_hash: Option<Vec<u8>>,
@@ -24,4 +25,6 @@ pub struct ImageRow {
   pub error_message: Option<String>,
   pub created_at: NaiveDateTime,
   pub updated_at: NaiveDateTime,
+  pub is_favorite: bool,
+  pub is_deleted: bool,
 }

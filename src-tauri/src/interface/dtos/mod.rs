@@ -1,7 +1,8 @@
-use serde::{Deserialize, Serialize};
-
+pub mod gallery_dto;
 pub mod image_dto;
 pub mod tag_dto;
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SearchOrderBy {

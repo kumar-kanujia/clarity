@@ -18,6 +18,7 @@ impl FileScanResult {
 #[derive(Debug)]
 pub struct FileMetaData {
   pub path: String,
+  pub file_name: String,
   pub size_bytes: i64,
   pub created_at: String,
 }

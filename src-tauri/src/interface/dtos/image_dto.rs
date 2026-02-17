@@ -1,6 +1,4 @@
-use crate::{
-  domain::image::Image, infrastructure::fs::ops::get_file_name, interface::dtos::SearchOrderBy,
-};
+use crate::{domain::image::Image, interface::dtos::SearchOrderBy};
 
 use serde::{Deserialize, Serialize};
 
@@ -74,7 +72,7 @@ impl From<Image> for ImageDto {
       size: image.size_string(),
       resolution: image.resolution(),
       id: image.id as i64,
-      file_name: get_file_name(&image.path),
+      file_name: image.file_name,
       path: image.path,
       created_at: image.created_at,
       thumbnail_path: image.thumbnail_path,

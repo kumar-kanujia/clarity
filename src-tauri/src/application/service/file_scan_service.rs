@@ -8,10 +8,11 @@ use std::{cmp, path::PathBuf};
 
 use tokio::task::JoinSet;
 
+#[derive(Debug, Default)]
 pub struct FileScanService;
 
 impl FileScanService {
-  pub async fn scan_for_images(paths: &[String]) -> Result<FileScanResult, AppError> {
+  pub async fn scan_for_images(&self, paths: &[String]) -> Result<FileScanResult, AppError> {
     if paths.is_empty() {
       return Ok(FileScanResult::default());
     }
@@ -64,6 +65,7 @@ impl FileScanService {
   }
 
   pub async fn extract_metadata_for_files(
+    &self,
     files: &[PathBuf],
   ) -> Result<Vec<FileMetaData>, AppError> {
     let files = files.to_vec(); // Clone to own data

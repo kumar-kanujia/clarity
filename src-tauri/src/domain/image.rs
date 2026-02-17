@@ -19,9 +19,11 @@ pub struct ImageMetadata {
   pub height: i64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Default, Clone)]
 pub struct Image {
   pub id: i64,
+  pub file_name: String,
   pub path: String,
   pub size_bytes: i64,
   pub width: i64,
@@ -32,8 +34,9 @@ pub struct Image {
   pub retry_count: i64,
   pub error_message: Option<String>,
   pub created_at: String,
-  #[allow(dead_code)]
   pub updated_at: String,
+  pub is_favorite: bool,
+  pub is_deleted: bool,
 }
 
 impl Image {
@@ -133,6 +136,7 @@ impl From<ImageRow> for Image {
   fn from(row: ImageRow) -> Self {
     Self {
       id: row.id,
+      file_name: row.file_name,
       path: row.path,
       size_bytes: row.size_bytes,
       content_hash: row.content_hash.unwrap_or_default(),
@@ -144,6 +148,8 @@ impl From<ImageRow> for Image {
       error_message: row.error_message,
       created_at: format_datetime(row.created_at),
       updated_at: format_datetime(row.updated_at),
+      is_deleted: row.is_deleted,
+      is_favorite: row.is_favorite,
     }
   }
 }

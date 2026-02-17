@@ -32,13 +32,25 @@ impl MetadataP {
 
   pub fn get_file_metadata(file: &Path) -> Result<FileMetaData, ProcessingError> {
     let metadata = Self::get_metadata(file)?;
-    let path = file.to_string_lossy().to_string();
+
     let size_bytes = metadata.len() as i64;
+
+    let file_name = file
+      .file_name()
+      .iter()
+      .map(|f| f.to_string_lossy())
+      .collect();
+
     if size_bytes == 0 {
-      return Err(ProcessingError::EmptyFile(path));
+      return Err(ProcessingError::EmptyFile(file_name));
     }
+
+    let path = file.to_string_lossy().to_string();
+
     let created_at = Self::extract_created_at(metadata);
+
     Ok(FileMetaData {
+      file_name,
       path,
       size_bytes,
       created_at,

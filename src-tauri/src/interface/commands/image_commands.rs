@@ -1,8 +1,12 @@
 use crate::{
   application::{
-    service::image_query_service::ImageQueryService,
+    service::{
+      file_scan_service::FileScanService, image_import_service::ImageImportService,
+      image_query_service::ImageQueryService,
+    },
     workflow::scan_and_import_images::ScanAndImportImages,
   },
+  infrastructure::repo::image_repo::ImageRepository,
   interface::dtos::image_dto::{
     ImageCursor, ImageDto, ImageSearchCursor, ImageSearchQuery, ImageSearchResult,
     ImportSummaryDto, PaginatedImageHashGroups, PaginatedImages,
@@ -20,9 +24,15 @@ pub async fn import_images(
   let span = tracing::info_span!("import_images", paths = paths.len());
   let _enter = span.enter();
 
-  let wf = ScanAndImportImages::new(state.db.clone());
+  let image_repo = ImageRepository::new(state.db.clone());
 
-  match wf.run(&paths).await {
+  let import_service = ImageImportService::new(image_repo);
+
+  let file_service = FileScanService::default();
+
+  let wf = ScanAndImportImages::new(import_service, file_service);
+
+  match wf.scan_and_import(&paths).await {
     Ok(summary) => {
       tracing::info!("Import completed");
       Ok(summary.into())

@@ -37,10 +37,11 @@ impl ImageRepository {
     }
 
     let mut query_builder =
-      QueryBuilder::new("INSERT OR IGNORE INTO images (path, size_bytes, created_at) ");
+      QueryBuilder::new("INSERT OR IGNORE INTO images (path, file_name, size_bytes, created_at) ");
 
     query_builder.push_values(files, |mut b, file| {
       b.push_bind(&file.path)
+        .push_bind(&file.file_name)
         .push_bind(file.size_bytes)
         .push_bind(&file.created_at);
     });
