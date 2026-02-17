@@ -19,3 +19,12 @@ pub fn is_file_readable(path: &str) -> Result<(), FSError> {
     },
   }
 }
+
+pub fn get_file_name(path: &str) -> String {
+  let path = Path::new(path);
+  path
+    .file_name()
+    .iter()
+    .map(|f| f.to_string_lossy())
+    .collect()
+}

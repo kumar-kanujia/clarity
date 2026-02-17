@@ -7,7 +7,7 @@ import "./index.css"
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
-import { Providers } from "./components/providers"
+import { Providers } from "./features/shared/providers"
 
 // Create a new router instance
 const router = createRouter({ routeTree })

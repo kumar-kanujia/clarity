@@ -45,6 +45,10 @@ impl Image {
     format!("{}x{}", self.width, self.height)
   }
 
+  // pub fn get_file_name(&self) -> String {
+
+  // }
+
   pub fn size_string(&self) -> String {
     const KB: f64 = 1_000.0;
     const MB: f64 = 1_000_000.0;

@@ -22,7 +22,7 @@ export const GalleryView = () => {
     queryKey: ["images"],
     queryFn: async ({ pageParam = null }) => {
       const res = await fetchImages({
-        limit: 10,
+        limit: 12,
         cursor: pageParam ?? undefined
       })
       return res
@@ -51,7 +51,7 @@ export const GalleryView = () => {
   }, [isLoading, hasNextPage])
 
   return (
-    <div className="h-screen w-full overflow-y-auto">
+    <div className="py-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
         {data?.pages.map((page) =>
           page.data.map((image) => (
