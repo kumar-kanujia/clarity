@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
   application::{service::file_hash_service::FileHashService, worker::Worker},
   domain::image::Image,
@@ -5,15 +7,16 @@ use crate::{
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
+  setup::settings::MAX_WORKER_RETRIES,
 };
 
 #[derive(Debug, Clone)]
 pub struct FileHashWorker {
-  repo: &'static ImageRepository,
+  repo: Arc<ImageRepository>,
 }
 
 impl FileHashWorker {
-  pub fn new(repo: &'static ImageRepository) -> Self {
+  pub fn new(repo: Arc<ImageRepository>) -> Self {
     Self { repo }
   }
 }
@@ -34,7 +37,7 @@ impl Worker for FileHashWorker {
   async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
     let models = self
       .repo
-      .list_images_by_status(limit, ImageStatus::Pending)
+      .get_images_by_status_with_retry_count(limit, MAX_WORKER_RETRIES, ImageStatus::Pending)
       .await?;
     Ok(models.into_iter().map(Image::from).collect())
   }
@@ -45,7 +48,7 @@ impl Worker for FileHashWorker {
   }
 
   async fn update_batch(&self, items: &[Image]) -> Result<u64, DatabaseError> {
-    let count = self.repo.update_images_hash(items).await?;
+    let count = self.repo.update_images_content_hash(items).await?;
     Ok(count)
   }
 }

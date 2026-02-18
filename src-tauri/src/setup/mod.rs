@@ -12,13 +12,13 @@ use crate::{
   state::AppState,
 };
 
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 
 use rayon::ThreadPoolBuilder;
-use tauri::{App, Manager};
+use tauri::{App, AppHandle, Manager, RunEvent};
 use tokio_util::sync::CancellationToken;
 
-pub fn setup_app(app: &mut App) -> Result<(), Box<dyn Error>> {
+pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
   let span = tracing::info_span!("setup_app");
   let _enter = span.enter();
 
@@ -51,18 +51,25 @@ pub fn setup_app(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   tracing::info!("Setting up Workers");
 
-  let image_repo: &'static ImageRepository = Box::leak(Box::new(ImageRepository::new(db)));
+  let image_repo = Arc::new(ImageRepository::new(db));
 
   let shutdown_clone = shutdown.clone();
 
-  let worker = FileHashWorker::new(image_repo);
-  tauri::async_runtime::spawn(async move { worker.run(shutdown_clone).await });
+  let file_hash_worker = FileHashWorker::new(image_repo.clone());
+  tauri::async_runtime::spawn(async move { file_hash_worker.run(shutdown_clone).await });
 
-  if let Some(worker) = ThumbnailWorker::new(app_handle, image_repo) {
-    tauri::async_runtime::spawn(async move { worker.run(shutdown).await });
+  if let Some(thumbnail_worker) = ThumbnailWorker::new(app_handle, image_repo) {
+    tauri::async_runtime::spawn(async move { thumbnail_worker.run(shutdown).await });
   }
 
   tracing::info!("Workers setup complete");
 
   Ok(())
+}
+
+pub fn app_callback(app_handle: &AppHandle, event: RunEvent) {
+  if let RunEvent::ExitRequested { .. } = event {
+    let state = app_handle.state::<AppState>();
+    state.shutdown.cancel();
+  }
 }

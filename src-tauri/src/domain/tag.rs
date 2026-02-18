@@ -19,4 +19,25 @@ impl Tag {
       .collect::<Vec<&str>>()
       .join("-")
   }
+
+  pub fn normalize_color(color: &str) -> String {
+    let trimmed = color.trim().trim_start_matches('#');
+
+    // Expand 3-char hex (#abc → #aabbcc)
+    let expanded = if trimmed.len() == 3 && trimmed.chars().all(|c| c.is_ascii_hexdigit()) {
+      trimmed
+        .chars()
+        .map(|c| format!("{c}{c}"))
+        .collect::<String>()
+    } else {
+      trimmed.to_string()
+    };
+
+    // Validate 6-digit hex
+    if expanded.len() == 6 && expanded.chars().all(|c| c.is_ascii_hexdigit()) {
+      format!("#{}", expanded.to_uppercase())
+    } else {
+      "#808080".to_string()
+    }
+  }
 }

@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use sqlx::prelude::{FromRow, Type};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[derive(Debug, Type, Default)]
 #[repr(i32)]
 pub enum ImageStatus {
   #[default]
@@ -10,7 +10,7 @@ pub enum ImageStatus {
   Thumbnailed = 2,
 }
 
-#[derive(Debug, FromRow, Clone)]
+#[derive(Debug, FromRow)]
 pub struct ImageRow {
   pub id: i64,
   pub file_name: String,
@@ -30,7 +30,7 @@ pub struct ImageRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct GalleryImageRow {
+pub struct ImageItemRow {
   pub id: i64,
   pub file_name: String,
   pub path: String,

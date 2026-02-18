@@ -1,18 +1,13 @@
-use crate::{
-  infrastructure::{
-    models::image_model::{ImageRow, ImageStatus},
-    system::format_datetime,
-  },
-  interface::dtos::image_dto::ImageDto,
+use crate::infrastructure::{
+  models::image_model::{ImageRow, ImageStatus},
+  system::format_datetime,
 };
 
 use std::sync::OnceLock;
 
-pub const MAX_WORKER_RETRIES: i32 = 3;
-
 static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct ImageMetadata {
   pub thumbnail_path: String,
   pub width: i64,
@@ -20,7 +15,7 @@ pub struct ImageMetadata {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct Image {
   pub id: i64,
   pub file_name: String,
@@ -48,10 +43,6 @@ impl Image {
     format!("{}x{}", width, height)
   }
 
-  pub fn resolution(&self) -> String {
-    Self::make_resolution_string(self.width, self.height)
-  }
-
   pub fn make_size_string(size_bytes: i64) -> String {
     const KB: f64 = 1_000.0;
     const MB: f64 = 1_000_000.0;
@@ -69,10 +60,6 @@ impl Image {
     };
 
     format!("{value:.2} {unit}")
-  }
-
-  pub fn size_string(&self) -> String {
-    Self::make_size_string(self.size_bytes)
   }
 
   pub fn update_hash(&mut self, content_hash: Vec<u8>) {
@@ -103,7 +90,8 @@ impl Image {
     self.retry_count += 1;
   }
 
-  pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
+  #[allow(dead_code)]
+  pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<Image>> {
     if images.is_empty() {
       return Vec::new();
     }
@@ -126,7 +114,7 @@ impl Image {
       } else {
         curr_hash = Some(image.content_hash.clone());
       }
-      current_group.push(image.into());
+      current_group.push(image);
     }
     if !current_group.is_empty() {
       grouped_images.push(current_group);

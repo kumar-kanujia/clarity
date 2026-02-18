@@ -1,58 +1,49 @@
 use crate::{
   application::service::{
-    file_scan_service::FileScanService, image_import_service::ImageImportService,
+    file_scan_service::FileScanService, image_mutation_service::ImageMutationService,
   },
-  domain::file::FileScanResult,
   error::AppError,
-  interface::dtos::image_dto::ImportSummaryDto,
+  interface::dtos::image_dto::ImportSummary,
 };
 
 pub struct ScanAndImportImages {
-  import_service: ImageImportService,
+  mutation_service: ImageMutationService,
   file_service: FileScanService,
 }
 
 impl ScanAndImportImages {
-  pub fn new(import_service: ImageImportService, file_service: FileScanService) -> Self {
+  pub fn new(mutation_service: ImageMutationService, file_service: FileScanService) -> Self {
     Self {
-      import_service,
+      mutation_service,
       file_service,
     }
   }
 
-  pub async fn scan_and_import(&self, paths: &[String]) -> Result<ImportSummaryDto, AppError> {
-    let file_scan = self.file_service.scan_for_images(paths).await?;
+  pub async fn scan_and_import_images(&self, paths: &[String]) -> Result<ImportSummary, AppError> {
+    let file_scan_summary = self.file_service.scan_paths_for_images(paths).await?;
 
-    let metadata = self
+    let total_scanned = file_scan_summary.total_files;
+    let walk_errors = file_scan_summary.walk_errors;
+
+    if total_scanned == 0 {
+      return Ok(ImportSummary::build(total_scanned, walk_errors, 0, 0));
+    }
+
+    let files_metadata = self
       .file_service
-      .extract_metadata_for_files(&file_scan.files)
+      .extract_metadata_for_files(file_scan_summary.files)
       .await?;
 
     let imported_count = self
-      .import_service
-      .persist_file_metadata_for_images(&metadata)
+      .mutation_service
+      .persist_file_metadata_for_images(&files_metadata)
       .await?;
 
-    Ok(Self::build_summary(
-      &file_scan,
-      metadata.len(),
+    Ok(ImportSummary::build(
+      total_scanned,
+      walk_errors,
+      files_metadata.len() as i64,
       imported_count,
     ))
-  }
-
-  fn build_summary(
-    scan: &FileScanResult,
-    metadata_count: usize,
-    imported_count: i64,
-  ) -> ImportSummaryDto {
-    let metadata_count = metadata_count as i64;
-    let extraction_failures = scan.total_files - scan.walk_errors - metadata_count;
-    let total_failed = scan.walk_errors + extraction_failures;
-    ImportSummaryDto {
-      total_scanned: scan.total_files,
-      total_imported: imported_count,
-      failed: total_failed,
-      skipped: metadata_count - imported_count,
-    }
   }
 }
