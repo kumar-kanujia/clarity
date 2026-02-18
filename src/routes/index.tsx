@@ -1,4 +1,4 @@
-import { GalleryView } from "@/features/gallery/ui/view"
+import { GalleryView } from "@/features/gallery/view"
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/")({

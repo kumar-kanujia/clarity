@@ -1,13 +1,13 @@
-import type { GalleryImage } from "@/services/tauri"
+import type { ImageItem } from "@/services/tauri"
 import { create } from "zustand"
 
 interface ImageModalState {
   isOpen: boolean
   index: number
 
-  getImages: (() => GalleryImage[]) | null
+  getImages: (() => ImageItem[]) | null
 
-  open: (getter: () => GalleryImage[], index: number) => void
+  open: (getter: () => ImageItem[], index: number) => void
   close: () => void
 
   next: () => void

@@ -1,8 +1,10 @@
-import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
-import { useImageModal } from "../store/use-image-model-store"
+
 import { convertFileSrc } from "@tauri-apps/api/core"
+
+import { useImageModal } from "@/store"
+import { Button } from "@/components/ui/button"
 
 export const ImageModal = () => {
   const { isOpen, index, getImages, next, prev, close } = useImageModal()
@@ -46,10 +48,10 @@ export const ImageModal = () => {
               damping: 30,
               stiffness: 300
             }}
-            src={convertFileSrc(image.imagePath || image.thumbnailPath)}
+            src={convertFileSrc(image.filePath || image.thumbnailPath)}
             alt="Image Modal"
             className="max-h-full max-w-full object-contain shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-lg"
-            key={"modal-image-" + image.imageId}
+            key={"modal-image-" + image.id}
           />
         </div>
         <AnimatePresence>

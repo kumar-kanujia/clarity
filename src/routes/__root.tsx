@@ -1,4 +1,4 @@
-import { AppLayout } from "@/features/shared/layout/app-layout"
+import { AppLayout } from "@/components/layout"
 import { createRootRoute, Outlet } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 

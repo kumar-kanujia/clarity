@@ -1,3 +1,4 @@
+import { BinView } from "@/features/bin/view"
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/bin")({
@@ -5,5 +6,5 @@ export const Route = createFileRoute("/bin")({
 })
 
 function BinPage() {
-  return <div>Hello "/bin"!</div>
+  return <BinView />
 }

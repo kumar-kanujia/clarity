@@ -1,7 +1,7 @@
 import { SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/features/sidebar/ui/app-sidebar"
-import { AppHeader } from "../ui/app-header"
-import { ImageModal } from "../ui/image-modal"
+import { AppHeader } from "./app-header"
+import { ImageModal } from "@/components/common/image-modal"
+import { AppSidebar } from "./app-sidebar"
 
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (

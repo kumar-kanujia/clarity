@@ -15,6 +15,7 @@ import { Link } from "@tanstack/react-router"
 import {
   Aperture,
   FolderPlus,
+  Heart,
   ImagePlusIcon,
   Settings,
   Trash2
@@ -50,40 +51,50 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                tooltip={"Add Image"}
-                onClick={() => uploadImage("file")}
-              >
-                <ImagePlusIcon />
-                <p className="text-nowrap">Add Image</p>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                tooltip={"Add Folder"}
-                onClick={() => uploadImage("directory")}
-              >
-                <FolderPlus /> 
-                <p className="text-nowrap">Add Folder</p>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
               <Link to="/">
                 <SidebarMenuButton tooltip={"Gallery"}>
-                  <Aperture /> 
+                  <Aperture />
                   <p className="text-nowrap">Gallery</p>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link to="/favorites">
+                <SidebarMenuButton tooltip={"Favorites"}>
+                  <Heart />
+                  <p className="text-nowrap">Favorites</p>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t">
-        <SidebarMenu>
+      <SidebarFooter>
+        <SidebarMenu className="border-t pt-2">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={"Add Image"}
+              onClick={() => uploadImage("file")}
+            >
+              <ImagePlusIcon />
+              <p className="text-nowrap">Add Image</p>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={"Add Folder"}
+              onClick={() => uploadImage("directory")}
+            >
+              <FolderPlus />
+              <p className="text-nowrap">Add Folder</p>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu className="pt-2 border-t">
           <SidebarMenuItem>
             <Link to="/bin">
               <SidebarMenuButton tooltip={"Bin"}>
-                <Trash2 /> 
+                <Trash2 />
                 <p className="text-nowrap">Bin</p>
               </SidebarMenuButton>
             </Link>
@@ -91,7 +102,7 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
           <SidebarMenuItem>
             <Link to="/settings">
               <SidebarMenuButton tooltip={"Settings"}>
-                <Settings /> 
+                <Settings />
                 <p className="text-nowrap">Settings</p>
               </SidebarMenuButton>
             </Link>

@@ -1,27 +1,27 @@
 import { motion } from "motion/react"
 
-import type { GalleryImage } from "@/services/tauri"
+import type { ImageItem } from "@/services/tauri"
 import { convertFileSrc } from "@tauri-apps/api/core"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Heart, Trash } from "lucide-react"
-import { useToggleFavorite } from "../../hooks/use-toggle-favorite"
+import { useToggleFavorite } from "../../../features/favorite/hooks/use-toggle-favorite"
 import { useState } from "react"
-import { useMoveToBin } from "../../hooks/use-move-to-bin"
+import { useMoveToBin } from "@/features/bin/hooks"
 
 export const ImageCard = ({
   image,
   index,
   onClick
 }: {
-  image: GalleryImage
+  image: ImageItem
   index: number
   onClick?: () => void
 }) => {
-  const { isDeleted, moveToBin } = useMoveToBin(image.imageId)
+  const { isDeleted, moveToBin } = useMoveToBin(image.id)
 
   const [isFavorite, setIsFavorite] = useState(image.isFavorite)
-  const toggleFavorite = useToggleFavorite(image.imageId)
+  const toggleFavorite = useToggleFavorite(image.id)
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -54,7 +54,7 @@ export const ImageCard = ({
     >
       <div className="relative aspect-square rounded-3xl overflow-hidden bg-zinc-900 border border-white/5 shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] group-hover:border-white/10 transition-all duration-700">
         <img
-          src={convertFileSrc(image.thumbnailPath || image.imagePath)}
+          src={convertFileSrc(image.thumbnailPath || image.filePath)}
           alt={image.fileName}
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
           loading="lazy"
@@ -98,7 +98,7 @@ export const ImageCard = ({
             </span>
             <span className="w-1 h-1 rounded-full bg-white/30" />
             <span className="text-[9px] text-white/70 uppercase tracking-widest font-bold">
-              {image.imageSize}
+              {image.size}
             </span>
           </div>
         </div>
