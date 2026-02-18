@@ -1,0 +1,1 @@
+pub const GALLERY_FETCH_LIMIT: i64 = 12;

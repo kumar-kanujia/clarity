@@ -3,7 +3,7 @@ use crate::{
     models::image_model::{ImageRow, ImageStatus},
     system::format_datetime,
   },
-  interface::dto::ImageDto,
+  interface::dtos::image_dto::ImageDto,
 };
 
 use std::sync::OnceLock;
@@ -19,9 +19,11 @@ pub struct ImageMetadata {
   pub height: i64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Default, Clone)]
 pub struct Image {
   pub id: i64,
+  pub file_name: String,
   pub path: String,
   pub size_bytes: i64,
   pub width: i64,
@@ -32,8 +34,9 @@ pub struct Image {
   pub retry_count: i64,
   pub error_message: Option<String>,
   pub created_at: String,
-  #[allow(dead_code)]
   pub updated_at: String,
+  pub is_favorite: bool,
+  pub is_deleted: bool,
 }
 
 impl Image {
@@ -41,17 +44,21 @@ impl Image {
     IMAGE_EXTENSIONS.get_or_init(|| vec!["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"])
   }
 
-  pub fn resolution(&self) -> String {
-    format!("{}x{}", self.width, self.height)
+  pub fn make_resolution_string(width: i64, height: i64) -> String {
+    format!("{}x{}", width, height)
   }
 
-  pub fn size_string(&self) -> String {
+  pub fn resolution(&self) -> String {
+    Self::make_resolution_string(self.width, self.height)
+  }
+
+  pub fn make_size_string(size_bytes: i64) -> String {
     const KB: f64 = 1_000.0;
     const MB: f64 = 1_000_000.0;
     const GB: f64 = 1_000_000_000.0;
 
     #[allow(clippy::cast_precision_loss)]
-    let bytes = self.size_bytes as f64;
+    let bytes = size_bytes as f64;
 
     let (value, unit) = if bytes < MB {
       (bytes / KB, "KB")
@@ -62,6 +69,10 @@ impl Image {
     };
 
     format!("{value:.2} {unit}")
+  }
+
+  pub fn size_string(&self) -> String {
+    Self::make_size_string(self.size_bytes)
   }
 
   pub fn update_hash(&mut self, content_hash: Vec<u8>) {
@@ -129,6 +140,7 @@ impl From<ImageRow> for Image {
   fn from(row: ImageRow) -> Self {
     Self {
       id: row.id,
+      file_name: row.file_name,
       path: row.path,
       size_bytes: row.size_bytes,
       content_hash: row.content_hash.unwrap_or_default(),
@@ -140,6 +152,8 @@ impl From<ImageRow> for Image {
       error_message: row.error_message,
       created_at: format_datetime(row.created_at),
       updated_at: format_datetime(row.updated_at),
+      is_deleted: row.is_deleted,
+      is_favorite: row.is_favorite,
     }
   }
 }

@@ -2,8 +2,8 @@ use crate::{
   domain::tag::Tag,
   error::AppError,
   infrastructure::{models::tag_model::TagType, repo::tag_repo::TagRepository},
-  interface::dto::TagDto,
-  setup::state::Db,
+  interface::dtos::tag_dto::TagDto,
+  state::Db,
 };
 
 pub struct TagService {

@@ -17,8 +17,8 @@ pub enum AppError {
   Internal(#[from] tauri::Error),
 }
 
-impl AppError {
-  pub fn user_message(&self) -> String {
+impl Into<String> for AppError {
+  fn into(self) -> String {
     match self {
       AppError::Scan(err) => err.user_message(),
       AppError::Database(err) => err.user_message(),

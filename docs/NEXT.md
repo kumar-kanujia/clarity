@@ -21,8 +21,8 @@ Goal: Provide complete, deterministic, and flexible image retrieval across all s
 
 ## Part 1.1 — Core Image Retrieval Expansion
 
-- [ ] Fetch image by ID
-- [ ] Fetch images by multiple IDs
+- [x] Fetch image by ID
+- [x] Fetch images by multiple IDs
 - [ ] Fetch images by name
 - [ ] Fetch images by multiple names
 - [ ] Fetch images by tag

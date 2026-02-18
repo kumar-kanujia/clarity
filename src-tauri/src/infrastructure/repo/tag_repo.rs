@@ -3,7 +3,7 @@ use crate::{
     models::tag_model::{TagRow, TagType},
     repo::error::DatabaseError,
   },
-  setup::state::Db,
+  state::Db,
 };
 
 #[derive(Debug, Clone)]
