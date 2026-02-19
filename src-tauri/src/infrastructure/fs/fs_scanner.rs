@@ -1,5 +1,5 @@
 use crate::{
-  domain::{file::FileScanResult, image::Image},
+  domain::{file::FileScanSummary, image::Image},
   infrastructure::fs::error::FSError,
 };
 
@@ -23,7 +23,7 @@ impl FileScanner {
       .is_some_and(Self::is_supported_image_ext)
   }
 
-  pub fn scan_path_for_images(path: &Path) -> Result<FileScanResult, FSError> {
+  pub fn scan_path_for_images(path: &Path) -> Result<FileScanSummary, FSError> {
     if !path.exists() {
       return Err(FSError::InvalidRoot(path.display().to_string()));
     }
@@ -48,7 +48,7 @@ impl FileScanner {
       }
     }
 
-    Ok(FileScanResult {
+    Ok(FileScanSummary {
       files,
       total_files,
       walk_errors,

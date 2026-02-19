@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as BinRouteImport } from './routes/bin'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BinRoute = BinRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bin': typeof BinRoute
+  '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bin': typeof BinRoute
+  '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bin': typeof BinRoute
+  '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bin' | '/settings'
+  fullPaths: '/' | '/bin' | '/favorites' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bin' | '/settings'
-  id: '__root__' | '/' | '/bin' | '/settings'
+  to: '/' | '/bin' | '/favorites' | '/settings'
+  id: '__root__' | '/' | '/bin' | '/favorites' | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BinRoute: typeof BinRoute
+  FavoritesRoute: typeof FavoritesRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bin': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BinRoute: BinRoute,
+  FavoritesRoute: FavoritesRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport

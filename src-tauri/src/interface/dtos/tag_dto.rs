@@ -4,14 +4,14 @@ use serde::Serialize;
 
 #[derive(Serialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct TagDto {
+pub struct TagItem {
   pub id: i64,
   pub tag_name: String,
   pub tag_color: String,
   pub image_count: i64,
 }
 
-impl From<TagRow> for TagDto {
+impl From<TagRow> for TagItem {
   fn from(tag_row: TagRow) -> Self {
     Self {
       id: tag_row.id,
