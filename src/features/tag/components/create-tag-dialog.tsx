@@ -18,7 +18,7 @@ import { Field, FieldGroup, FieldError } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { type CreateTagParams } from "@/services/tauri"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { useCreateTag } from "../../hooks"
+import { useCreateTag } from "../hooks"
 import { useCallback, useState } from "react"
 
 const TAG_COLORS = [

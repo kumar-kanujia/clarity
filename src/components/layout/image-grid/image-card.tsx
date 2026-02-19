@@ -1,7 +1,8 @@
 import { motion } from "motion/react"
 import type { ImageItem } from "@/services/tauri"
 import { convertFileSrc } from "@tauri-apps/api/core"
-import { BinButton, FavoriteButton, UndoBinButton } from "./card-buttons"
+import { FavoriteButton, UndoBinButton } from "./card-buttons"
+import { ImageOptions } from "./image-options"
 
 const CardWrapper = ({
   image,
@@ -15,51 +16,53 @@ const CardWrapper = ({
   children: React.ReactNode
 }) => {
   return (
-    <motion.div
-      layout
-      layoutId={`image-${image.id}`}
-      onClick={onClick}
-      className="group relative cursor-pointer"
-      initial={{
-        opacity: 0,
-        y: 12
-      }}
-      animate={{
-        opacity: 1,
-        y: 0
-      }}
-      exit={{
-        opacity: 0
-      }}
-      whileHover={{
-        scale: 1.01
-      }}
-      whileTap={{
-        scale: 0.99
-      }}
-      transition={{
-        layout: {
-          type: "spring",
-          stiffness: 380,
-          damping: 32
-        },
+    <ImageOptions id={image.id}>
+      <motion.div
+        layout
+        layoutId={`image-${image.id}`}
+        onClick={onClick}
+        className="group relative cursor-pointer"
+        initial={{
+          opacity: 0,
+          y: 12
+        }}
+        animate={{
+          opacity: 1,
+          y: 0
+        }}
+        exit={{
+          opacity: 0
+        }}
+        whileHover={{
+          scale: 1.01
+        }}
+        whileTap={{
+          scale: 0.99
+        }}
+        transition={{
+          layout: {
+            type: "spring",
+            stiffness: 380,
+            damping: 32
+          },
 
-        opacity: {
-          duration: 0.2,
-          ease: "easeOut",
-          delay: Math.min(index * 0.02, 0.12)
-        },
+          opacity: {
+            duration: 0.2,
+            ease: "easeOut",
+            delay: Math.min(index * 0.02, 0.12)
+          },
 
-        y: {
-          type: "spring",
-          stiffness: 300,
-          damping: 28,
-          delay: Math.min(index * 0.02, 0.12)
-        }
-      }}
-    >
-      {children}
-    </motion.div>
+          y: {
+            type: "spring",
+            stiffness: 300,
+            damping: 28,
+            delay: Math.min(index * 0.02, 0.12)
+          }
+        }}
+      >
+        {children}
+      </motion.div>
+    </ImageOptions>
   )
 }
 
@@ -90,16 +93,12 @@ export const ImageCard = ({
             damping: 26
           }}
         />
-        <div
-          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200
-      "
-        />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
       </div>
 
       {!inBinView && (
         <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out">
           <FavoriteButton id={image.id} favorite={image.isFavorite} />
-          <BinButton id={image.id} />
         </div>
       )}
 

@@ -1,7 +1,7 @@
-import { fetchAllTags } from "@/services/tauri"
+import { fetchAllTags, fetchTopTags } from "@/services/tauri"
 import { queryOptions } from "@tanstack/react-query"
 
-export const allTagsQueryKey = "tags"
+const allTagsQueryKey = "tags"
 
 export const useGetAllTags = () => {
   const option = queryOptions({
@@ -12,4 +12,18 @@ export const useGetAllTags = () => {
   })
 
   return { queryKey: allTagsQueryKey, queryOption: option }
+}
+
+const topTagsQueryKey = "top-tags"
+
+export const useGetTopTags = () => {
+  const option = queryOptions({
+    queryKey: [topTagsQueryKey],
+    queryFn: async () => {
+      const tags = await fetchTopTags()
+      return tags.slice(0, 5)
+    }
+  })
+
+  return { queryKey: topTagsQueryKey, queryOption: option }
 }
