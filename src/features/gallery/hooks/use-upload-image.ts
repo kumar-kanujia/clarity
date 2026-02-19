@@ -1,7 +1,6 @@
 import { importImages } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { open } from "@tauri-apps/plugin-dialog"
-import { toast } from "sonner"
 import { galleryQueryKey } from "./use-gallery-query-options"
 
 type Uploadtype = "file" | "directory"

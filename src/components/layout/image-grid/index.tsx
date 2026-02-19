@@ -18,6 +18,17 @@ export function ImageGrid<T extends AnyInfiniteQueryOptions>({
   const loaderRef = useRef<HTMLDivElement>(null)
   const imageRefs = useRef<Array<HTMLDivElement | null>>([])
 
+  useEffect(() => {
+    if (imageRefs.current.length > 0) {
+      requestAnimationFrame(() => {
+        imageRefs.current[1]?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest"
+        })
+      })
+    }
+  }, [])
+
   const [index, setIndex] = useState(0)
   const [isViewBoxOpen, setIsViewBoxOpen] = useState(false)
 
@@ -38,7 +49,7 @@ export function ImageGrid<T extends AnyInfiniteQueryOptions>({
       if (el) {
         el.scrollIntoView({
           behavior: "smooth",
-          block: "center"
+          block: "nearest"
         })
       }
     })
@@ -89,7 +100,7 @@ export function ImageGrid<T extends AnyInfiniteQueryOptions>({
   ])
 
   return (
-    <div className="relative">
+    <div className="relative select-none">
       {/* Grid */}
       <motion.div
         animate={{

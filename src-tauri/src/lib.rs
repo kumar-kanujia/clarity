@@ -9,8 +9,8 @@ mod state;
 use crate::{
   interface::command::{
     gallery_command::{fetch_bin, fetch_favorites, fetch_gallery},
-    image_command::{import_images, mark_image_deleted, toggle_favorite},
-    tag_command::{create_tag, fetch_top_tags, soft_delete_tag},
+    image_command::{import_images, soft_delete_image, toggle_favorite, undo_soft_delete_image},
+    tag_command::{create_tag, fetch_top_tags, soft_tag_delete},
   },
   setup::{app_callback, app_setup, logger::Logger},
 };
@@ -26,13 +26,14 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       import_images,
       toggle_favorite,
-      mark_image_deleted,
+      soft_delete_image,
+      undo_soft_delete_image,
       fetch_gallery,
       fetch_favorites,
       fetch_bin,
       create_tag,
       fetch_top_tags,
-      soft_delete_tag
+      soft_tag_delete,
     ])
     .setup(app_setup)
     .build(tauri::generate_context!())

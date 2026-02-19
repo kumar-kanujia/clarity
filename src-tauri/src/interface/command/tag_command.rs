@@ -31,7 +31,7 @@ pub async fn create_tag(
 }
 
 #[tauri::command]
-pub async fn soft_delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<(), String> {
+pub async fn soft_tag_delete(state: State<'_, AppState>, tag_id: i64) -> Result<(), String> {
   let span = tracing::info_span!("soft_delete_tag");
   let _enter = span.enter();
 

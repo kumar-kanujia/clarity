@@ -1,8 +1,7 @@
 import { motion } from "motion/react"
 import type { ImageItem } from "@/services/tauri"
 import { convertFileSrc } from "@tauri-apps/api/core"
-import { FavoriteButton } from "./favorite-button"
-import { BinButton } from "./bin-button"
+import { BinButton, FavoriteButton, UndoBinButton } from "./card-buttons"
 
 const CardWrapper = ({
   image,
@@ -101,6 +100,12 @@ export const ImageCard = ({
         <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out">
           <FavoriteButton id={image.id} favorite={image.isFavorite} />
           <BinButton id={image.id} />
+        </div>
+      )}
+
+      {inBinView && (
+        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out">
+          <UndoBinButton id={image.id} />
         </div>
       )}
       {/* Always visible info */}
