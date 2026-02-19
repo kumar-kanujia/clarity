@@ -71,3 +71,24 @@ pub async fn fetch_top_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, 
     }
   }
 }
+
+#[tauri::command]
+pub async fn fetch_all_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, String> {
+  let span = tracing::info_span!("fetch_all_tags");
+  let _enter = span.enter();
+
+  let tag_repo = TagRepository::new(state.db.clone());
+
+  let ts = TagService::new(tag_repo);
+
+  match ts.list_all_user_tags().await {
+    Ok(tags) => {
+      tracing::info!("Fetched all tags, count: {}", tags.len());
+      Ok(tags)
+    }
+    Err(err) => {
+      tracing::error!(error = ?err, "DB error");
+      Err(err.into())
+    }
+  }
+}

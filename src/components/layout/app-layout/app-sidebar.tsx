@@ -18,6 +18,7 @@ import {
   Heart,
   ImagePlusIcon,
   Settings,
+  TagIcon,
   Trash2
 } from "lucide-react"
 
@@ -63,6 +64,14 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
                 <SidebarMenuButton tooltip={"Favorites"}>
                   <Heart />
                   <p className="text-nowrap">Favorites</p>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link to="/tags">
+                <SidebarMenuButton tooltip={"Tags"}>
+                  <TagIcon />
+                  <p className="text-nowrap">Tags</p>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>

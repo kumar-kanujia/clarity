@@ -75,21 +75,27 @@ impl TagRepository {
   pub async fn get_tags_order_by_image_count(
     &self,
     tag_type: TagType,
-    limit: i64,
+    limit: Option<i64>,
   ) -> Result<Vec<TagRow>, DatabaseError> {
-    let query_str = r#"
-            SELECT *
-            FROM tags
-            WHERE tag_type = ?1
-            ORDER BY image_count DESC
-            LIMIT ?2
-        "#;
-    let row = sqlx::query_as::<_, TagRow>(query_str)
-      .bind(tag_type)
-      .bind(limit)
-      .fetch_all(&self.db)
-      .await?;
+    let mut qb = sqlx::QueryBuilder::new(
+      r#"
+        SELECT *
+        FROM tags
+        WHERE tag_type = 
+        "#,
+    );
 
-    Ok(row)
+    qb.push_bind(tag_type);
+
+    qb.push(" ORDER BY image_count DESC");
+
+    if let Some(limit) = limit {
+      qb.push(" LIMIT ");
+      qb.push_bind(limit);
+    }
+
+    let rows = qb.build_query_as::<TagRow>().fetch_all(&self.db).await?;
+
+    Ok(rows)
   }
 }

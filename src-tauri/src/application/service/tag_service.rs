@@ -40,7 +40,15 @@ impl TagService {
   pub async fn list_top_user_tags(&self) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::User, TAG_FETCH_LIMIT)
+      .get_tags_order_by_image_count(TagType::User, Some(TAG_FETCH_LIMIT))
+      .await?;
+    Ok(tag_rows.into_iter().map(TagItem::from).collect())
+  }
+
+  pub async fn list_all_user_tags(&self) -> Result<Vec<TagItem>, AppError> {
+    let tag_rows = self
+      .repo
+      .get_tags_order_by_image_count(TagType::User, None)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }

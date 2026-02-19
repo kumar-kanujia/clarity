@@ -10,7 +10,7 @@ use crate::{
   interface::command::{
     gallery_command::{fetch_bin, fetch_favorites, fetch_gallery},
     image_command::{import_images, soft_delete_image, toggle_favorite, undo_soft_delete_image},
-    tag_command::{create_tag, fetch_top_tags, soft_tag_delete},
+    tag_command::{create_tag, fetch_all_tags, fetch_top_tags, soft_tag_delete},
   },
   setup::{app_callback, app_setup, logger::Logger},
 };
@@ -33,6 +33,7 @@ pub fn run() {
       fetch_bin,
       create_tag,
       fetch_top_tags,
+      fetch_all_tags,
       soft_tag_delete,
     ])
     .setup(app_setup)
