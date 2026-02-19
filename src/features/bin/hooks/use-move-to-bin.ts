@@ -2,14 +2,14 @@ import { markImageDeleted } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export const useMoveToBin = (imageId: number) => {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
 
-  const { mutate, isSuccess } = useMutation({
+  const { mutate, data, isPending, isSuccess, isError } = useMutation({
     mutationFn: async () => markImageDeleted({ imageId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gallery"] })
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["all"] })
     }
   })
 
-  return { moveToBin: mutate, isDeleted: isSuccess }
+  return { mutate, data, isPending, isSuccess, isError }
 }

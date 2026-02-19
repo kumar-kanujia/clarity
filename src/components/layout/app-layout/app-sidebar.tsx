@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 
 export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
-  const uploadImage = useUploadImage()
+  const { mutate } = useUploadImage()
 
   return (
     <Sidebar collapsible="icon" variant="floating" className="py-2 select-none">
@@ -74,7 +74,7 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip={"Add Image"}
-              onClick={() => uploadImage("file")}
+              onClick={() => mutate("file")}
             >
               <ImagePlusIcon />
               <p className="text-nowrap">Add Image</p>
@@ -83,7 +83,7 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip={"Add Folder"}
-              onClick={() => uploadImage("directory")}
+              onClick={() => mutate("directory")}
             >
               <FolderPlus />
               <p className="text-nowrap">Add Folder</p>

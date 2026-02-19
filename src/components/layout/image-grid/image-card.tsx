@@ -1,108 +1,122 @@
 import { motion } from "motion/react"
-
 import type { ImageItem } from "@/services/tauri"
 import { convertFileSrc } from "@tauri-apps/api/core"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { Heart, Trash } from "lucide-react"
-import { useToggleFavorite } from "../../../features/favorite/hooks/use-toggle-favorite"
-import { useState } from "react"
-import { useMoveToBin } from "@/features/bin/hooks"
+import { FavoriteButton } from "./favorite-button"
+import { BinButton } from "./bin-button"
 
-export const ImageCard = ({
+const CardWrapper = ({
   image,
   index,
-  onClick
+  onClick,
+  children
 }: {
   image: ImageItem
   index: number
   onClick?: () => void
+  children: React.ReactNode
 }) => {
-  const { isDeleted, moveToBin } = useMoveToBin(image.id)
-
-  const [isFavorite, setIsFavorite] = useState(image.isFavorite)
-  const toggleFavorite = useToggleFavorite(image.id)
-
-  const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const newFavoriteStatus = await toggleFavorite()
-    setIsFavorite(newFavoriteStatus)
-  }
-
-  const handleMoveToBin = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-
-    moveToBin()
-  }
-
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ y: -5 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{
-        type: "spring",
-        damping: 25,
-        stiffness: 400,
-        delay: Math.min(index * 0.005, 0.1)
-      }}
+      layoutId={`image-${image.id}`}
       onClick={onClick}
-      className={cn("group relative", isDeleted && "opacity-50")}
+      className="group relative cursor-pointer"
+      initial={{
+        opacity: 0,
+        y: 12
+      }}
+      animate={{
+        opacity: 1,
+        y: 0
+      }}
+      exit={{
+        opacity: 0
+      }}
+      whileHover={{
+        scale: 1.01
+      }}
+      whileTap={{
+        scale: 0.99
+      }}
+      transition={{
+        layout: {
+          type: "spring",
+          stiffness: 380,
+          damping: 32
+        },
+
+        opacity: {
+          duration: 0.2,
+          ease: "easeOut",
+          delay: Math.min(index * 0.02, 0.12)
+        },
+
+        y: {
+          type: "spring",
+          stiffness: 300,
+          damping: 28,
+          delay: Math.min(index * 0.02, 0.12)
+        }
+      }}
     >
-      <div className="relative aspect-square rounded-3xl overflow-hidden bg-zinc-900 border border-white/5 shadow-sm group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] group-hover:border-white/10 transition-all duration-700">
-        <img
+      {children}
+    </motion.div>
+  )
+}
+
+export const ImageCard = ({
+  image,
+  index,
+  onClick,
+  inBinView
+}: {
+  image: ImageItem
+  index: number
+  onClick?: () => void
+  inBinView?: boolean
+}) => {
+  return (
+    <CardWrapper image={image} index={index} onClick={onClick}>
+      {/* Image container */}
+      <div className="relative aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 group-hover:border-white/20 transition-colors duration-200">
+        <motion.img
           src={convertFileSrc(image.thumbnailPath || image.filePath)}
           alt={image.fileName}
-          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
           loading="lazy"
+          className="w-full h-full object-cover"
+          whileHover={{ scale: 1.04 }}
+          transition={{
+            type: "spring",
+            stiffness: 220,
+            damping: 26
+          }}
         />
-        <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div
+          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200
+      "
+        />
       </div>
 
-      <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0">
-        <Button
-          size="icon"
-          variant="secondary"
-          className={cn(
-            "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300",
-            isFavorite &&
-              "bg-red-500 text-white border-red-500 hover:bg-red-600 hover:text-white"
-          )}
-          onClick={handleToggleFavorite}
-        >
-          <Heart className={cn("w-4.5 h-4.5", isFavorite && "fill-current")} />
-        </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          className={cn(
-            "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300"
-          )}
-          onClick={handleMoveToBin}
-        >
-          <Trash className={cn("w-4.5 h-4.5")} />
-        </Button>
-      </div>
+      {!inBinView && (
+        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out">
+          <FavoriteButton id={image.id} favorite={image.isFavorite} />
+          <BinButton id={image.id} />
+        </div>
+      )}
+      {/* Always visible info */}
+      <div className="absolute bottom-3 left-3 right-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-out">
+        <p className="text-[11px] text-white font-medium truncate">
+          {image.fileName}
+        </p>
 
-      <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2.5 group-hover:translate-y-0">
-        <div className="flex flex-col gap-1">
-          <p className="text-[11px] text-white font-black truncate tracking-wide">
-            {image.fileName}
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] text-white/70 uppercase tracking-widest font-bold">
-              {image.resolution}
-            </span>
-            <span className="w-1 h-1 rounded-full bg-white/30" />
-            <span className="text-[9px] text-white/70 uppercase tracking-widest font-bold">
-              {image.size}
-            </span>
-          </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[9px] text-white/60">{image.resolution}</span>
+
+          <span className="w-1 h-1 rounded-full bg-white/30" />
+
+          <span className="text-[9px] text-white/60">{image.size}</span>
         </div>
       </div>
-    </motion.div>
+    </CardWrapper>
   )
 }

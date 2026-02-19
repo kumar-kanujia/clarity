@@ -1,13 +1,13 @@
-import { fetchBin, type CreatedAtCursor } from "@/services/tauri"
+import { fetchFavorites, type CreatedAtCursor } from "@/services/tauri"
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
-export const binQueryKey = ["all", "bin"]
+export const favoriteQueryKey = ["all", "favorites"]
 
-export const useBinQueryOptions = () => {
+export const useFavoritesQueryOptions = () => {
   const option = infiniteQueryOptions({
-    queryKey: binQueryKey,
+    queryKey: favoriteQueryKey,
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchBin({
+      const res = await fetchFavorites({
         cursor: pageParam ?? undefined
       })
       return res
@@ -18,5 +18,5 @@ export const useBinQueryOptions = () => {
     }
   })
 
-  return { queryKey: binQueryKey, queryOption: option }
+  return { queryKey: favoriteQueryKey, queryOption: option }
 }

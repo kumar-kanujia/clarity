@@ -1,32 +1,22 @@
-import {
-  fetchGallery,
-  type CreatedAtCursor,
-  type ImageItemResult
-} from "@/services/tauri"
-import { infiniteQueryOptions, type InfiniteData } from "@tanstack/react-query"
+import { fetchGallery, type CreatedAtCursor } from "@/services/tauri"
+import { infiniteQueryOptions } from "@tanstack/react-query"
+
+export const galleryQueryKey = ["all", "gallery"]
 
 export const useGalleryQueryOptions = () => {
-  const queryKey = ["gallery"]
-
-  const option = infiniteQueryOptions<
-    ImageItemResult,
-    Error,
-    InfiniteData<ImageItemResult>,
-    readonly unknown[],
-    CreatedAtCursor | null
-  >({
-    queryKey: queryKey,
+  const option = infiniteQueryOptions({
+    queryKey: galleryQueryKey,
     queryFn: async ({ pageParam = null }) => {
       const res = await fetchGallery({
         cursor: pageParam ?? undefined
       })
       return res
     },
-    initialPageParam: null,
+    initialPageParam: null as CreatedAtCursor | null,
     getNextPageParam: (lastPage) => {
       return lastPage?.nextCursor ?? null
     }
   })
 
-  return { queryKey, queryOption: option }
+  return { queryKey: galleryQueryKey, queryOption: option }
 }
