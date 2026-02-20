@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog"
-import { useTagDeleteStore } from "../store"
+import { useDeleteTagStore } from "../store"
 import { useEffect, useState } from "react"
 import { useSoftDeleteTag } from "../hooks"
 import { useQueryClient } from "@tanstack/react-query"
@@ -18,7 +18,7 @@ export const DeleteTagDialog = () => {
 
   const [open, setOpen] = useState(false)
 
-  const { tag, closeDeleteDialog } = useTagDeleteStore()
+  const { tag, closeDeleteDialog } = useDeleteTagStore()
 
   const { mutate, isPending } = useSoftDeleteTag()
 

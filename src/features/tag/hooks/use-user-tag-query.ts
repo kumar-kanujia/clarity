@@ -1,4 +1,9 @@
-import { fetchAllTags, fetchTopTags } from "@/services/tauri"
+import {
+  fetchAllTags,
+  fetchAttachedTags,
+  fetchAvailableTags,
+  fetchTopTags
+} from "@/services/tauri"
 import { queryOptions } from "@tanstack/react-query"
 
 const allTagsQueryKey = "tags"
@@ -26,4 +31,26 @@ export const useGetTopTags = () => {
   })
 
   return { queryKey: topTagsQueryKey, queryOption: option }
+}
+
+export const useGetAttachedTags = (imageId: number, limit: number) => {
+  const option = queryOptions({
+    queryKey: ["attached-tags", imageId],
+    queryFn: async () => {
+      return await fetchAttachedTags({ imageId, limit })
+    }
+  })
+
+  return { queryKey: "attached-tags", queryOption: option }
+}
+
+export const useGetAvilableTags = (imageId: number, limit: number) => {
+  const option = queryOptions({
+    queryKey: ["available-tags", imageId],
+    queryFn: async () => {
+      return await fetchAvailableTags({ imageId, limit })
+    }
+  })
+
+  return { queryKey: "attached-tags", queryOption: option }
 }

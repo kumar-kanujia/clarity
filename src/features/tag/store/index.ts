@@ -1,1 +1,1 @@
-export * from "./tag-delete-store"
+export * from "./delete-tag-store"

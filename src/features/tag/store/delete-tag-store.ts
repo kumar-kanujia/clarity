@@ -1,18 +1,18 @@
 import type { TagItem } from "@/services/tauri"
 import { create } from "zustand"
 
-interface TagDeleteStore {
+interface DeleteTagStore {
   tag: TagItem | null
   setTag: (tag: TagItem | null) => void
 }
 
-const tagDeleteStore = create<TagDeleteStore>((set) => ({
+const deleteTagStore = create<DeleteTagStore>((set) => ({
   tag: null,
   setTag: (tag) => set({ tag })
 }))
 
-export const useTagDeleteStore = () => {
-  const { tag, setTag } = tagDeleteStore()
+export const useDeleteTagStore = () => {
+  const { tag, setTag } = deleteTagStore()
 
   const openDeleteDialog = (tag: TagItem) => {
     setTag(tag)

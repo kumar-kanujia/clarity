@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { TagItem } from "@/services/tauri"
 import { Edit2, TagIcon, Trash2 } from "lucide-react"
-import { useTagDeleteStore } from "../store"
+import { useDeleteTagStore } from "../store"
+import { useEditTagStore } from "../store/edit-tag-store"
 
 export const TagCard = ({ tag }: { tag: TagItem }) => {
-  const { openDeleteDialog } = useTagDeleteStore()
+  const { openDeleteDialog } = useDeleteTagStore()
+  const { openEditDialog } = useEditTagStore()
   return (
     <Card
       key={tag.id}
@@ -40,6 +42,7 @@ export const TagCard = ({ tag }: { tag: TagItem }) => {
               variant="ghost"
               size="icon"
               className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              onClick={() => openEditDialog(tag)}
             >
               <Edit2 />
             </Button>

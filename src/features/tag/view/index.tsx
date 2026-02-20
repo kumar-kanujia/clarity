@@ -6,6 +6,7 @@ import { useGetAllTags } from "../hooks/use-user-tag-query"
 
 import { TagCard } from "../components/tag-card"
 import { DeleteTagDialog } from "../components/delete-tag-dialog"
+import { EditTagDialog } from "../components/edit-tag-dialog"
 
 const TagHeader = () => (
   <header className="h-16 border-b flex items-center justify-between px-16 bg-background/50 backdrop-blur-md sticky top-0 z-30">
@@ -28,6 +29,7 @@ export const TagView = () => {
 
   return (
     <>
+      <EditTagDialog />
       <DeleteTagDialog />
       <div className="flex flex-col h-full bg-background overflow-hidden">
         <TagHeader />
