@@ -153,7 +153,7 @@ impl ImageRepository {
     image_id: i64,
     is_deleted: bool,
   ) -> Result<(), DatabaseError> {
-    let result = sqlx::query(
+    let image_result = sqlx::query(
       r#"
             UPDATE images
             SET is_deleted = ?1
@@ -165,7 +165,7 @@ impl ImageRepository {
     .execute(&self.db)
     .await?;
 
-    if result.rows_affected() == 0 {
+    if image_result.rows_affected() == 0 {
       return Err(DatabaseError::NotFound);
     }
 
