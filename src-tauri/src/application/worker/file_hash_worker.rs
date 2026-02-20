@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-  application::{service::file_hash_service::FileHashService, worker::Worker},
+  application::{service::file_hash_service, worker::Worker},
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,
@@ -43,7 +43,7 @@ impl Worker for FileHashWorker {
   }
 
   fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
-    FileHashService::process_batch(&mut items);
+    file_hash_service::process_batch(&mut items);
     items
   }
 
