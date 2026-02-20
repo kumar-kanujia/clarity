@@ -1,5 +1,5 @@
 use crate::{
-  error::AppError,
+  application::error::AppError,
   infrastructure::{
     fs::ops, models::image_model::ImageItemRow, repo::image_repo::ImageRepository,
     system::format_datetime,

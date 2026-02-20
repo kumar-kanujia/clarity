@@ -1,17 +1,17 @@
 use crate::{
+  application::error::AppError,
   application::service::{
     file_scan_service::FileScanService, image_mutation_service::ImageMutationService,
   },
-  error::AppError,
   interface::dtos::image_dto::ImportSummary,
 };
 
-pub struct ScanAndImportImages {
+pub struct ImageImportWorkflow {
   mutation_service: ImageMutationService,
   file_service: FileScanService,
 }
 
-impl ScanAndImportImages {
+impl ImageImportWorkflow {
   pub fn new(mutation_service: ImageMutationService, file_service: FileScanService) -> Self {
     Self {
       mutation_service,

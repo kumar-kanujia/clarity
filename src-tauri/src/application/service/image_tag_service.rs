@@ -1,5 +1,5 @@
 use crate::{
-  error::AppError,
+  application::error::AppError,
   infrastructure::{models::tag_model::TagType, repo::image_tag_repo::ImageTagRepository},
   interface::dtos::tag_dto::TagItem,
 };

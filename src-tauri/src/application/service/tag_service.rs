@@ -1,6 +1,6 @@
 use crate::{
+  application::error::AppError,
   domain::tag::Tag,
-  error::AppError,
   infrastructure::{models::tag_model::TagType, repo::tag_repo::TagRepository},
   interface::dtos::tag_dto::TagItem,
   setup::settings::TAG_FETCH_LIMIT,

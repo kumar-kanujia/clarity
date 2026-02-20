@@ -1,6 +1,6 @@
 use crate::{
+  application::error::AppError,
   domain::image::{Image, ImageMetadata},
-  error::AppError,
   infrastructure::{fs::ops, processing::thumbnail::ThumbnailP},
 };
 
@@ -16,7 +16,10 @@ pub struct ThumbnailService;
 
 impl ThumbnailService {
   pub fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
-    let cache_dir = app.path().app_data_dir().map_err(AppError::Internal)?;
+    let cache_dir = app
+      .path()
+      .app_data_dir()
+      .map_err(|err| AppError::Internal { source: err })?;
     let target_dir = cache_dir.join("org.clarity").join(".thumbnails");
     ops::ensure_dir(&target_dir)?;
     Ok(target_dir)

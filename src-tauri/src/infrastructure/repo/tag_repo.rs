@@ -64,10 +64,7 @@ impl TagRepository {
     .await?;
 
     if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound(format!(
-        "Tag with id {} not found",
-        tag_id
-      )));
+      return Err(DatabaseError::NotFound);
     }
 
     Ok(())
@@ -90,10 +87,7 @@ impl TagRepository {
       .await?;
 
     if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound(format!(
-        "Tag with id {} not found",
-        tag_id
-      )));
+      return Err(DatabaseError::NotFound);
     }
 
     Ok(())

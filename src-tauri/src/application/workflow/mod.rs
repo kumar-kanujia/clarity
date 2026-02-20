@@ -1,1 +1,1 @@
-pub mod scan_and_import_images;
+pub mod image_import_wrokflow;

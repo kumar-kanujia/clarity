@@ -1,4 +1,6 @@
-use crate::{domain::image::Image, infrastructure::processing::hashing};
+use crate::{
+  application::error::AppError, domain::image::Image, infrastructure::processing::hashing,
+};
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use std::panic;
@@ -12,19 +14,17 @@ impl FileHashService {
       .par_iter_mut()
       .for_each(|image| match Self::hash_file(image) {
         Ok(hash) => image.update_hash(hash),
-        Err(err) => image.mark_hash_error(err),
+        Err(err) => image.mark_hash_error(err.to_string()),
       });
   }
 
-  fn hash_file(image: &Image) -> Result<Vec<u8>, String> {
-    panic::catch_unwind(|| hashing::generate_file_hash(&image.path, image.size_bytes))
-      .map_err(|_| {
-        tracing::error!(path=%image.path, id=image.id, "Hash panicked");
-        "hash_file panicked".to_string()
-      })?
-      .map_err(|e| {
-        tracing::error!(path=%image.path, id=image.id, error=%e);
-        e.to_string()
-      })
+  fn hash_file(image: &Image) -> Result<Vec<u8>, AppError> {
+    match panic::catch_unwind(|| hashing::generate_file_hash(&image.path, image.size_bytes)) {
+      Ok(res) => Ok(res?),
+      Err(err) => {
+        tracing::error!(path=%image.path, id=image.id, ?err, "Hash panicked");
+        Err(AppError::Unknown)
+      }
+    }
   }
 }

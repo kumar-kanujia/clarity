@@ -1,6 +1,6 @@
 use crate::{
+  application::error::AppError,
   domain::file::{FileMetaData, FileScanSummary},
-  error::AppError,
   infrastructure::{fs::fs_scanner::FileScanner, processing::metadata::MetadataP},
 };
 
@@ -25,7 +25,7 @@ impl FileScanService {
         FileScanner::scan_path_for_images(&path).map_err(AppError::from)
       })
       .await
-      .map_err(|e| AppError::Join(format!("Join Error failed to scan path: {}", e.to_string())))?;
+      .map_err(|e| AppError::Internal { source: e })?;
     }
 
     let num_threads = cmp::min(paths.len(), num_cpus::get());
@@ -57,7 +57,7 @@ impl FileScanService {
     let mut final_summary = FileScanSummary::default();
 
     while let Some(search) = scan_set.join_next().await {
-      let chunk_summary = search.map_err(|e| AppError::Join(e.to_string()))?;
+      let chunk_summary = search.map_err(|err| AppError::Join { source: err })?;
       final_summary.merge(chunk_summary);
     }
 
@@ -84,7 +84,7 @@ impl FileScanService {
         .collect()
     })
     .await
-    .map_err(|e| AppError::Join(e.to_string()))?;
+    .map_err(|err| AppError::Internal { source: err })?;
 
     Ok(result)
   }

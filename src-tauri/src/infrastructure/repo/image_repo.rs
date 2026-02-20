@@ -157,7 +157,11 @@ impl ImageRepository {
     .execute(&self.db)
     .await?;
 
-    Ok(result.rows_affected() > 0)
+    if result.rows_affected() == 0 {
+      return Err(DatabaseError::NotFound);
+    }
+
+    Ok(is_deleted)
   }
 
   // endregion
