@@ -11,18 +11,33 @@ import {
   SidebarMenuItem
 } from "@/components/ui/sidebar"
 import { useUploadImage } from "@/features/gallery/hooks/use-upload-image"
-import { Link } from "@tanstack/react-router"
+import { useGetTopTags } from "@/features/tags/hooks"
+import { useQuery } from "@tanstack/react-query"
+import { Link, useLocation, useMatch } from "@tanstack/react-router"
 import {
   Aperture,
   FolderPlus,
   Heart,
   ImagePlusIcon,
   Settings,
+  TagIcon,
+  TagsIcon,
   Trash2
 } from "lucide-react"
 
 export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
   const { mutate } = useUploadImage()
+
+  const { queryOption } = useGetTopTags()
+
+  const { data, isSuccess } = useQuery(queryOption)
+
+  const { pathname } = useLocation()
+
+  const match = useMatch({
+    from: "/tags/$tagid",
+    shouldThrow: false
+  })
 
   return (
     <Sidebar collapsible="icon" variant="floating" className="py-2 select-none">
@@ -52,7 +67,10 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
           <SidebarMenu>
             <SidebarMenuItem>
               <Link to="/">
-                <SidebarMenuButton tooltip={"Gallery"}>
+                <SidebarMenuButton
+                  tooltip={"Gallery"}
+                  isActive={pathname === "/"}
+                >
                   <Aperture />
                   <p className="text-nowrap">Gallery</p>
                 </SidebarMenuButton>
@@ -60,14 +78,54 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <Link to="/favorites">
-                <SidebarMenuButton tooltip={"Favorites"}>
+                <SidebarMenuButton
+                  tooltip={"Favorites"}
+                  isActive={pathname === "/favorites"}
+                >
                   <Heart />
                   <p className="text-nowrap">Favorites</p>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link to="/tags">
+                <SidebarMenuButton
+                  tooltip={"Tags"}
+                  isActive={pathname === "/tags"}
+                >
+                  <TagsIcon />
+                  <p className="text-nowrap">Tags</p>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+        {isSuccess && (
+          <SidebarGroup>
+            <SidebarMenu>
+              {data.map((tag) => (
+                <SidebarMenuItem key={tag.id}>
+                  <Link
+                    to={`/tags/$tagid`}
+                    params={{ tagid: `${tag.id}` }}
+                    style={{ color: tag.tagColor }}
+                    activeProps={{
+                      style: { color: "white", backgroundColor: tag.tagColor }
+                    }}
+                  >
+                    <SidebarMenuButton
+                      tooltip={tag.tagName}
+                      isActive={match?.params.tagid === `${tag.id}`}
+                    >
+                      <TagIcon />
+                      <p className="text-nowrap">{tag.tagName}</p>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu className="border-t pt-2">
@@ -93,7 +151,7 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
         <SidebarMenu className="pt-2 border-t">
           <SidebarMenuItem>
             <Link to="/bin">
-              <SidebarMenuButton tooltip={"Bin"}>
+              <SidebarMenuButton tooltip={"Bin"} isActive={pathname === "/bin"}>
                 <Trash2 />
                 <p className="text-nowrap">Bin</p>
               </SidebarMenuButton>
@@ -101,7 +159,10 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <Link to="/settings">
-              <SidebarMenuButton tooltip={"Settings"}>
+              <SidebarMenuButton
+                tooltip={"Settings"}
+                isActive={pathname === "/settings"}
+              >
                 <Settings />
                 <p className="text-nowrap">Settings</p>
               </SidebarMenuButton>

@@ -82,7 +82,7 @@ export const FavoriteButton = ({
       size="icon"
       variant="secondary"
       className={cn(
-        "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300",
+        "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300 cursor-pointer",
         isFavorite &&
           "bg-red-500 text-white border-red-500 hover:bg-red-600 hover:text-white"
       )}

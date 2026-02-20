@@ -8,7 +8,7 @@ impl Logger {
   pub fn init() {
     // This allows "info" generally, but suppresses noisy third-party crates
     // unless you explicitly set RUST_LOG=debug.
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,sqlx=warn".into());
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "error,sqlx=warn".into());
 
     // "%H:%M:%S%.3f" -> 14:35:02.123
     // "%Y-%m-%d %H:%M:%S%.3f" -> 2024-02-15 14:35:02.123

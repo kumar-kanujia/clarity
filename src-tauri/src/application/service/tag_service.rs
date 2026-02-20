@@ -29,6 +29,18 @@ impl TagService {
     Ok(new_tag_id)
   }
 
+  pub async fn edit_user_tag(
+    &self,
+    tag_id: i64,
+    tag_text: Option<String>,
+    tag_color: Option<String>,
+  ) -> Result<(), AppError> {
+    let tag_text = tag_text.map(|t| Tag::normalize_text(&t));
+    let tag_color = tag_color.map(|c| Tag::normalize_color(&c));
+    self.repo.update_tag(tag_id, tag_text, tag_color).await?;
+    Ok(())
+  }
+
   pub async fn soft_delete_user_tag(&self, tag_id: i64) -> Result<(), AppError> {
     self
       .repo
@@ -40,7 +52,15 @@ impl TagService {
   pub async fn list_top_user_tags(&self) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::User, TAG_FETCH_LIMIT)
+      .get_tags_order_by_image_count(TagType::User, Some(TAG_FETCH_LIMIT))
+      .await?;
+    Ok(tag_rows.into_iter().map(TagItem::from).collect())
+  }
+
+  pub async fn list_all_user_tags(&self) -> Result<Vec<TagItem>, AppError> {
+    let tag_rows = self
+      .repo
+      .get_tags_order_by_image_count(TagType::User, None)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }

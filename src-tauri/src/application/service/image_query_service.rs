@@ -101,4 +101,22 @@ impl ImageQueryService {
 
     Ok(ImageItemResult { data, next_cursor })
   }
+
+  pub async fn list_taged_image_items(
+    &self,
+    tag_id: i64,
+    limit: i64,
+    cursor: Option<CreatedAtCursor>,
+  ) -> Result<ImageItemResult, AppError> {
+    let raw_images = self
+      .repo
+      .get_image_items_for_tag_order_by_created_at(tag_id, limit + 1, cursor)
+      .await?;
+
+    let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
+
+    let data = self.filter_and_process_image(images_to_process);
+
+    Ok(ImageItemResult { data, next_cursor })
+  }
 }
