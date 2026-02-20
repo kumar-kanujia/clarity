@@ -27,5 +27,5 @@ BEGIN
 END;
 
 
-CREATE INDEX IF NOT EXISTS idx_image_tags_tag_id
-ON image_tags (tag_id, image_id);
+CREATE INDEX IF NOT EXISTS idx_image_tags_tag_created 
+ON image_tags (tag_id, created_at DESC, image_id DESC);

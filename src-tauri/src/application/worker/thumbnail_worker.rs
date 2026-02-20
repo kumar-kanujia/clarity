@@ -49,7 +49,7 @@ impl Worker for ThumbnailWorker {
   async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
     let raw_images = self
       .repo
-      .get_images_by_status_with_retry_count(limit, MAX_WORKER_RETRIES, ImageStatus::Hashed)
+      .get_images_for_processing(limit, MAX_WORKER_RETRIES, ImageStatus::Hashed)
       .await?;
     let images = raw_images.into_iter().map(Image::from).collect();
     Ok(images)

@@ -2,7 +2,7 @@ use crate::{
   application::error::AppError,
   infrastructure::{
     fs::ops, models::image_model::ImageItemRow, repo::image_repo::ImageRepository,
-    system::format_datetime,
+    utils::format_datetime,
   },
   interface::dtos::image_dto::{CreatedAtCursor, ImageItem, ImageItemResult},
 };
@@ -58,7 +58,7 @@ impl ImageQueryService {
   ) -> Result<ImageItemResult, AppError> {
     let raw_images = self
       .repo
-      .get_image_items_order_by_created_at(limit + 1, false, None, cursor)
+      .get_images_paginated(limit + 1, false, None, cursor)
       .await?;
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
@@ -75,7 +75,7 @@ impl ImageQueryService {
   ) -> Result<ImageItemResult, AppError> {
     let raw_images = self
       .repo
-      .get_image_items_order_by_created_at(limit + 1, true, None, cursor)
+      .get_images_paginated(limit + 1, true, None, cursor)
       .await?;
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
@@ -92,7 +92,7 @@ impl ImageQueryService {
   ) -> Result<ImageItemResult, AppError> {
     let raw_images = self
       .repo
-      .get_image_items_order_by_created_at(limit + 1, false, Some(true), cursor)
+      .get_images_paginated(limit + 1, false, Some(true), cursor)
       .await?;
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
@@ -110,7 +110,7 @@ impl ImageQueryService {
   ) -> Result<ImageItemResult, AppError> {
     let raw_images = self
       .repo
-      .get_image_items_for_tag_order_by_created_at(tag_id, limit + 1, cursor)
+      .get_images_by_tag_paginated(tag_id, limit + 1, cursor)
       .await?;
 
     let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);

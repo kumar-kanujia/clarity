@@ -1,6 +1,6 @@
 use crate::{
   domain::file::FileMetaData,
-  infrastructure::{processing::error::ProcessingError, system::get_utc_timestamp},
+  infrastructure::{processing::error::ProcessingError, utils::get_utc_timestamp},
 };
 
 use std::{

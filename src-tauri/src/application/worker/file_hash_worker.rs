@@ -37,7 +37,7 @@ impl Worker for FileHashWorker {
   async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
     let models = self
       .repo
-      .get_images_by_status_with_retry_count(limit, MAX_WORKER_RETRIES, ImageStatus::Pending)
+      .get_images_for_processing(limit, MAX_WORKER_RETRIES, ImageStatus::Pending)
       .await?;
     Ok(models.into_iter().map(Image::from).collect())
   }

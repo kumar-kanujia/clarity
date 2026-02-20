@@ -33,6 +33,8 @@ impl ImageRepository {
       return Ok(0);
     }
 
+    let mut tx = self.db.begin().await?;
+
     let mut query_builder =
       QueryBuilder::new("INSERT OR IGNORE INTO images (path, file_name, size_bytes, created_at) ");
 
@@ -43,7 +45,10 @@ impl ImageRepository {
         .push_bind(&file.created_at);
     });
 
-    let result = query_builder.build().execute(&self.db).await?;
+    let result = query_builder.build().execute(&mut *tx).await?;
+
+    tx.commit().await?;
+
     Ok(result.rows_affected())
   }
 
@@ -124,7 +129,7 @@ impl ImageRepository {
     Ok(total_updated)
   }
 
-  pub async fn update_image_is_favorite(&self, image_id: i64) -> Result<bool, DatabaseError> {
+  pub async fn toggle_image_favorite(&self, image_id: i64) -> Result<bool, DatabaseError> {
     let result = sqlx::query_scalar::<_, i64>(
       r#"
             UPDATE images
@@ -134,17 +139,20 @@ impl ImageRepository {
       "#,
     )
     .bind(image_id)
-    .fetch_one(&self.db)
+    .fetch_optional(&self.db)
     .await?;
 
-    Ok(result == 1)
+    match result {
+      Some(is_fav) => Ok(is_fav == 1),
+      None => Err(DatabaseError::NotFound),
+    }
   }
 
-  pub async fn update_image_is_deleted(
+  pub async fn set_image_deleted_status(
     &self,
     image_id: i64,
     is_deleted: bool,
-  ) -> Result<bool, DatabaseError> {
+  ) -> Result<(), DatabaseError> {
     let result = sqlx::query(
       r#"
             UPDATE images
@@ -161,14 +169,14 @@ impl ImageRepository {
       return Err(DatabaseError::NotFound);
     }
 
-    Ok(is_deleted)
+    Ok(())
   }
 
   // endregion
 
   // region: Image Query
 
-  pub async fn get_images_by_status_with_retry_count(
+  pub async fn get_images_for_processing(
     &self,
     limit: i64,
     max_retry_count: i64,
@@ -176,8 +184,13 @@ impl ImageRepository {
   ) -> Result<Vec<ImageRow>, DatabaseError> {
     let result = sqlx::query_as::<_, ImageRow>(
       r#"
-        SELECT * FROM images
+        SELECT 
+          id, file_name, path, size_bytes, content_hash, 
+          width, height, thumbnail_path, status, retry_count, 
+          error_message, created_at, updated_at, is_favorite, is_deleted
+        FROM images
         WHERE status = ?1 AND retry_count < ?2
+        ORDER BY created_at ASC
         LIMIT ?3
       "#,
     )
@@ -190,7 +203,7 @@ impl ImageRepository {
     Ok(result)
   }
 
-  pub async fn get_image_items_order_by_created_at(
+  pub async fn get_images_paginated(
     &self,
     limit: i64,
     is_deleted: bool,
@@ -207,19 +220,11 @@ impl ImageRepository {
     "#,
     );
 
-    if is_deleted {
-      qb.push("1");
-    } else {
-      qb.push("0");
-    }
+    qb.push_bind(is_deleted);
 
     if let Some(is_favorite) = is_favorite {
       qb.push(" AND is_favorite = ");
-      if is_favorite {
-        qb.push("1");
-      } else {
-        qb.push("0");
-      }
+      qb.push_bind(is_favorite);
     }
 
     if let Some(cursor) = cursor {
@@ -241,7 +246,7 @@ impl ImageRepository {
     Ok(result)
   }
 
-  pub async fn get_image_items_for_tag_order_by_created_at(
+  pub async fn get_images_by_tag_paginated(
     &self,
     tag_id: i64,
     limit: i64,
@@ -254,12 +259,10 @@ impl ImageRepository {
           height, thumbnail_path, images.created_at, is_favorite 
         FROM images
         JOIN image_tags ON images.id = image_tags.image_id
-        
+        WHERE image_tags.tag_id = 
     "#,
     );
-
-    qb.push(" WHERE image_tags.tag_id = ");
-    qb.push(tag_id);
+    qb.push_bind(tag_id);
     qb.push(" AND is_deleted = 0");
 
     if let Some(cursor) = cursor {
@@ -270,7 +273,7 @@ impl ImageRepository {
       qb.push(")");
     }
 
-    qb.push(" ORDER BY image_tags.created_at DESC, id DESC LIMIT ");
+    qb.push(" ORDER BY image_tags.created_at DESC, id DESC LIMIT");
     qb.push_bind(limit);
 
     let result = qb

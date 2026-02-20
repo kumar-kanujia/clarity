@@ -25,8 +25,9 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE INDEX IF NOT EXISTS idx_images_created_at_id
-ON images (created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_images_active_pagination 
+ON images (created_at DESC, id DESC) 
+WHERE is_deleted = 0;
 
 CREATE INDEX IF NOT EXISTS idx_images_work_queue
 ON images (status, retry_count, created_at DESC);

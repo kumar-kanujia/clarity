@@ -1,6 +1,6 @@
 use crate::{
   infrastructure::{
-    models::tag_model::{TagRow, TagType},
+    models::tag_model::{TagItemRow, TagType},
     repo::error::DatabaseError,
   },
   state::Db,
@@ -17,11 +17,7 @@ impl ImageTagRepository {
 
   // region: Tag Create
 
-  pub async fn create_or_delete_image_tag(
-    &self,
-    image_id: i64,
-    tag_id: i64,
-  ) -> Result<bool, DatabaseError> {
+  pub async fn toggle_image_tag(&self, image_id: i64, tag_id: i64) -> Result<bool, DatabaseError> {
     let mut tx = self.db.begin().await?;
 
     let delete_res = sqlx::query("DELETE FROM image_tags WHERE image_id = ?1 AND tag_id = ?2")
@@ -55,28 +51,23 @@ impl ImageTagRepository {
     image_id: i64,
     tag_type: TagType,
     limit: Option<i64>,
-  ) -> Result<Vec<TagRow>, DatabaseError> {
-    let mut qb = sqlx::QueryBuilder::new(
+  ) -> Result<Vec<TagItemRow>, DatabaseError> {
+    let rows = sqlx::query_as::<_, TagItemRow>(
       r#"
-      SELECT tags.*
+      SELECT tags.id, tags.text, tags.color, tags.image_count
       FROM tags
-      JOIN image_tags ON tags.id = image_tags.tag_id"#,
-    );
-
-    qb.push(" WHERE image_tags.image_id = ");
-    qb.push_bind(image_id);
-
-    qb.push(" AND tags.tag_type = ");
-    qb.push_bind(tag_type);
-
-    qb.push("ORDER BY tags.image_count DESC");
-
-    if let Some(limit) = limit {
-      qb.push(" LIMIT ");
-      qb.push_bind(limit);
-    }
-
-    let rows = qb.build_query_as::<TagRow>().fetch_all(&self.db).await?;
+      JOIN image_tags ON tags.id = image_tags.tag_id
+      WHERE image_tags.image_id = ?1
+        AND tags.tag_type = ?2
+      ORDER BY tags.image_count DESC
+      LIMIT ?3
+      "#,
+    )
+    .bind(image_id)
+    .bind(tag_type)
+    .bind(limit.unwrap_or(-1))
+    .fetch_all(&self.db)
+    .await?;
 
     Ok(rows)
   }
@@ -86,33 +77,27 @@ impl ImageTagRepository {
     image_id: i64,
     tag_type: TagType,
     limit: Option<i64>,
-  ) -> Result<Vec<TagRow>, DatabaseError> {
-    let mut qb = sqlx::QueryBuilder::new(
+  ) -> Result<Vec<TagItemRow>, DatabaseError> {
+    let rows = sqlx::query_as::<_, TagItemRow>(
       r#"
-      SELECT tags.*
+      SELECT tags.id, tags.text, tags.color, tags.image_count
       FROM tags
-      WHERE NOT EXISTS (
-          SELECT 1
-          FROM image_tags
-          WHERE image_tags.tag_id = tags.id
-          AND image_tags.image_id = 
+      WHERE tags.tag_type = ?1
+        AND NOT EXISTS (
+            SELECT 1
+            FROM image_tags
+            WHERE image_tags.tag_id = tags.id
+              AND image_tags.image_id = ?2
+        )
+      ORDER BY tags.image_count DESC
+      LIMIT ?3
       "#,
-    );
-
-    qb.push_bind(image_id);
-    qb.push(")");
-
-    qb.push(" AND tags.tag_type = ");
-    qb.push_bind(tag_type);
-
-    qb.push(" ORDER BY tags.image_count DESC");
-
-    if let Some(limit) = limit {
-      qb.push(" LIMIT ");
-      qb.push_bind(limit);
-    }
-
-    let rows = qb.build_query_as::<TagRow>().fetch_all(&self.db).await?;
+    )
+    .bind(tag_type)
+    .bind(image_id)
+    .bind(limit.unwrap_or(-1)) // The magic SQLite trick to bypass the limit if None
+    .fetch_all(&self.db)
+    .await?;
 
     Ok(rows)
   }

@@ -7,7 +7,7 @@ use crate::{
   application::worker::{
     Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
   },
-  infrastructure::{repo::image_repo::ImageRepository, system::get_num_threads},
+  infrastructure::{repo::image_repo::ImageRepository, utils::get_num_threads},
   setup::dbsetup::setup_db,
   state::AppState,
 };

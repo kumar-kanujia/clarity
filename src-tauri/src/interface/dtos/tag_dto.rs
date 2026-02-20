@@ -1,4 +1,4 @@
-use crate::infrastructure::models::tag_model::TagRow;
+use crate::infrastructure::models::tag_model::TagItemRow;
 
 use serde::Serialize;
 
@@ -11,8 +11,8 @@ pub struct TagItem {
   pub image_count: i64,
 }
 
-impl From<TagRow> for TagItem {
-  fn from(tag_row: TagRow) -> Self {
+impl From<TagItemRow> for TagItem {
+  fn from(tag_row: TagItemRow) -> Self {
     Self {
       id: tag_row.id,
       tag_name: tag_row.text,

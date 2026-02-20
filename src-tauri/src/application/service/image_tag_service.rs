@@ -14,10 +14,7 @@ impl ImageTagService {
   }
 
   pub async fn toggle_tag_on_image(&self, image_id: i64, tag_id: i64) -> Result<bool, AppError> {
-    let res = self
-      .repo
-      .create_or_delete_image_tag(image_id, tag_id)
-      .await?;
+    let res = self.repo.toggle_image_tag(image_id, tag_id).await?;
     Ok(res)
   }
 
