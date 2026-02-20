@@ -1,6 +1,6 @@
 use crate::{
   application::{
-    service::{file_scan_service::FileScanService, image_mutation_service::ImageMutationService},
+    service::image_mutation_service::ImageMutationService,
     workflow::image_import_wrokflow::ImageImportWorkflow,
   },
   infrastructure::repo::image_repo::ImageRepository,
@@ -20,9 +20,7 @@ pub async fn import_images(
 
   let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let file_scan_service = FileScanService::default();
-
-  let image_import_workflow = ImageImportWorkflow::new(image_mutation_service, file_scan_service);
+  let image_import_workflow = ImageImportWorkflow::new(image_mutation_service);
 
   let summary = image_import_workflow.scan_and_import_images(&paths).await?;
 
@@ -64,18 +62,18 @@ pub async fn toggle_favorite(
 pub async fn soft_delete_image(
   state: State<'_, AppState>,
   image_id: i64,
-) -> Result<bool, CommandError> {
+) -> Result<(), CommandError> {
   let image_repository = ImageRepository::new(state.db.clone());
 
   let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let is_deleted = image_mutation_service
+  image_mutation_service
     .change_image_is_deleted(image_id, true)
     .await?;
 
-  tracing::info!(is_deleted = is_deleted, "Image soft delete completed:");
+  tracing::info!("Image soft delete completed:");
 
-  Ok(is_deleted)
+  Ok(())
 }
 
 #[tauri::command]
@@ -83,16 +81,16 @@ pub async fn soft_delete_image(
 pub async fn undo_soft_delete_image(
   state: State<'_, AppState>,
   image_id: i64,
-) -> Result<bool, CommandError> {
+) -> Result<(), CommandError> {
   let image_repository = ImageRepository::new(state.db.clone());
 
   let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let is_deleted = image_mutation_service
+  image_mutation_service
     .change_image_is_deleted(image_id, false)
     .await?;
 
-  tracing::info!(is_deleted = is_deleted, "Image undo soft delete completed:");
+  tracing::info!("Image undo soft delete completed:");
 
-  Ok(is_deleted)
+  Ok(())
 }

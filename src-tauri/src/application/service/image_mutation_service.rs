@@ -3,8 +3,6 @@ use crate::{
   infrastructure::repo::image_repo::ImageRepository,
 };
 
-pub const CHUNK_SIZE: usize = 50;
-
 pub struct ImageMutationService {
   repo: ImageRepository,
 }
@@ -19,11 +17,10 @@ impl ImageMutationService {
     &self,
     image_metadata: &[FileMetaData],
   ) -> Result<i64, AppError> {
-    let mut imported = 0;
-
-    for chunk in image_metadata.chunks(CHUNK_SIZE) {
-      imported += self.repo.create_images_by_file_metadata(chunk).await? as i64;
-    }
+    let imported = self
+      .repo
+      .create_images_by_file_metadata(image_metadata)
+      .await?;
 
     Ok(imported)
   }
@@ -39,11 +36,11 @@ impl ImageMutationService {
     &self,
     image_id: i64,
     is_deleted: bool,
-  ) -> Result<bool, AppError> {
+  ) -> Result<(), AppError> {
     self
       .repo
       .set_image_deleted_status(image_id, is_deleted)
       .await?;
-    Ok(is_deleted)
+    Ok(())
   }
 }

@@ -28,28 +28,35 @@ impl ImageRepository {
   pub async fn create_images_by_file_metadata(
     &self,
     files: &[FileMetaData],
-  ) -> Result<u64, DatabaseError> {
+  ) -> Result<i64, DatabaseError> {
     if files.is_empty() {
       return Ok(0);
     }
 
+    const CHUNK_SIZE: usize = 5000;
+
     let mut tx = self.db.begin().await?;
+    let mut total_inserted = 0;
 
-    let mut query_builder =
-      QueryBuilder::new("INSERT OR IGNORE INTO images (path, file_name, size_bytes, created_at) ");
+    for chunk in files.chunks(CHUNK_SIZE) {
+      let mut query_builder = QueryBuilder::new(
+        "INSERT OR IGNORE INTO images (path, file_name, size_bytes, created_at) ",
+      );
 
-    query_builder.push_values(files, |mut b, file| {
-      b.push_bind(&file.path)
-        .push_bind(&file.file_name)
-        .push_bind(file.size_bytes)
-        .push_bind(&file.created_at);
-    });
+      query_builder.push_values(chunk, |mut b, file| {
+        b.push_bind(&file.path)
+          .push_bind(&file.file_name)
+          .push_bind(file.size_bytes)
+          .push_bind(&file.created_at);
+      });
 
-    let result = query_builder.build().execute(&mut *tx).await?;
+      let result = query_builder.build().execute(&mut *tx).await?;
+      total_inserted += result.rows_affected();
+    }
 
     tx.commit().await?;
 
-    Ok(result.rows_affected())
+    Ok(total_inserted as i64)
   }
 
   // endregion
