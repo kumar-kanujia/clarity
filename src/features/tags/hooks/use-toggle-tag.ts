@@ -20,8 +20,7 @@ export const useToggleTag = () => {
       Promise.all([
         qc.invalidateQueries({ queryKey: ["attached-tags"] }),
         qc.invalidateQueries({ queryKey: ["available-tags"] }),
-        qc.invalidateQueries({ queryKey: ["tags"] }),
-        qc.invalidateQueries({ queryKey: ["top-tags"] })
+        qc.invalidateQueries({ queryKey: ["tags"] })
       ])
     }
   })

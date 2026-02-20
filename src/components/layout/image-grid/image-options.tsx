@@ -15,7 +15,7 @@ import {
   useGetAttachedTags,
   useGetAvilableTags,
   useToggleTag
-} from "@/features/tag/hooks"
+} from "@/features/tags/hooks"
 import { useMoveToBin } from "@/features/bin/hooks"
 import { useLocation } from "@tanstack/react-router"
 

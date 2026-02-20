@@ -22,7 +22,7 @@ const TagHeader = () => (
   </header>
 )
 
-export const TagView = () => {
+export const TagsView = () => {
   const { queryOption } = useGetAllTags()
 
   const { data: tags, isLoading, isSuccess } = useQuery(queryOption)

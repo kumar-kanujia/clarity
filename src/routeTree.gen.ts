@@ -9,17 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as BinRouteImport } from './routes/bin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TagsIndexRouteImport } from './routes/tags/index'
+import { Route as TagsTagidRouteImport } from './routes/tags/$tagid'
 
-const TagsRoute = TagsRouteImport.update({
-  id: '/tags',
-  path: '/tags',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -40,20 +36,32 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TagsIndexRoute = TagsIndexRouteImport.update({
+  id: '/tags/',
+  path: '/tags/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TagsTagidRoute = TagsTagidRouteImport.update({
+  id: '/tags/$tagid',
+  path: '/tags/$tagid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bin': typeof BinRoute
   '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
-  '/tags': typeof TagsRoute
+  '/tags/$tagid': typeof TagsTagidRoute
+  '/tags/': typeof TagsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bin': typeof BinRoute
   '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
-  '/tags': typeof TagsRoute
+  '/tags/$tagid': typeof TagsTagidRoute
+  '/tags': typeof TagsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +69,28 @@ export interface FileRoutesById {
   '/bin': typeof BinRoute
   '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
-  '/tags': typeof TagsRoute
+  '/tags/$tagid': typeof TagsTagidRoute
+  '/tags/': typeof TagsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bin' | '/favorites' | '/settings' | '/tags'
+  fullPaths:
+    | '/'
+    | '/bin'
+    | '/favorites'
+    | '/settings'
+    | '/tags/$tagid'
+    | '/tags/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bin' | '/favorites' | '/settings' | '/tags'
-  id: '__root__' | '/' | '/bin' | '/favorites' | '/settings' | '/tags'
+  to: '/' | '/bin' | '/favorites' | '/settings' | '/tags/$tagid' | '/tags'
+  id:
+    | '__root__'
+    | '/'
+    | '/bin'
+    | '/favorites'
+    | '/settings'
+    | '/tags/$tagid'
+    | '/tags/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,18 +98,12 @@ export interface RootRouteChildren {
   BinRoute: typeof BinRoute
   FavoritesRoute: typeof FavoritesRoute
   SettingsRoute: typeof SettingsRoute
-  TagsRoute: typeof TagsRoute
+  TagsTagidRoute: typeof TagsTagidRoute
+  TagsIndexRoute: typeof TagsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tags': {
-      id: '/tags'
-      path: '/tags'
-      fullPath: '/tags'
-      preLoaderRoute: typeof TagsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -116,6 +132,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tags/': {
+      id: '/tags/'
+      path: '/tags'
+      fullPath: '/tags/'
+      preLoaderRoute: typeof TagsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tags/$tagid': {
+      id: '/tags/$tagid'
+      path: '/tags/$tagid'
+      fullPath: '/tags/$tagid'
+      preLoaderRoute: typeof TagsTagidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -124,7 +154,8 @@ const rootRouteChildren: RootRouteChildren = {
   BinRoute: BinRoute,
   FavoritesRoute: FavoritesRoute,
   SettingsRoute: SettingsRoute,
-  TagsRoute: TagsRoute,
+  TagsTagidRoute: TagsTagidRoute,
+  TagsIndexRoute: TagsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

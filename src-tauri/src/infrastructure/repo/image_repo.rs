@@ -236,4 +236,44 @@ impl ImageRepository {
 
     Ok(result)
   }
+
+  pub async fn get_image_items_for_tag_order_by_created_at(
+    &self,
+    tag_id: i64,
+    limit: i64,
+    cursor: Option<CreatedAtCursor>,
+  ) -> Result<Vec<ImageItemRow>, DatabaseError> {
+    let mut qb = QueryBuilder::new(
+      r#" 
+        SELECT 
+          id, file_name, path, size_bytes, width,
+          height, thumbnail_path, images.created_at, is_favorite 
+        FROM images
+        JOIN image_tags ON images.id = image_tags.image_id
+        
+    "#,
+    );
+
+    qb.push(" WHERE image_tags.tag_id = ");
+    qb.push(tag_id);
+    qb.push(" AND is_deleted = 0");
+
+    if let Some(cursor) = cursor {
+      qb.push(" AND (image_tags.created_at, images.id) < (");
+      qb.push_bind(cursor.created_at);
+      qb.push(", ");
+      qb.push_bind(cursor.id);
+      qb.push(")");
+    }
+
+    qb.push(" ORDER BY image_tags.created_at DESC, id DESC LIMIT ");
+    qb.push_bind(limit);
+
+    let result = qb
+      .build_query_as::<ImageItemRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(result)
+  }
 }

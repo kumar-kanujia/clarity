@@ -5,14 +5,19 @@ import type { TagItem } from "@/services/tauri"
 import { Edit2, TagIcon, Trash2 } from "lucide-react"
 import { useDeleteTagStore } from "../store"
 import { useEditTagStore } from "../store/edit-tag-store"
+import { useRouter } from "@tanstack/react-router"
 
 export const TagCard = ({ tag }: { tag: TagItem }) => {
   const { openDeleteDialog } = useDeleteTagStore()
   const { openEditDialog } = useEditTagStore()
+  const { navigate } = useRouter()
   return (
     <Card
       key={tag.id}
       className="group relative overflow-hidden border bg-background hover:border-primary/50 transition-all duration-500 cursor-pointer shadow-sm hover:shadow-xl"
+      onClick={() =>
+        navigate({ to: "/tags/$tagid", params: { tagid: tag.id.toString() } })
+      }
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
