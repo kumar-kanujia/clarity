@@ -42,6 +42,45 @@ impl TagRepository {
 
   // region: Tag Mutate
 
+  pub async fn update_tag(
+    &self,
+    tag_id: i64,
+    tag_text: Option<String>,
+    tag_color: Option<String>,
+  ) -> Result<(), DatabaseError> {
+    if tag_text.is_none() && tag_color.is_none() {
+      return Ok(());
+    }
+
+    let mut qb = sqlx::QueryBuilder::new("UPDATE tags SET ");
+
+    let mut separated = qb.separated(", ");
+
+    if let Some(tag_text) = tag_text {
+      separated.push("text = ");
+      separated.push_bind(tag_text);
+    }
+
+    if let Some(tag_color) = tag_color {
+      separated.push("color = ");
+      separated.push_bind(tag_color);
+    }
+
+    qb.push(" WHERE id = ");
+    qb.push_bind(tag_id);
+
+    let result = qb.build().execute(&self.db).await?;
+
+    if result.rows_affected() == 0 {
+      return Err(DatabaseError::NotFound(format!(
+        "Tag with id {} not found",
+        tag_id
+      )));
+    }
+
+    Ok(())
+  }
+
   pub async fn update_tag_tag_type(
     &self,
     tag_id: i64,

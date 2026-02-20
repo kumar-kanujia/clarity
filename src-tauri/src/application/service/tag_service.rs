@@ -29,6 +29,18 @@ impl TagService {
     Ok(new_tag_id)
   }
 
+  pub async fn edit_user_tag(
+    &self,
+    tag_id: i64,
+    tag_text: Option<String>,
+    tag_color: Option<String>,
+  ) -> Result<(), AppError> {
+    let tag_text = tag_text.map(|t| Tag::normalize_text(&t));
+    let tag_color = tag_color.map(|c| Tag::normalize_color(&c));
+    self.repo.update_tag(tag_id, tag_text, tag_color).await?;
+    Ok(())
+  }
+
   pub async fn soft_delete_user_tag(&self, tag_id: i64) -> Result<(), AppError> {
     self
       .repo
