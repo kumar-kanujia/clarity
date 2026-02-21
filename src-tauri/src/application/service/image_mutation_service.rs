@@ -22,7 +22,7 @@ impl ImageMutationService {
       .create_images_by_file_metadata(image_metadata)
       .await?;
 
-    Ok(imported)
+    Ok(imported as i64)
   }
 
   #[tracing::instrument(skip(self))]

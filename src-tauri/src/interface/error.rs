@@ -19,10 +19,13 @@ impl From<AppError> for CommandError {
         error = ?err,
         "Command failed"
     );
+
     match err {
       AppError::Filesystem { source } => CommandError::User {
         message: source.to_string(),
       },
+
+      AppError::Validation(message) => CommandError::User { message },
 
       AppError::Database { source } => CommandError::User {
         message: source.to_string(),

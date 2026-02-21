@@ -29,7 +29,7 @@ pub async fn import_images(
     total_imported = summary.total_imported,
     walk_errors = summary.skipped,
     total_failed = summary.failed,
-    "Import images completed:"
+    "Import images completed!"
   );
 
   Ok(summary)
@@ -51,7 +51,7 @@ pub async fn toggle_favorite(
 
   tracing::info!(
     is_favorite = is_favorite,
-    "Image favorite toggle completed:"
+    "Image favorite toggle completed!"
   );
 
   Ok(is_favorite)
@@ -71,7 +71,7 @@ pub async fn soft_delete_image(
     .change_image_is_deleted(image_id, true)
     .await?;
 
-  tracing::info!("Image soft delete completed:");
+  tracing::info!("Image soft delete completed!");
 
   Ok(())
 }
@@ -90,7 +90,7 @@ pub async fn undo_soft_delete_image(
     .change_image_is_deleted(image_id, false)
     .await?;
 
-  tracing::info!("Image undo soft delete completed:");
+  tracing::info!("Image undo soft delete completed!");
 
   Ok(())
 }

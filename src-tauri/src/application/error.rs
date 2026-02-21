@@ -12,6 +12,9 @@ pub enum AppError {
     source: FSError,
   },
 
+  #[error("{0}")]
+  Validation(String),
+
   #[error("Database error")]
   Database {
     #[from]

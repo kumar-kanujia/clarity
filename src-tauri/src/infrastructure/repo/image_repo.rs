@@ -26,7 +26,7 @@ impl ImageRepository {
   pub async fn create_images_by_file_metadata(
     &self,
     files: &[FileMetaData],
-  ) -> Result<i64, DatabaseError> {
+  ) -> Result<u64, DatabaseError> {
     if files.is_empty() {
       return Ok(0);
     }
@@ -54,7 +54,7 @@ impl ImageRepository {
 
     tx.commit().await?;
 
-    Ok(total_inserted as i64)
+    Ok(total_inserted)
   }
 
   // endregion
