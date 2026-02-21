@@ -3,7 +3,7 @@ use crate::{
     models::tag_model::{TagItemRow, TagType},
     repo::error::DatabaseError,
   },
-  state::Db,
+  setup::state::Db,
 };
 
 pub struct ImageTagRepository {

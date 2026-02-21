@@ -2,14 +2,14 @@ pub mod dbsetup;
 pub mod error;
 pub mod logger;
 pub mod settings;
+pub mod state;
 
 use crate::{
   application::worker::{
     Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
   },
   infrastructure::{repo::image_repo::ImageRepository, utils::get_num_threads},
-  setup::dbsetup::setup_db,
-  state::AppState,
+  setup::{dbsetup::setup_db, state::AppState},
 };
 
 use std::{error::Error, sync::Arc};
@@ -44,10 +44,9 @@ pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   let shutdown = CancellationToken::new();
 
-  app_handle.manage(AppState {
-    db: db.clone(),
-    shutdown: shutdown.clone(),
-  });
+  tracing::info!("Setting up query service");
+
+  app_handle.manage(AppState::new(db.clone(), shutdown.clone()));
 
   tracing::info!("Setting up Workers");
 

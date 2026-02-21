@@ -2,13 +2,11 @@
 use crate::{
   domain::{file::FileMetaData, image::Image},
   infrastructure::{
-    models::image_model::{ImageRow, ImageStatus},
+    models::image_model::{ImageItemRow, ImageRow, ImageStatus},
     repo::error::DatabaseError,
   },
-  state::Db,
-};
-use crate::{
-  infrastructure::models::image_model::ImageItemRow, interface::dtos::image_dto::CreatedAtCursor,
+  interface::dtos::image_dto::CreatedAtCursor,
+  setup::state::Db,
 };
 
 use sqlx::QueryBuilder;
@@ -212,10 +210,10 @@ impl ImageRepository {
 
   pub async fn get_images_paginated(
     &self,
+    cursor: Option<CreatedAtCursor>,
     limit: i64,
     is_deleted: bool,
     is_favorite: Option<bool>,
-    cursor: Option<CreatedAtCursor>,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
     let mut qb = QueryBuilder::new(
       r#" 
@@ -255,9 +253,9 @@ impl ImageRepository {
 
   pub async fn get_images_by_tag_paginated(
     &self,
-    tag_id: i64,
-    limit: i64,
     cursor: Option<CreatedAtCursor>,
+    limit: i64,
+    tag_id: i64,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
     let mut qb = QueryBuilder::new(
       r#" 

@@ -3,7 +3,6 @@ mod domain;
 mod infrastructure;
 mod interface;
 mod setup;
-mod state;
 
 use crate::{
   interface::command::{
@@ -25,10 +24,10 @@ pub fn run() {
     .plugin(tauri_plugin_opener::init())
     .invoke_handler(tauri::generate_handler![
       import_images,
+      fetch_gallery,
       toggle_favorite,
       soft_delete_image,
       undo_soft_delete_image,
-      fetch_gallery,
       fetch_favorites,
       fetch_bin,
       fetch_tag_gallery,

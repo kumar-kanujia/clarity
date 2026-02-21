@@ -17,34 +17,13 @@ CREATE TABLE IF NOT EXISTS images (
   is_deleted      INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0, 1))
 ) STRICT;
 
+
 CREATE TRIGGER IF NOT EXISTS trg_images_updated_at
 AFTER UPDATE ON images
 BEGIN
     UPDATE images
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = NEW.id;
-END;
-
--- Trigger: Decrement tag counts when an image is sent to the trash
-
-CREATE TRIGGER IF NOT EXISTS trg_image_soft_delete
-AFTER UPDATE OF is_deleted ON images
-WHEN OLD.is_deleted = 0 AND NEW.is_deleted = 1
-BEGIN
-    UPDATE tags 
-    SET image_count = image_count - 1 
-    WHERE id IN (SELECT tag_id FROM image_tags WHERE image_id = NEW.id);
-END;
-
--- Trigger: Increment tag counts when an image is restored from the bin
-
-CREATE TRIGGER IF NOT EXISTS trg_image_restore
-AFTER UPDATE OF is_deleted ON images
-WHEN OLD.is_deleted = 1 AND NEW.is_deleted = 0
-BEGIN
-    UPDATE tags 
-    SET image_count = image_count + 1 
-    WHERE id IN (SELECT tag_id FROM image_tags WHERE image_id = NEW.id);
 END;
 
 CREATE INDEX IF NOT EXISTS idx_images_active_pagination 

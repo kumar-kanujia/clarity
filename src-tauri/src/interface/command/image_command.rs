@@ -5,7 +5,7 @@ use crate::{
   },
   infrastructure::repo::image_repo::ImageRepository,
   interface::{dtos::image_dto::ImportSummary, error::CommandError},
-  state::AppState,
+  setup::state::AppState,
 };
 
 use tauri::State;

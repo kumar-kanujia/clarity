@@ -4,7 +4,7 @@ use crate::{
   application::service::image_tag_service::ImageTagService,
   infrastructure::repo::image_tag_repo::ImageTagRepository,
   interface::{dtos::tag_dto::TagItem, error::CommandError},
-  state::AppState,
+  setup::state::AppState,
 };
 
 #[tauri::command]

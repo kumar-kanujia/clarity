@@ -2,7 +2,7 @@ use crate::{
   application::service::tag_service::TagService,
   infrastructure::repo::tag_repo::TagRepository,
   interface::{dtos::tag_dto::TagItem, error::CommandError},
-  state::AppState,
+  setup::state::AppState,
 };
 
 use tauri::State;
