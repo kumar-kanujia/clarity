@@ -1,6 +1,5 @@
 import { MainImageView } from "@/components/view"
 import { getBinQueryOptions } from "@/features/bin/hooks"
-import { getFavoritesQueryOptions } from "@/features/favorites/hooks"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
 
@@ -12,6 +11,6 @@ export const Route = createFileRoute("/bin")({
 })
 
 function BinPage() {
-  const queryOptions = useMemo(() => getFavoritesQueryOptions(), [])
+  const queryOptions = useMemo(() => getBinQueryOptions(), [])
   return <MainImageView queryOptions={queryOptions} />
 }

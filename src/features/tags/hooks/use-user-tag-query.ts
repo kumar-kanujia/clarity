@@ -6,51 +6,45 @@ import {
 } from "@/services/tauri"
 import { queryOptions } from "@tanstack/react-query"
 
-const allTagsQueryKey = "tags"
+export const allTagsQueryKey = ["tags"]
 
-export const useGetAllTags = () => {
-  const option = queryOptions({
-    queryKey: [allTagsQueryKey],
+export const getAllTagsQueryOption = () =>
+  queryOptions({
+    queryKey: allTagsQueryKey,
     queryFn: async () => {
       return await fetchAllTags()
     }
   })
 
-  return { queryKey: allTagsQueryKey, queryOption: option }
-}
+export const topTagsQueryKey = ["tags", "top-tags"]
 
-const topTagsQueryKey = "top-tags"
-
-export const useGetTopTags = () => {
-  const option = queryOptions({
-    queryKey: [topTagsQueryKey],
+export const getTopQueryOptions = () =>
+  queryOptions({
+    queryKey: topTagsQueryKey,
     queryFn: async () => {
       const tags = await fetchTopTags()
-      return tags.slice(0, 5)
+      return tags
     }
   })
 
-  return { queryKey: topTagsQueryKey, queryOption: option }
-}
+export const attachedTagsQueryKey = ["tags", "attached-tags"]
 
-export const useGetAttachedTags = (imageId: number, limit: number) => {
-  const option = queryOptions({
-    queryKey: ["attached-tags", imageId],
+export const getAttachedTagsQueryOptions = (imageId: number, limit: number) => {
+  return queryOptions({
+    queryKey: [...attachedTagsQueryKey, imageId],
     queryFn: async () => {
       return await fetchAttachedTags({ imageId, limit })
     }
   })
-
-  return { queryKey: "attached-tags", queryOption: option }
 }
 
+export const availableTagsQueryKey = ["tags", "available-tags"]
+
 export const useGetAvilableTags = (imageId: number, limit: number) => {
-  const option = queryOptions({
-    queryKey: ["available-tags", imageId],
+  return queryOptions({
+    queryKey: [...availableTagsQueryKey, imageId],
     queryFn: async () => {
       return await fetchAvailableTags({ imageId, limit })
     }
   })
-
-  return { queryKey: "attached-tags", queryOption: option }
 }

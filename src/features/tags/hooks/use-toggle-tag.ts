@@ -1,9 +1,9 @@
-import { toggleTag } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-export const useToggleTag = () => {
-  const qc = useQueryClient()
+import { toggleTag } from "@/services/tauri"
 
+export const useToggleTag = (imageId: number) => {
+  const qc = useQueryClient()
   const { mutate, isSuccess, isPending } = useMutation({
     mutationFn: async ({
       imageId,
@@ -15,11 +15,10 @@ export const useToggleTag = () => {
       let res = await toggleTag({ imageId, tagId })
       return res
     },
-
     onSuccess: async () => {
       Promise.all([
-        qc.invalidateQueries({ queryKey: ["attached-tags"] }),
-        qc.invalidateQueries({ queryKey: ["available-tags"] }),
+        qc.invalidateQueries({ queryKey: ["tags", "attached-tags", imageId] }),
+        qc.invalidateQueries({ queryKey: ["tags", "available-tags", imageId] }),
         qc.invalidateQueries({ queryKey: ["tags"] })
       ])
     }

@@ -1,5 +1,6 @@
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { motion } from "motion/react"
 
 import type { ImageItemResult } from "@/services/tauri"
 
@@ -21,7 +22,6 @@ import {
 import { ImageOptions } from "./image-options"
 import { ImageCard } from "./image-card"
 import { ImageLightbox } from "./image-lightbox"
-import { motion } from "motion/react"
 
 interface MainImageViewProps<T extends AnyInfiniteQueryOptions> {
   queryOptions: T
@@ -142,13 +142,20 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
         >
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
             {images.map((image, index) => (
-              <ImageOptions id={image.id} key={image.id}>
-                <ImageCard
-                  image={image}
-                  index={index}
-                  onClick={() => onImageClick(index)}
-                />
-              </ImageOptions>
+              <div
+                key={image.id}
+                ref={(el) => {
+                  imageRefs.current[index] = el
+                }}
+              >
+                <ImageOptions imageId={image.id}>
+                  <ImageCard
+                    image={image}
+                    index={index}
+                    onClick={() => onImageClick(index)}
+                  />
+                </ImageOptions>
+              </div>
             ))}
           </div>
         </motion.div>
@@ -157,7 +164,7 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
             data={images}
             index={index}
             setIndex={setIndex}
-            onClick={onViewBoxClose}
+            onClose={onViewBoxClose}
           />
         )}
       </div>

@@ -30,7 +30,7 @@ export const useUploadImage = () => {
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [galleryQueryKey] })
+      qc.invalidateQueries({ queryKey: galleryQueryKey })
     }
   })
 

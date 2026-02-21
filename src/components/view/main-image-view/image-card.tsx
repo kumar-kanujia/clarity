@@ -1,10 +1,10 @@
+import { useLocation } from "@tanstack/react-router"
 import { motion } from "motion/react"
 import type { ReactNode } from "react"
 
 import { convertFileSrc } from "@tauri-apps/api/core"
 
 import type { ImageItem } from "@/services/tauri"
-import { useLocation } from "@tanstack/react-router"
 import { FavoriteButton, UndoBinButton } from "./action-buttons"
 
 interface ImageCardProps {
@@ -60,12 +60,9 @@ const ImageInfo = ({ image }: { image: ImageItem }) => (
     <p className="text-[11px] text-white font-medium truncate">
       {image.fileName}
     </p>
-
     <div className="flex items-center gap-2 mt-0.5">
       <span className="text-[9px] text-white/60">{image.resolution}</span>
-
       <span className="w-1 h-1 rounded-full bg-white/30" />
-
       <span className="text-[9px] text-white/60">{image.size}</span>
     </div>
   </div>
@@ -117,13 +114,11 @@ const Wrapper = ({
         stiffness: 380,
         damping: 32
       },
-
       opacity: {
         duration: 0.2,
         ease: "easeOut",
         delay: Math.min(index * 0.02, 0.12)
       },
-
       y: {
         type: "spring",
         stiffness: 300,

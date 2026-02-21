@@ -47,7 +47,10 @@ export const TagCard = ({ tag }: { tag: TagItem }) => {
               variant="ghost"
               size="icon"
               className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              onClick={() => openEditDialog(tag)}
+              onClick={(e) => {
+                e.stopPropagation()
+                openEditDialog(tag)
+              }}
             >
               <Edit2 />
             </Button>
@@ -55,7 +58,10 @@ export const TagCard = ({ tag }: { tag: TagItem }) => {
               variant="ghost"
               size="icon"
               className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:text-destructive"
-              onClick={() => openDeleteDialog(tag)}
+              onClick={(e) => {
+                e.stopPropagation()
+                openDeleteDialog(tag)
+              }}
             >
               <Trash2 />
             </Button>

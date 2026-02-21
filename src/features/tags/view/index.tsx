@@ -2,20 +2,20 @@ import { TagIcon } from "lucide-react"
 
 import { CreateTagDialog } from "../components/create-tag-dialog"
 import { useQuery } from "@tanstack/react-query"
-import { useGetAllTags } from "../hooks/use-user-tag-query"
+import { getAllTagsQueryOption } from "../hooks/use-user-tag-query"
 
 import { TagCard } from "../components/tag-card"
 import { DeleteTagDialog } from "../components/delete-tag-dialog"
 import { EditTagDialog } from "../components/edit-tag-dialog"
 
 const TagHeader = () => (
-  <header className="h-16 border-b flex items-center justify-between px-16 bg-background/50 backdrop-blur-md sticky top-0 z-30">
+  <header className="h-16 border-b flex items-center justify-between px-8 bg-background/50 backdrop-blur-md sticky top-0 z-30">
     <div className="flex flex-col">
       <h1 className="text-sm font-bold tracking-widest uppercase">
         Management
       </h1>
       <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
-        Organize your collection with Tags
+        Organize your images with Tags
       </p>
     </div>
     <CreateTagDialog />
@@ -23,9 +23,9 @@ const TagHeader = () => (
 )
 
 export const TagsView = () => {
-  const { queryOption } = useGetAllTags()
+  const allTagsQueryOption = getAllTagsQueryOption()
 
-  const { data: tags, isLoading, isSuccess } = useQuery(queryOption)
+  const { data: tags, isLoading, isSuccess } = useQuery(allTagsQueryOption)
 
   return (
     <>

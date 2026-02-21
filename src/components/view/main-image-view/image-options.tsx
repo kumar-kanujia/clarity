@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/context-menu"
 
 import {
-  useGetAttachedTags,
+  getAttachedTagsQueryOptions,
   useGetAvilableTags,
   useToggleTag
 } from "@/features/tags/hooks"
@@ -23,23 +23,14 @@ import { useMoveToBin } from "@/features/bin/hooks"
 
 interface ImageOptionsProps {
   children: ReactNode
-  id: number
+  imageId: number
 }
 
-export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
+export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
   const { pathname } = useLocation()
 
-  const { queryOption: attachedQueryOption } = useGetAttachedTags(id, 5)
-  const { queryOption: availableQueryOption } = useGetAvilableTags(id, 5)
-
-  const { mutate, isPending } = useMoveToBin(id)
-
-  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
-
-  const handleMoveToBin = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    mutate()
-  }
+  const attachedQueryOption = getAttachedTagsQueryOptions(imageId, 5)
+  const availableQueryOption = useGetAvilableTags(imageId, 5)
 
   const { data: attachedTagData, isSuccess: attachedTagFetchSuccess } =
     useQuery(attachedQueryOption)
@@ -47,9 +38,12 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
   const { data: availableTagData, isSuccess: availableTagFetchSuccess } =
     useQuery(availableQueryOption)
 
-  if (pathname === "/bin") {
-    return <>{children}</>
-  }
+  const { mutate: moveToBin, isPending: isMoveToBinPending } =
+    useMoveToBin(imageId)
+
+  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag(imageId)
+
+  if (pathname === "/bin") return <>{children}</>
 
   return (
     <ContextMenu>
@@ -62,7 +56,7 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
               {attachedTagData.map((tag) => (
                 <ContextMenuItem
                   key={tag.id}
-                  onClick={() => toggleTag({ imageId: id, tagId: tag.id })}
+                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
                   disabled={isTagPending}
                 >
                   <TagIcon
@@ -76,7 +70,6 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
             <ContextMenuSeparator />
           </>
         )}
-
         {availableTagFetchSuccess && availableTagData.length > 0 && (
           <>
             <ContextMenuGroup>
@@ -84,7 +77,7 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
               {availableTagData.map((tag) => (
                 <ContextMenuItem
                   key={tag.id}
-                  onClick={() => toggleTag({ imageId: id, tagId: tag.id })}
+                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
                   disabled={isTagPending}
                 >
                   <TagIcon
@@ -98,14 +91,16 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
             <ContextMenuSeparator />
           </>
         )}
-
         <ContextMenuGroup>
           <ContextMenuItem
             variant="destructive"
-            onClick={handleMoveToBin}
-            disabled={isPending}
+            onClick={(e) => {
+              e.stopPropagation()
+              moveToBin()
+            }}
+            disabled={isMoveToBinPending}
           >
-            <Trash2 /> Move to Bin
+            <Trash2 className="mr-2 size-4" /> Move to Bin
           </ContextMenuItem>
         </ContextMenuGroup>
       </ContextMenuContent>

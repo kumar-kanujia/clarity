@@ -25,14 +25,14 @@ import {
   SidebarMenuItem
 } from "@/components/ui/sidebar"
 import { useUploadImage } from "@/features/gallery/hooks/use-upload-image"
-import { useGetTopTags } from "@/features/tags/hooks"
+import { getTopQueryOptions } from "@/features/tags/hooks"
 
 export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
   const { mutate } = useUploadImage()
 
-  const { queryOption } = useGetTopTags()
+  const tagQueryOption = getTopQueryOptions()
 
-  const { data, isSuccess } = useQuery(queryOption)
+  const { data, isSuccess } = useQuery(tagQueryOption)
 
   const { pathname } = useLocation()
 

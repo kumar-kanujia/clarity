@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog"
+
 import { Button } from "@/components/ui/button"
 
 import { cn } from "@/lib/utils"
@@ -46,8 +47,6 @@ export const EditTagDialog = () => {
       tagColor: TAG_COLORS[0]
     }
   })
-
-  console.log(form.getValues(), tag)
 
   useEffect(() => {
     if (tag) {

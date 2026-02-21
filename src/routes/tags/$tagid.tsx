@@ -14,6 +14,6 @@ export const Route = createFileRoute("/tags/$tagid")({
 
 function RouteComponent() {
   const { tagid } = useParams({ from: "/tags/$tagid" })
-  const queryOptions = useMemo(() => getTagQueryOptions(Number(tagid)), [])
+  const queryOptions = useMemo(() => getTagQueryOptions(Number(tagid)), [tagid])
   return <MainImageView queryOptions={queryOptions} />
 }
