@@ -39,7 +39,7 @@ export const CreateTagDialog = () => {
 
   const form = useForm<CreateTagParams>({
     defaultValues: {
-      tagText: "",
+      tagName: "",
       color: TAG_COLORS[0]
     }
   })
@@ -51,7 +51,7 @@ export const CreateTagDialog = () => {
       setIsOpen(open)
       if (!open) {
         form.reset({
-          tagText: "",
+          tagName: "",
           color: TAG_COLORS[0]
         })
       }
@@ -66,7 +66,7 @@ export const CreateTagDialog = () => {
           handleOpenChange(false)
         },
         onError: () => {
-          form.setError("tagText", {
+          form.setError("tagName", {
             type: "server",
             message:
               "Tag with this name already exists. Please choose a different name."
@@ -101,7 +101,7 @@ export const CreateTagDialog = () => {
             <FieldGroup>
               {/* TAG NAME */}
               <Controller
-                name="tagText"
+                name="tagName"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field>
