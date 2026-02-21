@@ -1,8 +1,7 @@
 use crate::{
-  domain::file::FileMetaData, error::AppError, infrastructure::repo::image_repo::ImageRepository,
+  application::error::AppError, domain::file::FileMetaData,
+  infrastructure::repo::image_repo::ImageRepository,
 };
-
-pub const CHUNK_SIZE: usize = 50;
 
 pub struct ImageMutationService {
   repo: ImageRepository,
@@ -18,18 +17,17 @@ impl ImageMutationService {
     &self,
     image_metadata: &[FileMetaData],
   ) -> Result<i64, AppError> {
-    let mut imported = 0;
+    let imported = self
+      .repo
+      .create_images_by_file_metadata(image_metadata)
+      .await?;
 
-    for chunk in image_metadata.chunks(CHUNK_SIZE) {
-      imported += self.repo.create_images_by_file_metadata(chunk).await? as i64;
-    }
-
-    Ok(imported)
+    Ok(imported as i64)
   }
 
   #[tracing::instrument(skip(self))]
   pub async fn change_image_is_favorite(&self, image_id: i64) -> Result<bool, AppError> {
-    let is_favorite = self.repo.update_image_is_favorite(image_id).await?;
+    let is_favorite = self.repo.toggle_image_favorite(image_id).await?;
     Ok(is_favorite)
   }
 
@@ -38,11 +36,11 @@ impl ImageMutationService {
     &self,
     image_id: i64,
     is_deleted: bool,
-  ) -> Result<bool, AppError> {
-    let is_deleted = self
+  ) -> Result<(), AppError> {
+    self
       .repo
-      .update_image_is_deleted(image_id, is_deleted)
+      .set_image_deleted_status(image_id, is_deleted)
       .await?;
-    Ok(is_deleted)
+    Ok(())
   }
 }

@@ -4,8 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 export const useEditTag = () => {
   const qc = useQueryClient()
   const { mutate, isPending, isError, isSuccess } = useMutation({
-    mutationFn: async ({ tagId, tagColor, tagText }: EditTagParams) => {
-      await editTag({ tagId, tagColor, tagText })
+    mutationFn: async ({ tagId, tagColor, tagName }: EditTagParams) => {
+      await editTag({ tagId, tagColor, tagName })
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tags"] })

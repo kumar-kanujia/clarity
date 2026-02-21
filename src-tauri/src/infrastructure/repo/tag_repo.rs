@@ -1,9 +1,9 @@
 use crate::{
   infrastructure::{
-    models::tag_model::{TagRow, TagType},
+    models::tag_model::{TagItemRow, TagType},
     repo::error::DatabaseError,
   },
-  state::Db,
+  setup::state::Db,
 };
 
 #[derive(Debug, Clone)]
@@ -27,15 +27,15 @@ impl TagRepository {
     let query_str = r#"
             INSERT INTO tags (text, color, tag_type)
             VALUES (?1, ?2, ?3)
+            RETURNING id
         "#;
-    let result = sqlx::query(query_str)
+    let id = sqlx::query_scalar::<_, i64>(query_str)
       .bind(text)
       .bind(color)
       .bind(tag_type)
-      .execute(&self.db)
+      .fetch_one(&self.db)
       .await?;
-
-    Ok(result.last_insert_rowid())
+    Ok(id)
   }
 
   // endregion
@@ -48,6 +48,10 @@ impl TagRepository {
     tag_text: Option<String>,
     tag_color: Option<String>,
   ) -> Result<(), DatabaseError> {
+    if tag_text.is_none() && tag_color.is_none() {
+      return Ok(());
+    }
+
     let result = sqlx::query(
       r#"
         UPDATE tags
@@ -64,20 +68,13 @@ impl TagRepository {
     .await?;
 
     if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound(format!(
-        "Tag with id {} not found",
-        tag_id
-      )));
+      return Err(DatabaseError::NotFound);
     }
 
     Ok(())
   }
 
-  pub async fn update_tag_tag_type(
-    &self,
-    tag_id: i64,
-    tag_type: TagType,
-  ) -> Result<(), DatabaseError> {
+  pub async fn update_tag_type(&self, tag_id: i64, tag_type: TagType) -> Result<(), DatabaseError> {
     let query_str = r#"
             UPDATE tags
             SET tag_type = ?1
@@ -90,10 +87,7 @@ impl TagRepository {
       .await?;
 
     if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound(format!(
-        "Tag with id {} not found",
-        tag_id
-      )));
+      return Err(DatabaseError::NotFound);
     }
 
     Ok(())
@@ -103,29 +97,24 @@ impl TagRepository {
 
   // region: Tag Query
 
-  pub async fn get_tags_order_by_image_count(
+  pub async fn get_popular_tags(
     &self,
     tag_type: TagType,
     limit: Option<i64>,
-  ) -> Result<Vec<TagRow>, DatabaseError> {
-    let mut qb = sqlx::QueryBuilder::new(
+  ) -> Result<Vec<TagItemRow>, DatabaseError> {
+    let rows = sqlx::query_as::<_, TagItemRow>(
       r#"
-        SELECT *
+        SELECT id, text, color, image_count
         FROM tags
-        WHERE tag_type = 
-        "#,
-    );
-
-    qb.push_bind(tag_type);
-
-    qb.push(" ORDER BY image_count DESC");
-
-    if let Some(limit) = limit {
-      qb.push(" LIMIT ");
-      qb.push_bind(limit);
-    }
-
-    let rows = qb.build_query_as::<TagRow>().fetch_all(&self.db).await?;
+        WHERE tag_type = ?1
+        ORDER BY image_count DESC
+        LIMIT ?2
+      "#,
+    )
+    .bind(tag_type)
+    .bind(limit.unwrap_or(-1))
+    .fetch_all(&self.db)
+    .await?;
 
     Ok(rows)
   }

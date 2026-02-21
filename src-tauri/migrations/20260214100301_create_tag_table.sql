@@ -18,5 +18,6 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE INDEX IF NOT EXISTS idx_tags_image_count
-ON tags(image_count DESC);
+
+CREATE INDEX IF NOT EXISTS idx_tags_type_count 
+ON tags (tag_type, image_count DESC);

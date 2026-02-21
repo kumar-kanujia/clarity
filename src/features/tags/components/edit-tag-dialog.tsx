@@ -42,7 +42,7 @@ export const EditTagDialog = () => {
   const form = useForm<EditTagParams>({
     defaultValues: {
       tagId: 0,
-      tagText: "",
+      tagName: "",
       tagColor: TAG_COLORS[0]
     }
   })
@@ -52,7 +52,7 @@ export const EditTagDialog = () => {
   useEffect(() => {
     if (tag) {
       form.setValue("tagId", tag.id)
-      form.setValue("tagText", tag.tagName)
+      form.setValue("tagName", tag.tagName)
       form.setValue("tagColor", tag.tagColor)
     }
   }, [tag, form])
@@ -64,7 +64,7 @@ export const EditTagDialog = () => {
           closeEditDialog()
         },
         onError: () => {
-          form.setError("tagText", {
+          form.setError("tagName", {
             type: "server",
             message:
               "Tag with this name already exists. Please choose a different name."
@@ -94,7 +94,7 @@ export const EditTagDialog = () => {
             <FieldGroup>
               {/* TAG NAME */}
               <Controller
-                name="tagText"
+                name="tagName"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field>

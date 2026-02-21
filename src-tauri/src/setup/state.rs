@@ -7,3 +7,9 @@ pub struct AppState {
   pub db: Db,
   pub shutdown: CancellationToken,
 }
+
+impl AppState {
+  pub fn new(db: Db, shutdown: CancellationToken) -> Self {
+    Self { db, shutdown }
+  }
+}

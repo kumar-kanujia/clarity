@@ -1,6 +1,6 @@
 use crate::infrastructure::{
   models::image_model::{ImageRow, ImageStatus},
-  system::format_datetime,
+  utils::format_datetime,
 };
 
 use std::sync::OnceLock;

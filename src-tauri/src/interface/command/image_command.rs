@@ -1,108 +1,96 @@
 use crate::{
   application::{
-    service::{file_scan_service::FileScanService, image_mutation_service::ImageMutationService},
-    workflow::scan_and_import_images::ScanAndImportImages,
+    service::image_mutation_service::ImageMutationService,
+    workflow::image_import_wrokflow::ImageImportWorkflow,
   },
   infrastructure::repo::image_repo::ImageRepository,
-  interface::dtos::image_dto::ImportSummary,
-  state::AppState,
+  interface::{dtos::image_dto::ImportSummary, error::CommandError},
+  setup::state::AppState,
 };
 
 use tauri::State;
 
 #[tauri::command]
+#[tracing::instrument(skip(state, paths), fields(path_count = paths.len()))]
 pub async fn import_images(
   state: State<'_, AppState>,
   paths: Vec<String>,
-) -> Result<ImportSummary, String> {
-  let span = tracing::info_span!("import_images", paths = paths.len());
-  let _enter = span.enter();
+) -> Result<ImportSummary, CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
 
-  let repo = ImageRepository::new(state.db.clone());
+  let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let mutation_service = ImageMutationService::new(repo);
+  let image_import_workflow = ImageImportWorkflow::new(image_mutation_service);
 
-  let file_service = FileScanService::default();
+  let summary = image_import_workflow.scan_and_import_images(&paths).await?;
 
-  let wf = ScanAndImportImages::new(mutation_service, file_service);
+  tracing::info!(
+    total_scanned = summary.total_scanned,
+    total_imported = summary.total_imported,
+    walk_errors = summary.skipped,
+    total_failed = summary.failed,
+    "Import images completed!"
+  );
 
-  match wf.scan_and_import_images(&paths).await {
-    Ok(summary) => {
-      tracing::info!("Import completed");
-      Ok(summary)
-    }
-    Err(err) => {
-      tracing::error!(
-          error = ?err,
-          "Import failed"
-      );
-      Err(err.into())
-    }
-  }
+  Ok(summary)
 }
 
 #[tauri::command]
-pub async fn toggle_favorite(state: State<'_, AppState>, image_id: i64) -> Result<bool, String> {
-  let span = tracing::info_span!("toggle_favorite", image_id);
-  let _enter = span.enter();
+#[tracing::instrument(skip(state), fields(image_id = image_id))]
+pub async fn toggle_favorite(
+  state: State<'_, AppState>,
+  image_id: i64,
+) -> Result<bool, CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
 
-  let repo = ImageRepository::new(state.db.clone());
+  let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let ms = ImageMutationService::new(repo);
+  let is_favorite = image_mutation_service
+    .change_image_is_favorite(image_id)
+    .await?;
 
-  match ms.change_image_is_favorite(image_id).await {
-    Ok(is_favorite) => {
-      tracing::info!(is_favorite, "Toggle favorite status changed:");
-      Ok(is_favorite)
-    }
-    Err(err) => {
-      tracing::error!(error = ?err, image_id = image_id, "toggle_favorite failed");
-      Err(err.into())
-    }
-  }
+  tracing::info!(
+    is_favorite = is_favorite,
+    "Image favorite toggle completed!"
+  );
+
+  Ok(is_favorite)
 }
 
 #[tauri::command]
-pub async fn soft_delete_image(state: State<'_, AppState>, image_id: i64) -> Result<bool, String> {
-  let span = tracing::info_span!("soft_delete_image", image_id);
-  let _enter = span.enter();
+#[tracing::instrument(skip(state), fields(image_id = image_id))]
+pub async fn soft_delete_image(
+  state: State<'_, AppState>,
+  image_id: i64,
+) -> Result<(), CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
 
-  let repo = ImageRepository::new(state.db.clone());
+  let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let ms = ImageMutationService::new(repo);
+  image_mutation_service
+    .change_image_is_deleted(image_id, true)
+    .await?;
 
-  match ms.change_image_is_deleted(image_id, true).await {
-    Ok(is_deleted) => {
-      tracing::info!(is_deleted, "Image marked as deleted: {}", image_id);
-      Ok(is_deleted)
-    }
-    Err(err) => {
-      tracing::error!(error = ?err, image_id = image_id, "soft_delete_image failed");
-      Err(err.into())
-    }
-  }
+  tracing::info!("Image soft delete completed!");
+
+  Ok(())
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state), fields(image_id = image_id))]
 pub async fn undo_soft_delete_image(
   state: State<'_, AppState>,
   image_id: i64,
-) -> Result<bool, String> {
-  let span = tracing::info_span!("undo_soft_delete_image", image_id);
-  let _enter = span.enter();
+) -> Result<(), CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
 
-  let repo = ImageRepository::new(state.db.clone());
+  let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let ms = ImageMutationService::new(repo);
+  image_mutation_service
+    .change_image_is_deleted(image_id, false)
+    .await?;
 
-  match ms.change_image_is_deleted(image_id, false).await {
-    Ok(is_deleted) => {
-      tracing::info!(is_deleted, "Image unmarked as deleted: {}", image_id);
-      Ok(is_deleted)
-    }
-    Err(err) => {
-      tracing::error!(error = ?err, image_id = image_id, "undo_soft_delete_image failed");
-      Err(err.into())
-    }
-  }
+  tracing::info!("Image undo soft delete completed!");
+
+  Ok(())
 }

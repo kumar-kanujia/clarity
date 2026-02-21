@@ -1,6 +1,6 @@
 use crate::{
   domain::image::Image,
-  infrastructure::{models::image_model::ImageItemRow, system::format_datetime},
+  infrastructure::{models::image_model::ImageItemRow, utils::format_datetime},
 };
 
 use serde::{Deserialize, Serialize};

@@ -1,5 +1,5 @@
 use crate::{
-  error::AppError,
+  application::error::AppError,
   infrastructure::{models::tag_model::TagType, repo::image_tag_repo::ImageTagRepository},
   interface::dtos::tag_dto::TagItem,
 };
@@ -14,10 +14,7 @@ impl ImageTagService {
   }
 
   pub async fn toggle_tag_on_image(&self, image_id: i64, tag_id: i64) -> Result<bool, AppError> {
-    let res = self
-      .repo
-      .create_or_delete_image_tag(image_id, tag_id)
-      .await?;
+    let res = self.repo.toggle_image_tag(image_id, tag_id).await?;
     Ok(res)
   }
 
@@ -30,7 +27,7 @@ impl ImageTagService {
       .repo
       .get_tags_attached_to_image(image_id, TagType::User, limit)
       .await?;
-    let res = raw.into_iter().map(|r| TagItem::from(r)).collect();
+    let res = raw.into_iter().map(TagItem::from).collect();
     Ok(res)
   }
 
@@ -43,7 +40,7 @@ impl ImageTagService {
       .repo
       .get_tags_not_attached_to_image(image_id, TagType::User, limit)
       .await?;
-    let res = raw.into_iter().map(|r| TagItem::from(r)).collect();
+    let res = raw.into_iter().map(TagItem::from).collect();
     Ok(res)
   }
 }

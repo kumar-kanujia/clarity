@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS images (
   is_deleted      INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0, 1))
 ) STRICT;
 
+
 CREATE TRIGGER IF NOT EXISTS trg_images_updated_at
 AFTER UPDATE ON images
 BEGIN
@@ -25,8 +26,9 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE INDEX IF NOT EXISTS idx_images_created_at_id
-ON images (created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_images_active_pagination 
+ON images (created_at DESC, id DESC) 
+WHERE is_deleted = 0;
 
 CREATE INDEX IF NOT EXISTS idx_images_work_queue
 ON images (status, retry_count, created_at DESC);
