@@ -1,10 +1,19 @@
-import { TagIdView } from "@/features/tags/view/tag-id"
-import { createFileRoute } from "@tanstack/react-router"
+import { MainImageView } from "@/components/view"
+import { getTagQueryOptions } from "@/features/tags/hooks/get-tag-query-options"
+import { createFileRoute, useParams } from "@tanstack/react-router"
+import { useMemo } from "react"
 
 export const Route = createFileRoute("/tags/$tagid")({
-  component: RouteComponent
+  component: RouteComponent,
+  loader: ({ context, params }) => {
+    context.queryClient.ensureInfiniteQueryData(
+      getTagQueryOptions(Number.parseInt(params.tagid))
+    )
+  }
 })
 
 function RouteComponent() {
-  return <TagIdView />
+  const { tagid } = useParams({ from: "/tags/$tagid" })
+  const queryOptions = useMemo(() => getTagQueryOptions(Number(tagid)), [])
+  return <MainImageView queryOptions={queryOptions} />
 }

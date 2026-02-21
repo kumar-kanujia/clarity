@@ -1,9 +1,11 @@
 import { fetchTagGallery, type CreatedAtCursor } from "@/services/tauri"
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
-export const useTagQueryOptions = (tagId: number) => {
-  const option = infiniteQueryOptions({
-    queryKey: ["all", "tags", tagId],
+export const tagQueryKey = ["tags"]
+
+export const getTagQueryOptions = (tagId: number) =>
+  infiniteQueryOptions({
+    queryKey: [...tagQueryKey, tagId],
     queryFn: async ({ pageParam = null }) => {
       const res = await fetchTagGallery({
         tagId,
@@ -16,6 +18,3 @@ export const useTagQueryOptions = (tagId: number) => {
       return lastPage?.nextCursor ?? null
     }
   })
-
-  return { queryKey: tagId, queryOption: option }
-}

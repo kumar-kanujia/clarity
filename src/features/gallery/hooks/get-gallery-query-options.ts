@@ -1,10 +1,11 @@
-import { fetchGallery, type CreatedAtCursor } from "@/services/tauri"
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
-export const galleryQueryKey = ["all", "gallery"]
+import { fetchGallery, type CreatedAtCursor } from "@/services/tauri"
 
-export const useGalleryQueryOptions = () => {
-  const option = infiniteQueryOptions({
+export const galleryQueryKey = ["main-gallery"]
+
+export const getGalleryQueryOptions = () =>
+  infiniteQueryOptions({
     queryKey: galleryQueryKey,
     queryFn: async ({ pageParam = null }) => {
       const res = await fetchGallery({
@@ -17,6 +18,3 @@ export const useGalleryQueryOptions = () => {
       return lastPage?.nextCursor ?? null
     }
   })
-
-  return { queryKey: galleryQueryKey, queryOption: option }
-}

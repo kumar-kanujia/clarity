@@ -1,6 +1,6 @@
 import { toggleFavorite } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { favoriteQueryKey } from "./use-favorites-query-options"
+import { favoriteQueryKey } from "./get-favorites-query-options"
 
 export const useToggleFavorite = (imageId: number) => {
   const qc = useQueryClient()

@@ -1,4 +1,7 @@
 import { type ReactNode } from "react"
+import { TagIcon, Trash2 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { useLocation } from "@tanstack/react-router"
 
 import {
   ContextMenu,
@@ -9,15 +12,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger
 } from "@/components/ui/context-menu"
-import { TagIcon, Trash2 } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+
 import {
   useGetAttachedTags,
   useGetAvilableTags,
   useToggleTag
 } from "@/features/tags/hooks"
+
 import { useMoveToBin } from "@/features/bin/hooks"
-import { useLocation } from "@tanstack/react-router"
 
 interface ImageOptionsProps {
   children: ReactNode

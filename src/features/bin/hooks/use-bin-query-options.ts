@@ -1,10 +1,10 @@
 import { fetchBin, type CreatedAtCursor } from "@/services/tauri"
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
-export const binQueryKey = ["all", "bin"]
+export const binQueryKey = ["bin"]
 
-export const useBinQueryOptions = () => {
-  const option = infiniteQueryOptions({
+export const getBinQueryOptions = () =>
+  infiniteQueryOptions({
     queryKey: binQueryKey,
     queryFn: async ({ pageParam = null }) => {
       const res = await fetchBin({
@@ -17,6 +17,3 @@ export const useBinQueryOptions = () => {
       return lastPage?.nextCursor ?? null
     }
   })
-
-  return { queryKey: binQueryKey, queryOption: option }
-}

@@ -1,7 +1,7 @@
 import { importImages } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { open } from "@tauri-apps/plugin-dialog"
-import { galleryQueryKey } from "./use-gallery-query-options"
+import { galleryQueryKey } from "./get-gallery-query-options"
 
 type Uploadtype = "file" | "directory"
 
@@ -30,7 +30,7 @@ export const useUploadImage = () => {
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: galleryQueryKey })
+      qc.invalidateQueries({ queryKey: [galleryQueryKey] })
     }
   })
 
