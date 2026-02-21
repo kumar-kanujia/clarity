@@ -27,7 +27,7 @@ impl ImageTagService {
       .repo
       .get_tags_attached_to_image(image_id, TagType::User, limit)
       .await?;
-    let res = raw.into_iter().map(|r| TagItem::from(r)).collect();
+    let res = raw.into_iter().map(TagItem::from).collect();
     Ok(res)
   }
 
@@ -40,7 +40,7 @@ impl ImageTagService {
       .repo
       .get_tags_not_attached_to_image(image_id, TagType::User, limit)
       .await?;
-    let res = raw.into_iter().map(|r| TagItem::from(r)).collect();
+    let res = raw.into_iter().map(TagItem::from).collect();
     Ok(res)
   }
 }

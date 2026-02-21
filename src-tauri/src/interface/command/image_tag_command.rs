@@ -1,11 +1,11 @@
-use tauri::State;
-
 use crate::{
   application::service::image_tag_service::ImageTagService,
   infrastructure::repo::image_tag_repo::ImageTagRepository,
   interface::{dtos::tag_dto::TagItem, error::CommandError},
   setup::state::AppState,
 };
+
+use tauri::State;
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(image_id = image_id, tag_id = tag_id))]
@@ -22,11 +22,7 @@ pub async fn toggle_tag(
     .toggle_tag_on_image(image_id, tag_id)
     .await?;
 
-  tracing::info!(
-    is_attached = is_attached,
-    "Tag toggle on image {} completed:",
-    image_id
-  );
+  tracing::info!(is_attached = is_attached, "Tag toggle on image completed");
 
   Ok(is_attached)
 }
@@ -46,11 +42,7 @@ pub async fn fetch_attached_tags(
     .list_attached_tags_on_image(image_id, limit)
     .await?;
 
-  tracing::info!(
-    tags_len = tags.len(),
-    "Fetch tags for image {} completed:",
-    image_id
-  );
+  tracing::info!(tags_len = tags.len(), "Fetch attached tags completed");
 
   Ok(tags)
 }
@@ -70,7 +62,7 @@ pub async fn fetch_available_tags(
     .list_available_tags_on_image(image_id, limit)
     .await?;
 
-  tracing::info!(tags_len = tags.len(), "Fetch available tags comlete");
+  tracing::info!(tags_len = tags.len(), "Fetch available tags completed");
 
   Ok(tags)
 }
