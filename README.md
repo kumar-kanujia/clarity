@@ -1,30 +1,59 @@
 # Clarity
 
-**Clarity** is a lightweight desktop image application built with **Tauri** and **React**.
-Its primary goal is to help users **identify duplicate images** on their system and manage image clutter efficiently.
+**Clarity** is a lightweight desktop image management application built with **Tauri** and **React**.
+Its primary goal is to help users organize, browse, and deduplicate images on their system — fast and without moving a single file.
 
 ---
 
 ## ✨ Features
 
-- 🔍 **Duplicate Image Detection**
-  - Scan directories to find duplicate images
-  - Designed to be fast and memory-efficient
+- 🔍 **Image Import & Discovery**
+  - Scan files and directories recursively
+  - Supported formats: JPG, JPEG, PNG, WebP, BMP, GIF, HEIC
 
-- 🖼️ **Image Preview**
-  - View detected duplicates directly in the app
+- 🖼️ **Gallery Views**
+  - Main gallery, Favorites, Bin (soft-deleted), and Tag-filtered views
+  - Cursor-based pagination for large collections
+
+- 🏷️ **Tagging & Organization**
+  - Create, edit, and soft-delete custom tags (name + color)
+  - Toggle tags on/off per image
+  - Browse images filtered by tag
+
+- ⭐ **Favorites**
+  - Mark/unmark any image as a favorite
+  - Dedicated Favorites view
+
+- 🗑️ **Soft Delete (Bin)**
+  - Move images to Bin without touching files on disk
+  - Restore from Bin at any time
+
+- 🔑 **Content Hashing**
+  - Blake3 hash computed per file via background worker
+  - Lays the groundwork for duplicate detection
+
+- 🖼️ **Thumbnail Generation**
+  - 256px WebP thumbnails generated in the background after hashing
+  - Cached locally; generation never blocks the UI
 
 - ⚡ **Native Performance**
   - Powered by Tauri (Rust backend + React frontend)
+  - Rayon-parallel processing for hashing and thumbnail generation
+  - SQLite database with WAL mode and memory-mapped IO
 
 ---
 
 ## 🧰 Tech Stack
 
-- **Frontend**: React
-- **Backend**: Tauri
-- **Build Tool**: Vite + Cargo
-- **Language**: TypeScript + Rust
+| Layer    | Technology                           |
+| -------- | ------------------------------------ |
+| Frontend | React + TypeScript + TanStack Router |
+| Backend  | Tauri v2 (Rust)                      |
+| Database | SQLite via `sqlx`                    |
+| Build    | Vite + Cargo                         |
+| Styling  | (CSS / component library)            |
+
+**Key Rust crates:** `tauri`, `sqlx`, `tokio`, `rayon`, `image` (image-rs), `blake3`, `walkdir`, `tracing`
 
 ---
 
@@ -32,10 +61,10 @@ Its primary goal is to help users **identify duplicate images** on their system 
 
 Make sure the following are installed:
 
-- **Bun**
+- **pnpm**
 
   ```bash
-  curl -fsSL https://bun.com/install | bash
+  curl -fsSL https://get.pnpm.io/install.sh | sh -
   ```
 
 - **Rust**
@@ -44,7 +73,7 @@ Make sure the following are installed:
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   ```
 
-- **MacOS Build Tools**
+- **macOS Build Tools**
 
   ```bash
   xcode-select --install
@@ -61,12 +90,10 @@ git clone https://github.com/kumar-kanujia/clarity
 cd clarity
 ```
 
----
-
 ### Install Dependencies
 
 ```bash
-bun install
+pnpm install
 ```
 
 ---
@@ -76,41 +103,39 @@ bun install
 Run the app in development mode:
 
 ```bash
-bun tauri dev
+pnpm tauri dev
 ```
 
 This will:
 
-- Start the React dev server
+- Start the React dev server (Vite)
 - Launch the Tauri desktop application with hot reload
 
 ---
 
 ## 🏗️ Build
 
-To create a production build of the app ( for mac ):
+To create a production build (macOS):
 
 ```bash
-bun tauri build --bundles dmg
+pnpm tauri build --bundles dmg
 ```
 
-After building, the generated binaries and installers can be found in:
+Generated binaries and installers are placed in:
 
 ```
 src-tauri/target/release/
 ```
 
-The output format depends on your operating system (e.g. `.exe`, `.dmg`, `.AppImage`).
-
 ---
 
 ## 🛣️ Roadmap
 
-- Improved duplicate detection (perceptual hashing)
-- Bulk image actions (delete / move)
-- Folder exclusions
-- Performance optimizations
-- UI/UX improvements
+- [ ] Duplicate detection UI (BLAKE3 hashes are already computed)
+- [ ] Batch image actions (bulk delete / bulk tag)
+- [ ] Folder exclusions during import
+- [ ] Physical file deletion from Bin
+- [ ] Advanced search & filtering
 
 ---
 
@@ -128,5 +153,3 @@ Contributions are welcome!
 ## 📄 License
 
 MIT License
-
----

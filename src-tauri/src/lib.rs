@@ -22,6 +22,7 @@ pub fn run() {
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
+    .setup(app_setup)
     .invoke_handler(tauri::generate_handler![
       import_images,
       fetch_gallery,
@@ -42,7 +43,6 @@ pub fn run() {
       fetch_attached_tags,
       fetch_available_tags
     ])
-    .setup(app_setup)
     .build(tauri::generate_context!())
     .expect("error while running tauri application");
 
