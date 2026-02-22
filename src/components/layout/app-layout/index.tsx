@@ -13,7 +13,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
         "
       >
         <AppSidebar />
-        <div className="w-full h-full overflow-y-auto py-2">{children}</div>
+        <div className="w-full flex-1 overflow-y-auto py-2">{children}</div>
       </div>
     </div>
   )
