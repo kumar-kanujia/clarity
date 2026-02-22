@@ -11,24 +11,27 @@ use std::{
 
 use tauri::{AppHandle, Manager};
 
-// pub fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
-//   let cache_dir = app
-//     .path()
-//     .app_cache_dir()
-//     .map_err(|err| AppError::Internal { source: err })?;
-//   let target_dir = cache_dir.join(".thumbnails");
-
-//   ops::ensure_dir(&target_dir)?;
-
-//   Ok(target_dir)
-// }
-
+#[cfg(not(debug_assertions))]
 pub fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
   let cache_dir = app
     .path()
+    .app_cache_dir()
+    .map_err(|err| AppError::Internal { source: err })?;
+
+  let target_dir = cache_dir.join(".thumbnails");
+
+  ops::ensure_dir(&target_dir)?;
+
+  Ok(target_dir)
+}
+
+#[cfg(debug_assertions)]
+pub fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
+  let app_dir = app
+    .path()
     .app_data_dir()
     .map_err(|err| AppError::Internal { source: err })?;
-  let target_dir = cache_dir.join("org.clarity").join(".thumbnails");
+  let target_dir = app_dir.join(".thumbnails");
   ops::ensure_dir(&target_dir)?;
   Ok(target_dir)
 }
