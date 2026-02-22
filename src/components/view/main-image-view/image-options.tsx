@@ -1,7 +1,6 @@
-import { type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { TagIcon, Trash2 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
-import { useLocation } from "@tanstack/react-router"
 
 import {
   ContextMenu,
@@ -24,30 +23,52 @@ import { useMoveToBin } from "@/features/bin/hooks"
 interface ImageOptionsProps {
   children: ReactNode
   imageId: number
+  isBinView?: boolean
 }
 
-export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
-  const { pathname } = useLocation()
+// 1. The Gateway Component
+export const ImageOptions = ({
+  children,
+  imageId,
+  isBinView
+}: ImageOptionsProps) => {
+  if (isBinView) return <>{children}</>
 
-  const attachedQueryOption = getAttachedTagsQueryOptions(imageId, 5)
-  const availableQueryOption = getAvailableTagsQueryOptions(imageId, 5)
+  return <ActiveContextMenu imageId={imageId}>{children}</ActiveContextMenu>
+}
 
+// 2. The Active Component
+const ActiveContextMenu = ({
+  children,
+  imageId
+}: {
+  children: ReactNode
+  imageId: number
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  // Lazy fetching: only loads when context menu opens
   const { data: attachedTagData, isSuccess: attachedTagFetchSuccess } =
-    useQuery(attachedQueryOption)
+    useQuery({
+      ...getAttachedTagsQueryOptions(imageId, 5),
+      enabled: isOpen
+    })
 
   const { data: availableTagData, isSuccess: availableTagFetchSuccess } =
-    useQuery(availableQueryOption)
+    useQuery({
+      ...getAvailableTagsQueryOptions(imageId, 5),
+      enabled: isOpen
+    })
 
   const { mutate: moveToBin, isPending: isMoveToBinPending } =
     useMoveToBin(imageId)
-
   const { mutate: toggleTag, isPending: isTagPending } = useToggleTag(imageId)
 
-  if (pathname === "/bin") return <>{children}</>
-
   return (
-    <ContextMenu>
+    <ContextMenu onOpenChange={setIsOpen}>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
+
+      {/* Restored original styling */}
       <ContextMenuContent className="bg-zinc-900/80 w-48">
         {attachedTagFetchSuccess && attachedTagData.length > 0 && (
           <>
@@ -59,9 +80,10 @@ export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
                   onClick={() => toggleTag({ imageId, tagId: tag.id })}
                   disabled={isTagPending}
                 >
+                  {/* Restored original TagIcon styling */}
                   <TagIcon
                     style={{ backgroundColor: tag.tagColor }}
-                    className="p-2 rounded-3xl"
+                    className="p-2 rounded-3xl mr-2"
                   />
                   {tag.tagName}
                 </ContextMenuItem>
@@ -70,6 +92,7 @@ export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
             <ContextMenuSeparator />
           </>
         )}
+
         {availableTagFetchSuccess && availableTagData.length > 0 && (
           <>
             <ContextMenuGroup>
@@ -80,9 +103,10 @@ export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
                   onClick={() => toggleTag({ imageId, tagId: tag.id })}
                   disabled={isTagPending}
                 >
+                  {/* Restored original TagIcon styling */}
                   <TagIcon
                     style={{ backgroundColor: tag.tagColor }}
-                    className="p-2 rounded-3xl"
+                    className="p-2 rounded-3xl mr-2"
                   />
                   {tag.tagName}
                 </ContextMenuItem>
@@ -91,6 +115,7 @@ export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
             <ContextMenuSeparator />
           </>
         )}
+
         <ContextMenuGroup>
           <ContextMenuItem
             variant="destructive"
@@ -100,6 +125,7 @@ export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
             }}
             disabled={isMoveToBinPending}
           >
+            {/* Restored original Trash styling */}
             <Trash2 className="mr-2 size-4" /> Move to Bin
           </ContextMenuItem>
         </ContextMenuGroup>

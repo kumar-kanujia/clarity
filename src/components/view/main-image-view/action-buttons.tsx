@@ -10,8 +10,8 @@ const baseClass =
   "h-9 w-9 rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300 cursor-pointer"
 
 export const UndoBinButton = ({ id }: { id: number }) => {
-  const { mutate, isPending, isError } = useUndoMoveToBin(id)
-  console.log(isError, "err")
+  const { mutate, isPending } = useUndoMoveToBin(id)
+
   return (
     <Button
       size="icon"
@@ -37,13 +37,17 @@ export const FavoriteButton = ({
 }) => {
   const { data, isPending, mutate } = useToggleFavorite(id)
 
+  // Use the mutation result if it exists (even if it's false!),
+  // otherwise fallback to the initial prop from the parent.
+  const isFavorited = data ?? favorite
+
   return (
     <Button
       size="icon"
       variant="secondary"
       className={cn(
         baseClass,
-        (favorite || data) &&
+        isFavorited &&
           "bg-red-500 text-white border-red-500 hover:bg-red-600 hover:text-white"
       )}
       disabled={isPending}
@@ -52,9 +56,7 @@ export const FavoriteButton = ({
         mutate()
       }}
     >
-      <Heart
-        className={cn("w-4.5 h-4.5", (favorite || data) && "fill-current")}
-      />
+      <Heart className={cn("w-4.5 h-4.5", isFavorited && "fill-current")} />
     </Button>
   )
 }

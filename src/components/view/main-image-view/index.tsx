@@ -1,13 +1,9 @@
-import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
 import { motion } from "motion/react"
 
 import type { ImageItemResult } from "@/services/tauri"
-
-import type {
-  AnyInfiniteQueryOptions,
-  AnySuspenseInfiniteQueryOptions
-} from "@/types"
+import type { AnySuspenseInfiniteQueryOptions } from "@/types"
 
 import { useLoadObserver } from "@/hooks/use-load-observer"
 
@@ -15,15 +11,15 @@ import {
   EndBanner,
   EmptyState,
   ErrorBanner,
-  ErrorState,
   LoadingBanner
 } from "@/components/common"
 
 import { ImageOptions } from "./image-options"
 import { ImageCard } from "./image-card"
 import { ImageLightbox } from "./image-lightbox"
+import { useLocation } from "@tanstack/react-router"
 
-interface MainImageViewProps<T extends AnyInfiniteQueryOptions> {
+interface MainImageViewProps<T extends AnySuspenseInfiniteQueryOptions> {
   queryOptions: T
 }
 
@@ -34,69 +30,50 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
   const [isViewBoxOpen, setIsViewBoxOpen] = useState(false)
   const imageRefs = useRef<Array<HTMLDivElement | null>>([])
 
+  const { pathname } = useLocation()
+
+  let isBinView = useMemo(() => pathname === "/bin", [pathname])
+
   const {
     data,
     fetchNextPage,
-    isLoading,
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-    isError,
-    isFetchNextPageError,
-    isSuccess
+    isFetchNextPageError
   } = useSuspenseInfiniteQuery<ImageItemResult>(queryOptions)
-
-  console.log(
-    isLoading,
-    hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    isError,
-    isSuccess
-  )
 
   const loaderRef = useLoadObserver({
     fetchNextPage,
-    isLoading,
+    isLoading: false,
     hasNextPage,
     isFetchingNextPage
   })
 
-  useEffect(() => {
-    if (imageRefs.current.length > 0) {
-      requestAnimationFrame(() => {
-        imageRefs.current[1]?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest"
-        })
-      })
-    }
-  }, [])
-
-  const images = useMemo(
-    () => data?.pages.flatMap((page) => page.data) || [],
-    [data]
-  )
-
-  let nearingEnd = index + 4 >= images.length
+  const images = useMemo(() => data.pages.flatMap((page) => page.data), [data])
 
   useEffect(() => {
-    if (isViewBoxOpen) {
-      if (nearingEnd && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage()
-      }
+    imageRefs.current = imageRefs.current.slice(0, images.length)
+  }, [images.length])
+
+  useEffect(() => {
+    if (!isViewBoxOpen || !hasNextPage || isFetchingNextPage) return
+
+    const nearingEnd = index + 4 >= images.length
+    if (nearingEnd) {
+      fetchNextPage()
     }
   }, [
     isViewBoxOpen,
-    nearingEnd,
+    index,
     images.length,
     hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
+    fetchNextPage
   ])
 
-  const onImageClick = (index: number) => {
-    setIndex(index)
+  const onImageClick = (clickedIndex: number) => {
+    setIndex(clickedIndex)
     setIsViewBoxOpen(true)
   }
 
@@ -105,32 +82,22 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
 
     requestAnimationFrame(() => {
       const el = imageRefs.current[index]
-
       if (el) {
         el.scrollIntoView({
           behavior: "smooth",
-          block: "nearest"
+          block: "center"
         })
       }
     })
   }
 
-  const showEnd =
-    isSuccess &&
-    !hasNextPage &&
-    !isFetching &&
-    !isFetchingNextPage &&
-    images.length > 0
-
-  const showEmpty = isSuccess && images.length === 0
+  const showEmpty = images.length === 0
 
   if (showEmpty) {
     return <EmptyState />
   }
 
-  if (isError && images.length === 0) {
-    return <ErrorState />
-  }
+  const showEnd = !hasNextPage && !isFetching && !isFetchingNextPage
 
   return (
     <>
@@ -141,8 +108,8 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
             scale: isViewBoxOpen ? 0.98 : 1
           }}
           transition={{
-            duration: 0.2,
-            ease: "easeOut"
+            duration: 0.3,
+            ease: "easeInOut"
           }}
           style={{
             pointerEvents: isViewBoxOpen ? "none" : "auto"
@@ -150,24 +117,26 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
           className="py-4"
         >
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
-            {images.map((image, index) => (
+            {images.map((image, idx) => (
               <div
                 key={image.id}
                 ref={(el) => {
-                  imageRefs.current[index] = el
+                  imageRefs.current[idx] = el
                 }}
               >
-                <ImageOptions imageId={image.id}>
+                <ImageOptions imageId={image.id} isBinView={isBinView}>
                   <ImageCard
                     image={image}
-                    index={index}
-                    onClick={() => onImageClick(index)}
+                    index={idx}
+                    onClick={() => onImageClick(idx)}
+                    isBinView={isBinView}
                   />
                 </ImageOptions>
               </div>
             ))}
           </div>
         </motion.div>
+
         {isViewBoxOpen && (
           <ImageLightbox
             data={images}
@@ -177,9 +146,11 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
           />
         )}
       </div>
+
       {isFetchingNextPage && <LoadingBanner />}
       {showEnd && <EndBanner />}
       {isFetchNextPageError && <ErrorBanner />}
+
       <div ref={loaderRef} className="h-20 w-full" />
     </>
   )

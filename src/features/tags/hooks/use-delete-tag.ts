@@ -1,14 +1,25 @@
 import { softDeleteTag } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
+import {
+  allTagsQueryKey,
+  attachedTagsQueryKey,
+  availableTagsQueryKey,
+  topTagsQueryKey
+} from "."
+
 export const useSoftDeleteTag = () => {
   const qc = useQueryClient()
+
   const { mutate, isPending, isError, isSuccess } = useMutation({
-    mutationFn: async (tagId: number) => {
-      softDeleteTag({ tagId })
-    },
+    mutationFn: (tagId: number) => softDeleteTag({ tagId }),
     onSuccess: () => {
-      qc.invalidateQueries()
+      return Promise.all([
+        qc.invalidateQueries({ queryKey: allTagsQueryKey }),
+        qc.invalidateQueries({ queryKey: topTagsQueryKey }),
+        qc.invalidateQueries({ queryKey: attachedTagsQueryKey }),
+        qc.invalidateQueries({ queryKey: availableTagsQueryKey })
+      ])
     }
   })
 
