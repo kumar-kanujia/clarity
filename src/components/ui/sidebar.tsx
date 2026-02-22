@@ -192,7 +192,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden top-8! h-[calc(100dvh-2rem)]!"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE

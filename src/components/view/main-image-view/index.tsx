@@ -16,8 +16,8 @@ import {
 
 import { ImageOptions } from "./image-options"
 import { ImageCard } from "./image-card"
-import { ImageLightbox } from "./image-lightbox"
 import { useLocation } from "@tanstack/react-router"
+import { ImageLightbox } from "@/components/common/lightbox"
 
 interface MainImageViewProps<T extends AnySuspenseInfiniteQueryOptions> {
   queryOptions: T

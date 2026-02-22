@@ -62,14 +62,14 @@ const ActiveContextMenu = ({
 
   const { mutate: moveToBin, isPending: isMoveToBinPending } =
     useMoveToBin(imageId)
-  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag(imageId)
+  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
 
   return (
     <ContextMenu onOpenChange={setIsOpen}>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
 
       {/* Restored original styling */}
-      <ContextMenuContent className="bg-zinc-900/80 w-48">
+      <ContextMenuContent className="bg-background/80 w-48">
         {attachedTagFetchSuccess && attachedTagData.length > 0 && (
           <>
             <ContextMenuGroup>

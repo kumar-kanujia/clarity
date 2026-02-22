@@ -9,7 +9,8 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
         className="relative flex flex-1 w-full overflow-hidden 
         **:data-[slot=sidebar-wrapper]:min-h-full! 
         **:data-[slot=sidebar-container]:absolute! 
-        **:data-[slot=sidebar-container]:h-full!"
+        **:data-[slot=sidebar-container]:h-full!
+        "
       >
         <AppSidebar />
         <div className="w-full h-full overflow-y-auto py-2">{children}</div>
