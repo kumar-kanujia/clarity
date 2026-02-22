@@ -1,18 +1,24 @@
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { Ellipsis } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-export const AppHeader = () => {
+export const AppHeader = ({ className }: { className?: string }) => {
   return (
-    <header className="flex py-2 px-3 items-center justify-between border-b gap-4">
-      <div className="flex-1">
-        <SidebarTrigger />
-      </div>
-      <div className="flex gap-3">
-        <Button size={"icon"} variant={"outline"}>
-          <Ellipsis />
-        </Button>
-      </div>
-    </header>
+    <div
+      className={cn(
+        "flex justify-start items-center h-full border-b",
+        className
+      )}
+    >
+      <div className="w-20 h-full" data-tauri-drag-region />
+      <header className="flex justify-start items-center h-full w-full">
+        <div className="px-1">
+          <SidebarTrigger variant="ghost" />
+        </div>
+        <div
+          className="flex-1 w-full h-full select-none"
+          data-tauri-drag-region
+        />
+      </header>
+    </div>
   )
 }

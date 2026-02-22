@@ -1,12 +1,13 @@
-import { fetchTagGallery, type CreatedAtCursor } from "@/services/tauri"
+import { fetchFavorites, type CreatedAtCursor } from "@/services/tauri"
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
-export const useTagQueryOptions = (tagId: number) => {
-  const option = infiniteQueryOptions({
-    queryKey: ["all", "tags", tagId],
+export const favoriteQueryKey = ["favorites"]
+
+export const getFavoritesQueryOptions = () =>
+  infiniteQueryOptions({
+    queryKey: favoriteQueryKey,
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchTagGallery({
-        tagId,
+      const res = await fetchFavorites({
         cursor: pageParam ?? undefined
       })
       return res
@@ -16,6 +17,3 @@ export const useTagQueryOptions = (tagId: number) => {
       return lastPage?.nextCursor ?? null
     }
   })
-
-  return { queryKey: tagId, queryOption: option }
-}

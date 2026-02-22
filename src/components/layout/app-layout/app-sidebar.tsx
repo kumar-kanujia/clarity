@@ -1,3 +1,17 @@
+import { useQuery } from "@tanstack/react-query"
+import { Link, useLocation, useMatch } from "@tanstack/react-router"
+
+import {
+  Aperture,
+  FolderPlus,
+  Heart,
+  ImagePlusIcon,
+  Settings,
+  TagIcon,
+  TagsIcon,
+  Trash2
+} from "lucide-react"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import {
@@ -11,26 +25,14 @@ import {
   SidebarMenuItem
 } from "@/components/ui/sidebar"
 import { useUploadImage } from "@/features/gallery/hooks/use-upload-image"
-import { useGetTopTags } from "@/features/tags/hooks"
-import { useQuery } from "@tanstack/react-query"
-import { Link, useLocation, useMatch } from "@tanstack/react-router"
-import {
-  Aperture,
-  FolderPlus,
-  Heart,
-  ImagePlusIcon,
-  Settings,
-  TagIcon,
-  TagsIcon,
-  Trash2
-} from "lucide-react"
+import { getTopQueryOptions } from "@/features/tags/hooks"
 
 export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
   const { mutate } = useUploadImage()
 
-  const { queryOption } = useGetTopTags()
+  const tagQueryOption = getTopQueryOptions()
 
-  const { data, isSuccess } = useQuery(queryOption)
+  const { data, isSuccess } = useQuery(tagQueryOption)
 
   const { pathname } = useLocation()
 
@@ -40,11 +42,11 @@ export const AppSidebar = ({}: React.ComponentProps<typeof Sidebar>) => {
   })
 
   return (
-    <Sidebar collapsible="icon" variant="floating" className="py-2 select-none">
-      <SidebarHeader className=" h-12 mb-4">
+    <Sidebar collapsible="icon" variant="floating" className="select-none">
+      <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex cursor-default  items-center justify-between rounded-lg overflow-hidden ps-0.5">
+            <div className="flex items-center justify-between overflow-hidden ps-0.5">
               <div className="flex items-center gap-3 ps-0">
                 <Avatar>
                   <AvatarFallback>C</AvatarFallback>

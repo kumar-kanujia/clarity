@@ -1,4 +1,6 @@
-import { type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+import { TagIcon, Trash2 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 import {
   ContextMenu,
@@ -9,50 +11,65 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger
 } from "@/components/ui/context-menu"
-import { TagIcon, Trash2 } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+
 import {
-  useGetAttachedTags,
-  useGetAvilableTags,
+  getAttachedTagsQueryOptions,
+  getAvailableTagsQueryOptions,
   useToggleTag
 } from "@/features/tags/hooks"
+
 import { useMoveToBin } from "@/features/bin/hooks"
-import { useLocation } from "@tanstack/react-router"
 
 interface ImageOptionsProps {
   children: ReactNode
-  id: number
+  imageId: number
+  isBinView?: boolean
 }
 
-export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
-  const { pathname } = useLocation()
+// 1. The Gateway Component
+export const ImageOptions = ({
+  children,
+  imageId,
+  isBinView
+}: ImageOptionsProps) => {
+  if (isBinView) return <>{children}</>
 
-  const { queryOption: attachedQueryOption } = useGetAttachedTags(id, 5)
-  const { queryOption: availableQueryOption } = useGetAvilableTags(id, 5)
+  return <ActiveContextMenu imageId={imageId}>{children}</ActiveContextMenu>
+}
 
-  const { mutate, isPending } = useMoveToBin(id)
+// 2. The Active Component
+const ActiveContextMenu = ({
+  children,
+  imageId
+}: {
+  children: ReactNode
+  imageId: number
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
 
-  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
-
-  const handleMoveToBin = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    mutate()
-  }
-
+  // Lazy fetching: only loads when context menu opens
   const { data: attachedTagData, isSuccess: attachedTagFetchSuccess } =
-    useQuery(attachedQueryOption)
+    useQuery({
+      ...getAttachedTagsQueryOptions(imageId, 5),
+      enabled: isOpen
+    })
 
   const { data: availableTagData, isSuccess: availableTagFetchSuccess } =
-    useQuery(availableQueryOption)
+    useQuery({
+      ...getAvailableTagsQueryOptions(imageId, 5),
+      enabled: isOpen
+    })
 
-  if (pathname === "/bin") {
-    return <>{children}</>
-  }
+  const { mutate: moveToBin, isPending: isMoveToBinPending } =
+    useMoveToBin(imageId)
+  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
 
   return (
-    <ContextMenu>
+    <ContextMenu onOpenChange={setIsOpen}>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="bg-zinc-900/80 w-48">
+
+      {/* Restored original styling */}
+      <ContextMenuContent className="bg-background/80 w-48">
         {attachedTagFetchSuccess && attachedTagData.length > 0 && (
           <>
             <ContextMenuGroup>
@@ -60,12 +77,13 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
               {attachedTagData.map((tag) => (
                 <ContextMenuItem
                   key={tag.id}
-                  onClick={() => toggleTag({ imageId: id, tagId: tag.id })}
+                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
                   disabled={isTagPending}
                 >
+                  {/* Restored original TagIcon styling */}
                   <TagIcon
                     style={{ backgroundColor: tag.tagColor }}
-                    className="p-2 rounded-3xl"
+                    className="p-2 rounded-3xl mr-2"
                   />
                   {tag.tagName}
                 </ContextMenuItem>
@@ -82,12 +100,13 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
               {availableTagData.map((tag) => (
                 <ContextMenuItem
                   key={tag.id}
-                  onClick={() => toggleTag({ imageId: id, tagId: tag.id })}
+                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
                   disabled={isTagPending}
                 >
+                  {/* Restored original TagIcon styling */}
                   <TagIcon
                     style={{ backgroundColor: tag.tagColor }}
-                    className="p-2 rounded-3xl"
+                    className="p-2 rounded-3xl mr-2"
                   />
                   {tag.tagName}
                 </ContextMenuItem>
@@ -100,10 +119,14 @@ export const ImageOptions = ({ children, id }: ImageOptionsProps) => {
         <ContextMenuGroup>
           <ContextMenuItem
             variant="destructive"
-            onClick={handleMoveToBin}
-            disabled={isPending}
+            onClick={(e) => {
+              e.stopPropagation()
+              moveToBin()
+            }}
+            disabled={isMoveToBinPending}
           >
-            <Trash2 /> Move to Bin
+            {/* Restored original Trash styling */}
+            <Trash2 className="mr-2 size-4" /> Move to Bin
           </ContextMenuItem>
         </ContextMenuGroup>
       </ContextMenuContent>

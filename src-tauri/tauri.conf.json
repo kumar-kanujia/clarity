@@ -12,10 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "",
-        "width": 800,
+        "title": "clarity",
+        "width": 1200,
         "height": 800,
-        "titleBarStyle": "Visible"
+        "titleBarStyle": "Overlay",
+        "decorations": true,
+        "hiddenTitle": true
       }
     ],
     "security": {

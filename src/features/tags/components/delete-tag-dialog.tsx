@@ -68,7 +68,7 @@ export const DeleteTagDialog = () => {
             onClick={() => handleConfirmDelete()}
             disabled={isPending}
           >
-            Delete {tag.tagName}
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,13 +1,14 @@
-import { fetchBin, type CreatedAtCursor } from "@/services/tauri"
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
-export const binQueryKey = ["all", "bin"]
+import { fetchGallery, type CreatedAtCursor } from "@/services/tauri"
 
-export const useBinQueryOptions = () => {
-  const option = infiniteQueryOptions({
-    queryKey: binQueryKey,
+export const galleryQueryKey = ["main-gallery"]
+
+export const getGalleryQueryOptions = () =>
+  infiniteQueryOptions({
+    queryKey: galleryQueryKey,
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchBin({
+      const res = await fetchGallery({
         cursor: pageParam ?? undefined
       })
       return res
@@ -17,6 +18,3 @@ export const useBinQueryOptions = () => {
       return lastPage?.nextCursor ?? null
     }
   })
-
-  return { queryKey: binQueryKey, queryOption: option }
-}
