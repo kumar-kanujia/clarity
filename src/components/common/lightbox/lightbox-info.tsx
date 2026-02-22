@@ -1,4 +1,4 @@
-import { Loader2, Plus, Calendar, Monitor, HardDrive } from "lucide-react"
+import { Loader2, Calendar, Monitor, HardDrive } from "lucide-react"
 
 import {
   Sheet,
@@ -7,7 +7,6 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
 import type { ImageItem } from "@/services/tauri"
 import { useQuery } from "@tanstack/react-query"
 import { getAttachedTagsQueryOptions } from "@/features/tags/hooks"
@@ -104,13 +103,6 @@ export const LightboxInfo = ({
                   No tags attached.
                 </p>
               )}
-
-              <Button
-                variant="outline"
-                className="w-full border-zinc-700/50 bg-black/20 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all shadow-none mt-2"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Manage Tags
-              </Button>
             </div>
           </div>
         </div>

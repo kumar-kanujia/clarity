@@ -93,7 +93,6 @@ export const ImageLightbox = ({
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-2xl select-none"
         onWheel={handleWheel}
-        // Removed onClick from here
       >
         <LightboxControls
           image={image}
@@ -112,7 +111,7 @@ export const ImageLightbox = ({
           onDragSwipe={handleDragSwipe}
           isLoading={isLoading}
           setIsLoading={setIsLoading}
-          onBackdropClick={handleBackdropClick} // Pass it down here
+          onBackdropClick={handleBackdropClick}
         />
 
         {scale === 1 && (
