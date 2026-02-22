@@ -15,7 +15,7 @@ import {
 
 import {
   getAttachedTagsQueryOptions,
-  useGetAvilableTags,
+  getAvailableTagsQueryOptions,
   useToggleTag
 } from "@/features/tags/hooks"
 
@@ -30,7 +30,7 @@ export const ImageOptions = ({ children, imageId }: ImageOptionsProps) => {
   const { pathname } = useLocation()
 
   const attachedQueryOption = getAttachedTagsQueryOptions(imageId, 5)
-  const availableQueryOption = useGetAvilableTags(imageId, 5)
+  const availableQueryOption = getAvailableTagsQueryOptions(imageId, 5)
 
   const { data: attachedTagData, isSuccess: attachedTagFetchSuccess } =
     useQuery(attachedQueryOption)

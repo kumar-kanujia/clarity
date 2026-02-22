@@ -6,7 +6,7 @@ import {
   attachedTagsQueryKey,
   availableTagsQueryKey,
   topTagsQueryKey
-} from "./use-user-tag-query"
+} from "."
 
 export const useEditTag = () => {
   const qc = useQueryClient()

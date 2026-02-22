@@ -79,7 +79,7 @@ export const ImageLightbox = ({
   )
 
   const onDragEnd = (
-    e: MouseEvent | TouchEvent | PointerEvent,
+    _: MouseEvent | TouchEvent | PointerEvent,
     { offset, velocity }: PanInfo
   ) => {
     if (scale > 1) return
@@ -182,7 +182,7 @@ export const ImageLightbox = ({
               </AnimatePresence>
             </div>
 
-            <div className="w-[1px] h-6 bg-white/20 my-auto mx-1" />
+            <div className="w-px h-6 bg-white/20 my-auto mx-1" />
 
             <Button
               variant="ghost"
@@ -205,7 +205,7 @@ export const ImageLightbox = ({
               <ZoomOut className="w-4 h-4 md:w-5 md:h-5" />
             </Button>
 
-            <div className="w-[1px] h-6 bg-white/20 my-auto mx-1" />
+            <div className="w-px h-6 bg-white/20 my-auto mx-1" />
 
             <Button
               variant="ghost"

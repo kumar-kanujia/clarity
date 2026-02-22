@@ -16,7 +16,7 @@ export const getAllTagsQueryOption = () =>
     }
   })
 
-export const topTagsQueryKey = ["tags", "top-tags"]
+export const topTagsQueryKey = ["top-tags"]
 
 export const getTopQueryOptions = () =>
   queryOptions({
@@ -40,7 +40,10 @@ export const getAttachedTagsQueryOptions = (imageId: number, limit: number) => {
 
 export const availableTagsQueryKey = ["tags", "available-tags"]
 
-export const useGetAvilableTags = (imageId: number, limit: number) => {
+export const getAvailableTagsQueryOptions = (
+  imageId: number,
+  limit: number
+) => {
   return queryOptions({
     queryKey: [...availableTagsQueryKey, imageId],
     queryFn: async () => {

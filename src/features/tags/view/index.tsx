@@ -1,12 +1,12 @@
 import { TagIcon } from "lucide-react"
 
 import { CreateTagDialog } from "../components/create-tag-dialog"
-import { useQuery } from "@tanstack/react-query"
-import { getAllTagsQueryOption } from "../hooks/use-user-tag-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 
 import { TagCard } from "../components/tag-card"
 import { DeleteTagDialog } from "../components/delete-tag-dialog"
 import { EditTagDialog } from "../components/edit-tag-dialog"
+import { getAllTagsQueryOption } from "../hooks"
 
 const TagHeader = () => (
   <header className="h-16 border-b flex items-center justify-between px-8 bg-background/50 backdrop-blur-md sticky top-0 z-30">
@@ -25,7 +25,11 @@ const TagHeader = () => (
 export const TagsView = () => {
   const allTagsQueryOption = getAllTagsQueryOption()
 
-  const { data: tags, isLoading, isSuccess } = useQuery(allTagsQueryOption)
+  const {
+    data: tags,
+    isLoading,
+    isSuccess
+  } = useSuspenseQuery(allTagsQueryOption)
 
   return (
     <>

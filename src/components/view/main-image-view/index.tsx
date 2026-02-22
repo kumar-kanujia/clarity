@@ -40,11 +40,20 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
     isLoading,
     hasNextPage,
     isFetching,
-    status,
     isFetchingNextPage,
     isError,
-    isFetchNextPageError
+    isFetchNextPageError,
+    isSuccess
   } = useSuspenseInfiniteQuery<ImageItemResult>(queryOptions)
+
+  console.log(
+    isLoading,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isError,
+    isSuccess
+  )
 
   const loaderRef = useLoadObserver({
     fetchNextPage,
@@ -107,13 +116,13 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
   }
 
   const showEnd =
-    status === "success" &&
+    isSuccess &&
     !hasNextPage &&
     !isFetching &&
     !isFetchingNextPage &&
     images.length > 0
 
-  const showEmpty = status === "success" && images.length === 0
+  const showEmpty = isSuccess && images.length === 0
 
   if (showEmpty) {
     return <EmptyState />
@@ -168,7 +177,7 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
           />
         )}
       </div>
-      {isLoading && <LoadingBanner />}
+      {isFetchingNextPage && <LoadingBanner />}
       {showEnd && <EndBanner />}
       {isFetchNextPageError && <ErrorBanner />}
       <div ref={loaderRef} className="h-20 w-full" />

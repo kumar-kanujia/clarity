@@ -3,7 +3,12 @@ import { cn } from "@/lib/utils"
 
 export const AppHeader = ({ className }: { className?: string }) => {
   return (
-    <div className={cn("flex justify-start items-center h-full", className)}>
+    <div
+      className={cn(
+        "flex justify-start items-center h-full border-b",
+        className
+      )}
+    >
       <div className="w-20 h-full" data-tauri-drag-region />
       <header className="flex justify-start items-center h-full w-full">
         <div className="px-1">

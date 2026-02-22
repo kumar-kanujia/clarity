@@ -1,11 +1,6 @@
 import { createTag, type CreateTagParams } from "@/services/tauri"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  allTagsQueryKey,
-  attachedTagsQueryKey,
-  availableTagsQueryKey,
-  topTagsQueryKey
-} from "./use-user-tag-query"
+import { allTagsQueryKey, availableTagsQueryKey, topTagsQueryKey } from "."
 
 export const useCreateTag = () => {
   const qc = useQueryClient()
@@ -15,7 +10,6 @@ export const useCreateTag = () => {
       Promise.all([
         qc.invalidateQueries({ queryKey: allTagsQueryKey }),
         qc.invalidateQueries({ queryKey: topTagsQueryKey }),
-        qc.invalidateQueries({ queryKey: attachedTagsQueryKey }),
         qc.invalidateQueries({ queryKey: availableTagsQueryKey })
       ])
     }

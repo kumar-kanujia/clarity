@@ -1,5 +1,5 @@
 export * from "./use-create-tag"
-export * from "./use-user-tag-query"
+export * from "./use-tag-query-options"
 export * from "./use-delete-tag"
 export * from "./use-toggle-tag"
 export * from "./use-edit-tag"
