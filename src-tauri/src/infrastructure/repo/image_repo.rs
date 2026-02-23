@@ -26,35 +26,43 @@ impl ImageRepository {
   pub async fn create_images_by_file_metadata(
     &self,
     files: &[FileMetaData],
-  ) -> Result<u64, DatabaseError> {
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
     if files.is_empty() {
-      return Ok(0);
+      return Ok(Vec::new());
     }
 
     const CHUNK_SIZE: usize = 200;
 
     let mut tx = self.db.begin().await?;
-    let mut total_inserted = 0;
+
+    let mut inserted_images = Vec::new();
 
     for chunk in files.chunks(CHUNK_SIZE) {
-      let mut query_builder = QueryBuilder::new(
+      let mut qb = QueryBuilder::new(
         "INSERT OR IGNORE INTO images (path, file_name, size_bytes, created_at) ",
       );
 
-      query_builder.push_values(chunk, |mut b, file| {
+      qb.push_values(chunk, |mut b, file| {
         b.push_bind(&file.path)
           .push_bind(&file.file_name)
           .push_bind(file.size_bytes)
           .push_bind(&file.created_at);
       });
 
-      let result = query_builder.build().execute(&mut *tx).await?;
-      total_inserted += result.rows_affected();
+      qb.push(
+        "RETURNING id, file_name, path, size_bytes, content_hash, width, height,
+            thumbnail_path, status, retry_count, error_message, created_at,
+            updated_at, is_favorite, is_deleted",
+      );
+
+      let mut rows: Vec<ImageRow> = qb.build_query_as().fetch_all(&mut *tx).await?;
+
+      inserted_images.append(&mut rows);
     }
 
     tx.commit().await?;
 
-    Ok(total_inserted)
+    Ok(inserted_images)
   }
 
   // endregion
@@ -347,10 +355,10 @@ mod tests {
       },
     ];
 
-    let count = repo.create_images_by_file_metadata(&files).await.unwrap();
+    let inserted = repo.create_images_by_file_metadata(&files).await.unwrap();
 
     // Result should be 2 because the 3rd item is a duplicate path
-    assert_eq!(count, 2);
+    assert_eq!(inserted.len(), 2);
   }
 
   #[sqlx::test(migrations = "./migrations")]

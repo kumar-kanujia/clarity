@@ -15,16 +15,12 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 pub struct PipelineOrchestrator {
-  /// The number of physical/logical cores allocated to Rayon
-  pub thread_count: usize,
-
   /// The entry point for the pipeline.
-  /// Your app will push new uploads into this channel.
   pub ingestion_tx: mpsc::Sender<Image>,
 }
 
 impl PipelineOrchestrator {
-  pub async fn start(
+  pub fn start(
     repo: Arc<ImageRepository>,
     thumbnail_target: PathBuf,
     shutdown_token: CancellationToken,
@@ -44,8 +40,8 @@ impl PipelineOrchestrator {
       );
     }
 
-    let hash_batch_size = std::cmp::max(4, thread_count * FILE_HASH_BATCH_FACTOR); // e.g., 4x multiplier
-    let thumb_batch_size = std::cmp::max(1, thread_count * THUMBNAIL_BATCH_FACTOR); // e.g., 1x multiplier
+    let hash_batch_size = std::cmp::max(4, thread_count * FILE_HASH_BATCH_FACTOR);
+    let thumb_batch_size = std::cmp::max(1, thread_count * THUMBNAIL_BATCH_FACTOR);
 
     let (hash_tx, hash_rx) = mpsc::channel::<Image>(10_000);
     let (thumb_tx, thumb_rx) = mpsc::channel::<Image>(10_000);
@@ -53,14 +49,18 @@ impl PipelineOrchestrator {
     let hash_stage = HashStage::new(repo.clone(), thumb_tx.clone());
     let thumb_stage = ThumbnailStage::new(thumbnail_target, repo.clone());
 
-    tokio::spawn(hash_stage.run(hash_rx, hash_batch_size, shutdown_token.clone()));
-    tokio::spawn(thumb_stage.run(thumb_rx, thumb_batch_size, shutdown_token.clone()));
+    tauri::async_runtime::spawn(hash_stage.run(hash_rx, hash_batch_size, shutdown_token.clone()));
+    tauri::async_runtime::spawn(thumb_stage.run(
+      thumb_rx,
+      thumb_batch_size,
+      shutdown_token.clone(),
+    ));
 
     let repo_recovery = repo.clone();
     let hash_tx_recovery = hash_tx.clone();
     let thumb_tx_recovery = thumb_tx.clone();
 
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
       tracing::info!("Starting Pipeline Recovery Sweep...");
 
       // Recover images that were uploaded but never hashed
@@ -99,7 +99,6 @@ impl PipelineOrchestrator {
     });
 
     Self {
-      thread_count,
       ingestion_tx: hash_tx,
     }
   }

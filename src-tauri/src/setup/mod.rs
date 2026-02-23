@@ -39,9 +39,8 @@ pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   let cancellation_token = cancellation_token.clone();
 
-  let orchestrator = tauri::async_runtime::block_on(async {
-    PipelineOrchestrator::start(image_repo, thumbnail_path, cancellation_token.clone()).await
-  });
+  let orchestrator =
+    PipelineOrchestrator::start(image_repo, thumbnail_path, cancellation_token.clone());
 
   app_handle.manage(AppState::new(db.clone(), orchestrator, cancellation_token));
 

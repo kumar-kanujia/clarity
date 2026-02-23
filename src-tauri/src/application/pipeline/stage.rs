@@ -12,12 +12,15 @@ pub trait PipelineStage: Clone + Send + Sync + 'static {
   /// Unique name for logging (e.g., "hash_stage")
   fn name(&self) -> &'static str;
 
-  /// Step 1: CPU-bound processing.
+  /// Step 1: Filter Batch
+  async fn filter_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Input>;
+
+  /// Step 2: CPU-bound processing.
   /// This is strictly synchronous.
   /// Here we will use `rayon::par_iter()` to shred through the batch.
   fn process_batch(&self, items: Vec<Self::Input>) -> Vec<Self::Output>;
 
-  /// Step 2: Handle results asynchronously.
+  /// Step 3: Handle results asynchronously.
   /// This is where we update the database and push items to the NEXT stage's queue.
   async fn handle_completed_batch(&self, items: Vec<Self::Output>) -> Result<u64, Self::Error>;
 
@@ -66,26 +69,28 @@ pub trait PipelineStage: Clone + Send + Sync + 'static {
         }
 
         batch_counter += 1;
+
         let batch_span = tracing::info_span!("batch", stage = name, bid = batch_counter);
+
         let start_time = Instant::now();
         let input_count = batch.len();
 
-        // 3. PROCESS (Hand off to Rayon via spawn_blocking)
-        let stage_clone = self.clone();
-        let items_to_process = batch;
+        // 3. Filter and save what is not needed for the next stage
+        let items_to_process = self
+          .filter_batch(batch)
+          .instrument(tracing::info_span!("filter_batch", stage = name))
+          .await;
 
-        let items_out = tokio::task::spawn_blocking(move || {
-          // Because Rayon is initialized globally by the Orchestrator,
-          // any Rayon methods used inside `process_batch` will automatically
-          // use the global thread pool.
-          stage_clone.process_batch(items_to_process)
-        })
-        .instrument(batch_span.clone())
-        .await
-        .unwrap_or_else(|e| {
-          tracing::error!(error = ?e, "Stage panic/task failure");
-          Vec::new()
-        });
+        // 4. PROCESS (Hand off to Rayon via spawn_blocking)
+        let stage_clone = self.clone();
+        let items_out =
+          tokio::task::spawn_blocking(move || stage_clone.process_batch(items_to_process))
+            .instrument(batch_span.clone())
+            .await
+            .unwrap_or_else(|e| {
+              tracing::error!(error = ?e, "Stage panic/task failure");
+              Vec::new()
+            });
 
         if items_out.is_empty() {
           continue;
@@ -93,7 +98,7 @@ pub trait PipelineStage: Clone + Send + Sync + 'static {
 
         let items_out_len = items_out.len();
 
-        // 4. ASYNC CLEANUP & ROUTING
+        // 5. ASYNC CLEANUP & ROUTING
         match self
           .handle_completed_batch(items_out)
           .instrument(tracing::info_span!("db_update", stage = name))

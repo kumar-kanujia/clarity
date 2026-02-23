@@ -10,7 +10,3 @@ pub fn get_utc_timestamp(time: time::SystemTime) -> String {
   let datetime: DateTime<Utc> = time.into();
   format_datetime(datetime.naive_local())
 }
-
-pub fn get_num_threads() -> usize {
-  num_cpus::get_physical().saturating_sub(2).max(1)
-}
