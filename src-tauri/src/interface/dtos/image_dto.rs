@@ -77,7 +77,7 @@ impl From<ImageItemRow> for ImageItem {
       resolution: Image::make_resolution_string(width, height),
       thumbnail_path: row.thumbnail_path.unwrap_or_default(),
       created_at: format_datetime(row.created_at),
-      is_favorite: row.is_favorite == 1,
+      is_favorite: row.is_favorite,
     }
   }
 }

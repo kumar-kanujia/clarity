@@ -3,6 +3,7 @@ mod domain;
 mod infrastructure;
 mod interface;
 mod setup;
+mod tests;
 
 use crate::{
   interface::command::{

@@ -67,3 +67,78 @@ impl TagService {
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::tests::utils::setup_test_db;
+
+  use super::*;
+
+  async fn setup() -> (TagService, sqlx::SqlitePool) {
+    let pool = setup_test_db().await;
+    let repo = TagRepository::new(pool.clone());
+    (TagService::new(repo), pool)
+  }
+
+  #[tokio::test]
+  async fn test_create_tag_normalization_and_validation() {
+    let (service, _) = setup().await;
+
+    // 1. Test Validation: Empty name should fail at the service level
+    let err = service
+      .create_new_user_tag("", "#FFFFFF")
+      .await
+      .unwrap_err();
+    assert!(matches!(err, AppError::Validation(_)));
+
+    // 2. Test Normalization: Service should clean up input
+    // Assuming Tag::normalize_text trims and lowercase
+    let tag_id = service
+      .create_new_user_tag("  NATURE  ", "red")
+      .await
+      .unwrap();
+
+    let tags = service.list_user_tags(None).await.unwrap();
+    assert_eq!(tags[0].id, tag_id);
+    assert_eq!(tags[0].tag_name, "nature"); // Verified normalized text
+  }
+
+  #[tokio::test]
+  async fn test_duplicate_tag_error_mapping() {
+    let (service, _) = setup().await;
+
+    service
+      .create_new_user_tag("unique", "#FFFFFF")
+      .await
+      .unwrap();
+
+    // 2nd attempt with same name
+    let result = service.create_new_user_tag("unique", "#111111").await;
+
+    // Verifies DatabaseError::RecordAlreadyExists -> AppError::Validation
+    match result {
+      Err(AppError::Validation(msg)) => assert!(msg.contains("already exists")),
+      _ => panic!(
+        "Expected validation error for duplicate tag, got {:?}",
+        result
+      ),
+    }
+  }
+
+  #[tokio::test]
+  async fn test_soft_delete_flow() {
+    let (service, _) = setup().await;
+
+    let tag_id = service
+      .create_new_user_tag("to_delete", "gray")
+      .await
+      .unwrap();
+
+    // Perform "soft delete" (changing type to Deleted)
+    service.soft_delete_user_tag(tag_id).await.unwrap();
+
+    // list_user_tags only fetches TagType::User, so this should be empty now
+    let tags = service.list_user_tags(None).await.unwrap();
+    assert!(tags.is_empty());
+  }
+}

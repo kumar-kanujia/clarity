@@ -119,3 +119,118 @@ impl TagRepository {
     Ok(rows)
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  use sqlx::SqlitePool;
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_create_tag(pool: SqlitePool) {
+    let repo = TagRepository::new(pool);
+
+    // Test creating a "Category" type tag
+    let tag_id = repo
+      .create_new_tag("Nature", "#00FF00", TagType::System)
+      .await
+      .expect("Failed to create tag");
+
+    assert!(tag_id > 0);
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_create_new_tag(pool: SqlitePool) {
+    let repo = TagRepository::new(pool.clone());
+
+    let tag_id = repo
+      .create_new_tag("Nature", "#00FF00", TagType::User)
+      .await
+      .unwrap();
+
+    let tag = sqlx::query_as::<_, TagItemRow>(
+      r#"
+        SELECT id, text, color, image_count
+        FROM tags
+        WHERE id = ?
+      "#,
+    )
+    .bind(tag_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(tag.id, tag_id);
+    assert_eq!(tag.text, "Nature");
+    assert_eq!(tag.color, "#00FF00");
+    assert_eq!(tag.image_count, 0);
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_update_tag_partial(pool: SqlitePool) {
+    let repo = TagRepository::new(pool.clone());
+
+    // 1. Setup: Create a tag
+    let tag_id = repo
+      .create_new_tag("Original", "#FFFFFF", TagType::User)
+      .await
+      .unwrap();
+
+    // 2. Update ONLY the text, keep the color
+    repo
+      .update_tag(tag_id, Some("Updated".into()), None)
+      .await
+      .unwrap();
+
+    // 3. Verify
+    let (text, color): (String, String) =
+      sqlx::query_as::<_, (String, String)>("SELECT text, color FROM tags WHERE id = ?")
+        .bind(tag_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    assert_eq!(text, "Updated");
+    assert_eq!(color, "#FFFFFF"); // Color should remain unchanged
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_tag_not_found(pool: SqlitePool) {
+    let repo = TagRepository::new(pool);
+
+    // Try to update a tag ID that doesn't exist
+    let result = repo.update_tag_type(999, TagType::Deleted).await;
+
+    match result {
+      Err(DatabaseError::NotFound) => (), // Success
+      _ => panic!("Expected NotFound error, got {:?}", result),
+    }
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_get_popular_tags(pool: SqlitePool) {
+    let repo = TagRepository::new(pool.clone());
+
+    // 1. Setup: Insert tags with different image counts
+    // (Ensure your migration has an image_count column, or update this manually)
+    sqlx::query(
+      "INSERT INTO tags (text, color, tag_type, image_count) VALUES ('A', '#FFFFFF', 'user', 100)",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+      "INSERT INTO tags (text, color, tag_type, image_count) VALUES ('B', '#FFFFFF', 'user', 50)",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // 2. Query popular tags
+    let popular = repo.get_popular_tags(TagType::User, Some(1)).await.unwrap();
+
+    assert_eq!(popular.len(), 1);
+    assert_eq!(popular[0].text, "A");
+  }
+}
