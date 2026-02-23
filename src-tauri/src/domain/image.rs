@@ -1,27 +1,24 @@
-use crate::{
-  infrastructure::{
-    models::image_model::{ImageRow, ImageStatus},
-    system::format_datetime,
-  },
-  interface::dto::ImageDto,
+use crate::infrastructure::{
+  models::image_model::{ImageRow, ImageStatus},
+  utils::format_datetime,
 };
 
 use std::sync::OnceLock;
 
-pub const MAX_WORKER_RETRIES: i32 = 3;
-
 static IMAGE_EXTENSIONS: OnceLock<Vec<&'static str>> = OnceLock::new();
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct ImageMetadata {
   pub thumbnail_path: String,
   pub width: i64,
   pub height: i64,
 }
 
-#[derive(Debug, Default, Clone)]
+#[allow(dead_code)]
+#[derive(Debug, Default)]
 pub struct Image {
   pub id: i64,
+  pub file_name: String,
   pub path: String,
   pub size_bytes: i64,
   pub width: i64,
@@ -32,8 +29,9 @@ pub struct Image {
   pub retry_count: i64,
   pub error_message: Option<String>,
   pub created_at: String,
-  #[allow(dead_code)]
   pub updated_at: String,
+  pub is_favorite: bool,
+  pub is_deleted: bool,
 }
 
 impl Image {
@@ -41,17 +39,17 @@ impl Image {
     IMAGE_EXTENSIONS.get_or_init(|| vec!["jpg", "jpeg", "png", "webp", "bmp", "gif", "heic"])
   }
 
-  pub fn resolution(&self) -> String {
-    format!("{}x{}", self.width, self.height)
+  pub fn make_resolution_string(width: i64, height: i64) -> String {
+    format!("{}x{}", width, height)
   }
 
-  pub fn size_string(&self) -> String {
+  pub fn make_size_string(size_bytes: i64) -> String {
     const KB: f64 = 1_000.0;
     const MB: f64 = 1_000_000.0;
     const GB: f64 = 1_000_000_000.0;
 
     #[allow(clippy::cast_precision_loss)]
-    let bytes = self.size_bytes as f64;
+    let bytes = size_bytes as f64;
 
     let (value, unit) = if bytes < MB {
       (bytes / KB, "KB")
@@ -92,7 +90,8 @@ impl Image {
     self.retry_count += 1;
   }
 
-  pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<ImageDto>> {
+  #[allow(dead_code)]
+  pub fn group_by_hash(images: Vec<Image>) -> Vec<Vec<Image>> {
     if images.is_empty() {
       return Vec::new();
     }
@@ -115,7 +114,7 @@ impl Image {
       } else {
         curr_hash = Some(image.content_hash.clone());
       }
-      current_group.push(image.into());
+      current_group.push(image);
     }
     if !current_group.is_empty() {
       grouped_images.push(current_group);
@@ -129,6 +128,7 @@ impl From<ImageRow> for Image {
   fn from(row: ImageRow) -> Self {
     Self {
       id: row.id,
+      file_name: row.file_name,
       path: row.path,
       size_bytes: row.size_bytes,
       content_hash: row.content_hash.unwrap_or_default(),
@@ -140,6 +140,8 @@ impl From<ImageRow> for Image {
       error_message: row.error_message,
       created_at: format_datetime(row.created_at),
       updated_at: format_datetime(row.updated_at),
+      is_deleted: row.is_deleted,
+      is_favorite: row.is_favorite,
     }
   }
 }

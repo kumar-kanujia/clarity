@@ -1,48 +1,51 @@
 mod application;
 mod domain;
-mod error;
 mod infrastructure;
 mod interface;
 mod setup;
+mod tests;
 
 use crate::{
   interface::command::{
-    create_tag, delete_tag, fetch_images, fetch_images_grouped_by_hash, fetch_images_with_tag,
-    fetch_system_tags, fetch_user_tags, import_images, toggle_tag_on_image,
+    gallery_command::{fetch_bin, fetch_favorites, fetch_gallery, fetch_tag_gallery},
+    image_command::{import_images, soft_delete_image, toggle_favorite, undo_soft_delete_image},
+    image_tag_command::{fetch_attached_tags, fetch_available_tags, toggle_tag},
+    tag_command::{create_tag, edit_tag, fetch_all_tags, fetch_top_tags, soft_delete_tag},
   },
-  setup::{setup_app, state::AppState, tracesetup},
+  setup::{app_callback, app_setup, logger::Logger},
 };
-
-use tauri::{Manager, RunEvent};
-
-pub static IMAGE_DIR: &str = "images";
 
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tracesetup::init_tracing();
+  Logger::init();
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
+    .setup(app_setup)
     .invoke_handler(tauri::generate_handler![
       import_images,
-      fetch_images,
-      fetch_images_grouped_by_hash,
+      fetch_gallery,
+      toggle_favorite,
+      soft_delete_image,
+      undo_soft_delete_image,
+      fetch_favorites,
+      fetch_bin,
+      fetch_tag_gallery,
+      // Tags
       create_tag,
-      fetch_user_tags,
-      fetch_system_tags,
-      delete_tag,
-      toggle_tag_on_image,
-      fetch_images_with_tag
+      edit_tag,
+      fetch_top_tags,
+      fetch_all_tags,
+      soft_delete_tag,
+      // Image tags
+      toggle_tag,
+      fetch_attached_tags,
+      fetch_available_tags
     ])
-    .setup(setup_app)
     .build(tauri::generate_context!())
     .expect("error while running tauri application");
 
-  app.run(|app_handle, event| {
-    if let RunEvent::ExitRequested { .. } = event {
-      let state = app_handle.state::<AppState>();
-      state.shutdown.cancel();
-    }
-  });
+  app.run(app_callback);
 }

@@ -1,6 +1,7 @@
 -- Add migration script here
 CREATE TABLE IF NOT EXISTS images (
   id              INTEGER PRIMARY KEY,
+  file_name       TEXT    NOT NULL,
   path            TEXT    NOT NULL UNIQUE,
   size_bytes      INTEGER NOT NULL CHECK (size_bytes > 0),
   content_hash    BLOB,
@@ -11,8 +12,11 @@ CREATE TABLE IF NOT EXISTS images (
   retry_count     INTEGER NOT NULL DEFAULT 0,
   error_message   TEXT,
   created_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  is_favorite     INTEGER NOT NULL DEFAULT 0 CHECK (is_favorite IN (0, 1)),
+  is_deleted      INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0, 1))
 ) STRICT;
+
 
 CREATE TRIGGER IF NOT EXISTS trg_images_updated_at
 AFTER UPDATE ON images
@@ -22,11 +26,15 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE INDEX IF NOT EXISTS idx_images_created_at_id
-ON images (created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_images_active_pagination 
+ON images (created_at DESC, id DESC) 
+WHERE is_deleted = 0;
 
 CREATE INDEX IF NOT EXISTS idx_images_work_queue
 ON images (status, retry_count, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_images_hash_created_at
 ON images (content_hash, created_at ASC);
+
+CREATE INDEX IF NOT EXISTS idx_image_file_name
+ON images (file_name);

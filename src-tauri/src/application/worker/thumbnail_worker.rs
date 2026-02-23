@@ -1,25 +1,26 @@
 use crate::{
-  application::{service::thumbnail_service::ThumbnailService, worker::Worker},
+  application::{service::thumbnail_service, worker::Worker},
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
+  setup::settings::MAX_WORKER_RETRIES,
 };
 
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use tauri::AppHandle;
 
 #[derive(Debug, Clone)]
 pub struct ThumbnailWorker {
   pub thumbnail_target: PathBuf,
-  repo: &'static ImageRepository,
+  repo: Arc<ImageRepository>,
 }
 
 impl ThumbnailWorker {
-  pub fn new(app: &AppHandle, repo: &'static ImageRepository) -> Option<Self> {
-    match ThumbnailService::get_thumbnail_target(app) {
+  pub fn new(app: &AppHandle, repo: Arc<ImageRepository>) -> Option<Self> {
+    match thumbnail_service::get_thumbnail_target(app) {
       Ok(path) => Some(Self {
         thumbnail_target: path,
         repo: repo,
@@ -46,20 +47,21 @@ impl Worker for ThumbnailWorker {
   }
 
   async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {
-    let models = self
+    let raw_images = self
       .repo
-      .list_images_by_status(limit, ImageStatus::Hashed)
+      .get_images_for_processing(limit, MAX_WORKER_RETRIES, ImageStatus::Hashed)
       .await?;
-    Ok(models.into_iter().map(Image::from).collect())
+    let images = raw_images.into_iter().map(Image::from).collect();
+    Ok(images)
   }
 
-  fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
-    ThumbnailService::process_batch(&mut items, &self.thumbnail_target);
-    items
+  fn process_batch(&self, mut images: Vec<Image>) -> Vec<Image> {
+    thumbnail_service::process_batch(&mut images, &self.thumbnail_target);
+    images
   }
 
-  async fn update_batch(&self, items: &[Image]) -> Result<u64, DatabaseError> {
-    let count = self.repo.update_images_metadata(items).await?;
+  async fn update_batch(&self, images: &[Image]) -> Result<u64, DatabaseError> {
+    let count = self.repo.update_image_metadata(images).await?;
     Ok(count)
   }
 }

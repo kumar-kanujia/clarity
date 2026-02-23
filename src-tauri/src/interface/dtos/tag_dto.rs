@@ -1,0 +1,23 @@
+use crate::infrastructure::models::tag_model::TagItemRow;
+
+use serde::Serialize;
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct TagItem {
+  pub id: i64,
+  pub tag_name: String,
+  pub tag_color: String,
+  pub image_count: i64,
+}
+
+impl From<TagItemRow> for TagItem {
+  fn from(tag_row: TagItemRow) -> Self {
+    Self {
+      id: tag_row.id,
+      tag_name: tag_row.text,
+      tag_color: tag_row.color,
+      image_count: tag_row.image_count,
+    }
+  }
+}

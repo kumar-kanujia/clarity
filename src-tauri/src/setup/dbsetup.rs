@@ -1,4 +1,10 @@
-use crate::{infrastructure::fs::ops, setup::error::DBInitError};
+use crate::{
+  infrastructure::fs::ops,
+  setup::{
+    error::DBInitError,
+    settings::{DB_DIR, DB_LOCATION, MAX_DB_POOL_SIZE},
+  },
+};
 
 use tauri::{AppHandle, Manager};
 
@@ -6,10 +12,6 @@ use sqlx::{
   SqlitePool, migrate,
   sqlite::{SqliteConnectOptions, SqlitePoolOptions},
 };
-
-pub const DB_DIR: &str = "db";
-pub const DB_FILE: &str = "clarity.sqlite3";
-pub const MAX_POOL_SIZE: u32 = 5;
 
 pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DBInitError> {
   let app_data = app
@@ -21,7 +23,7 @@ pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DBInitError> {
 
   ops::ensure_dir(&db_dir)?;
 
-  let db_path = db_dir.join(DB_FILE);
+  let db_path = db_dir.join(DB_LOCATION);
 
   let db_opts = SqliteConnectOptions::new()
     .filename(&db_path)
@@ -29,7 +31,7 @@ pub async fn setup_db(app: &AppHandle) -> Result<SqlitePool, DBInitError> {
     .foreign_keys(true);
 
   let pool = SqlitePoolOptions::new()
-    .max_connections(MAX_POOL_SIZE)
+    .max_connections(MAX_DB_POOL_SIZE)
     .acquire_timeout(std::time::Duration::from_secs(10))
     .after_connect(|conn, _| {
       Box::pin(async move {
