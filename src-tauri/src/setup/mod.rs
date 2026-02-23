@@ -5,30 +5,19 @@ pub mod settings;
 pub mod state;
 
 use crate::{
-  application::worker::{
-    Worker, file_hash_worker::FileHashWorker, thumbnail_worker::ThumbnailWorker,
-  },
-  infrastructure::{repo::image_repo::ImageRepository, utils::get_num_threads},
+  application::{pipeline::orchestrator::PipelineOrchestrator, service::thumbnail_service},
+  infrastructure::repo::image_repo::ImageRepository,
   setup::{dbsetup::setup_db, state::AppState},
 };
 
 use std::{error::Error, sync::Arc};
 
-use rayon::ThreadPoolBuilder;
 use tauri::{App, AppHandle, Manager, RunEvent};
 use tokio_util::sync::CancellationToken;
 
 pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
   let span = tracing::info_span!("setup_app");
   let _enter = span.enter();
-
-  if let Err(err) = ThreadPoolBuilder::new()
-    .num_threads(get_num_threads())
-    .thread_name(|i| format!("rayon-worker-{}", i))
-    .build_global()
-  {
-    tracing::error!(err = ?err, "Failed to initialize Rayon thread pool");
-  }
 
   let app_handle = app.handle();
 
@@ -42,26 +31,19 @@ pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   tracing::info!("Database setup complete");
 
-  let shutdown = CancellationToken::new();
+  let cancellation_token = CancellationToken::new();
 
-  tracing::info!("Setting up query service");
+  let image_repo = Arc::new(ImageRepository::new(db.clone()));
 
-  app_handle.manage(AppState::new(db.clone(), shutdown.clone()));
+  let thumbnail_path = thumbnail_service::get_thumbnail_target(&app_handle)?;
 
-  tracing::info!("Setting up Workers");
+  let cancellation_token = cancellation_token.clone();
 
-  let image_repo = Arc::new(ImageRepository::new(db));
+  let orchestrator = tauri::async_runtime::block_on(async {
+    PipelineOrchestrator::start(image_repo, thumbnail_path, cancellation_token.clone()).await
+  });
 
-  let shutdown_clone = shutdown.clone();
-
-  let file_hash_worker = FileHashWorker::new(image_repo.clone());
-  tauri::async_runtime::spawn(async move { file_hash_worker.run(shutdown_clone).await });
-
-  if let Some(thumbnail_worker) = ThumbnailWorker::new(app_handle, image_repo) {
-    tauri::async_runtime::spawn(async move { thumbnail_worker.run(shutdown).await });
-  }
-
-  tracing::info!("Workers setup complete");
+  app_handle.manage(AppState::new(db.clone(), orchestrator, cancellation_token));
 
   Ok(())
 }
@@ -69,6 +51,6 @@ pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 pub fn app_callback(app_handle: &AppHandle, event: RunEvent) {
   if let RunEvent::ExitRequested { .. } = event {
     let state = app_handle.state::<AppState>();
-    state.shutdown.cancel();
+    state.cancellation_token.cancel();
   }
 }

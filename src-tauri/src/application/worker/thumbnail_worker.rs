@@ -5,7 +5,7 @@ use crate::{
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
-  setup::settings::MAX_WORKER_RETRIES,
+  setup::settings::{MAX_WORKER_RETRIES, THUMBNAIL_BATCH_FACTOR},
 };
 
 use std::{path::PathBuf, sync::Arc};
@@ -43,7 +43,7 @@ impl Worker for ThumbnailWorker {
   }
 
   fn batch_factor(&self) -> usize {
-    2
+    THUMBNAIL_BATCH_FACTOR
   }
 
   async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {

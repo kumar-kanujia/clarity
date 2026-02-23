@@ -1,238 +1,170 @@
-# NEXT — Query Expansion, Tag System Expansion, and System Reliability Hardening
+---
 
-> Context:
-> Core backend is complete and deterministic. Duplicate detection, tagging backend, and structured logging exist.
->
-> This phase focuses on expanding query capabilities, improving tag system functionality, and strengthening system reliability.
->
-> Rule:
-> Work top to bottom.
-> Do not skip sections.
-> Do not introduce implicit behavior.
-> UI work is out of scope except UI data management layer integration.
+# NEXT — Worker Upgrade, Tag System Expansion, and Hard Delete Support
+
+Context: Core backend functionality is complete and stable. Processing pipeline, tagging, and soft delete exist and function correctly.
+
+This phase focuses on:
+- Upgrading worker system from loop-based to event-driven
+- Expanding tag system with restore and permanent delete
+- Supporting permanent image deletion
+
+Rule:
+Work top to bottom.
+Do not skip sections.
+Do not introduce implicit behavior.
+UI work is out of scope except data layer integration.
 
 ---
 
-# SECTION 1 — Image Query, Sorting, and Pagination Expansion
+# SECTION 1 — Event-Driven Worker System Upgrade
 
-Goal: Provide complete, deterministic, and flexible image retrieval across all supported access patterns.
+Goal: Replace loop-based workers with event-driven processing.
+
+Workers must execute only when work exists, not continuously poll.
 
 ---
 
-## Part 1.1 — Core Image Retrieval Expansion
+## Part 1.1 — Event-Driven Worker Architecture
 
-- [ ] Fetch image by ID
-- [ ] Fetch images by multiple IDs
-- [ ] Fetch images by name
-- [ ] Fetch images by multiple names
-- [ ] Fetch images by tag
-- [ ] Fetch images by multiple tags
-- [ ] Fetch favorite images
-- [ ] Fetch images in trash / bin
-- [ ] Support combined filtering (name, tags, favorites, trash)
+- [ ] Define worker event system
+- [ ] Define event types for pipeline stages
+- [ ] Ensure workers sleep when no work exists
+- [ ] Ensure workers wake immediately when work is available
+- [ ] Remove loop-based polling logic
 
 Completion Check:
 
-- [ ] All image access patterns supported
-- [ ] All queries deterministic
-- [ ] No ambiguity in returned results
+- [ ] No continuous polling exists
+- [ ] Workers activate only when events occur
+- [ ] Worker behavior deterministic
 
 ---
 
-## Part 1.2 — Sorting System Expansion
+## Part 1.2 — Pipeline Event Integration
 
-- [ ] Sort images by name
-- [ ] Sort images by file size
-- [ ] Sort images by import date
-- [ ] Sort images by resolution
-- [ ] Support ascending sorting
-- [ ] Support descending sorting
-- [ ] Maintain deterministic ordering across all sorting modes
+Events must be emitted when pipeline work becomes available.
+
+- [ ] Emit event when image enters Pending state
+- [ ] Emit event when hashing completes
+- [ ] Emit event when thumbnail generation becomes available
+- [ ] Ensure events emitted only after DB commit succeeds
+- [ ] Ensure duplicate events do not cause duplicate processing
 
 Completion Check:
 
-- [ ] Sorting consistent and stable
-- [ ] Sorting compatible with all filters
+- [ ] All pipeline stages triggered by events
+- [ ] No missed processing
+- [ ] No duplicate processing
 
 ---
 
-## Part 1.3 — Pagination System Improvement
+## Part 1.3 — Worker Reliability and Safety
 
-- [ ] Stable pagination across all queries
-- [ ] Pagination compatible with sorting
-- [ ] Pagination compatible with tag filtering
-- [ ] Pagination compatible with favorites
-- [ ] Pagination compatible with trash
-- [ ] Pagination compatible with duplicate queries
+- [ ] Ensure worker crash isolation remains intact
+- [ ] Ensure retry logic continues to function
+- [ ] Ensure failed items do not block worker
+- [ ] Ensure worker restart resumes processing correctly
 
 Completion Check:
 
-- [ ] Pagination stable under all sorting and filtering modes
-- [ ] No missing or duplicate results across pages
+- [ ] Worker system reliable and fault-tolerant
+- [ ] Worker system fully event-driven
 
 ---
 
-## Part 1.4 — Favorites System
+# SECTION 2 — Tag System Expansion
 
-- [ ] Mark image as favorite
-- [ ] Remove favorite status
-- [ ] Retrieve favorite images
-- [ ] Combine favorites with sorting
-- [ ] Combine favorites with filtering
+Goal: Complete tag delete, restore, and permanent delete functionality.
+
+Soft delete already exists.
+
+---
+
+## Part 2.1 — Retrieve Deleted Tags
+
+- [ ] Retrieve deleted tags
+- [ ] Retrieve active tags only
+- [ ] Retrieve all tags (active and deleted)
+- [ ] Support sorting and pagination of deleted tags
 
 Completion Check:
 
-- [ ] Favorite state reliable and persistent
-- [ ] Favorites integrate cleanly with queries
+- [ ] Deleted tags fully observable
 
 ---
 
-# SECTION 2 — Tag System Expansion and Organization Improvements
+## Part 2.2 — Restore Deleted Tag
 
-Goal: Provide complete and flexible tag management and tag-based organization.
-
----
-
-## Part 2.1 — Tag Management Expansion
-
-- [ ] Create tag
-- [ ] Rename tag
-- [ ] Delete tag
-- [ ] Change tag color
-- [ ] Prevent duplicate tag names
+- [ ] Restore deleted tag
+- [ ] Restore preserves tag ID
+- [ ] Restore preserves tag assignments
+- [ ] Restore fails safely if tag conflict exists
 
 Completion Check:
 
-- [ ] Tag lifecycle fully supported
-- [ ] Tag identity remains stable
+- [ ] Tag restore reliable
+- [ ] Tag relationships preserved
 
 ---
 
-## Part 2.2 — Tag Assignment Expansion
+## Part 2.3 — Permanent Tag Delete
 
-- [ ] Assign tag to image
-- [ ] Remove tag from image
-- [ ] Assign multiple tags to image
-- [ ] Remove multiple tags from image
+- [ ] Permanently delete tag record
+- [ ] Remove all tag assignments
+- [ ] Ensure referential integrity maintained
+- [ ] Ensure no orphan tag references remain
 
 Completion Check:
 
-- [ ] Tag assignment reliable
-- [ ] Tag relationships consistent
+- [ ] Tag fully removed from system
 
 ---
 
-## Part 2.3 — Tag Query and Insights Expansion
+# SECTION 3 — Permanent Image Delete
 
-- [ ] Retrieve all tags
-- [ ] Retrieve tag details
-- [ ] Retrieve images associated with tag
-- [ ] Retrieve image count per tag
-- [ ] Retrieve tag usage information
+Goal: Support permanent removal of image records from system.
+
+Permanent delete affects database and derived data only.
+Original files on disk must not be deleted.
+
+---
+
+## Part 3.1 — Permanent Image Delete Operation
+
+- [ ] Permanently delete image record
+- [ ] Remove tag assignments
+- [ ] Remove favorite state
+- [ ] Remove pipeline state
+- [ ] Remove duplicate relationships
 
 Completion Check:
 
-- [ ] Tag queries complete and reliable
-- [ ] Tag data consistent across operations
+- [ ] Image fully removed from database
+- [ ] No orphan references remain
 
 ---
 
-## Part 2.4 — Tag-Based Filtering Expansion
+## Part 3.2 — Thumbnail Cleanup
 
-- [ ] Filter images by single tag
-- [ ] Filter images by multiple tags
-- [ ] Combine tag filtering with sorting
-- [ ] Combine tag filtering with favorites
+- [ ] Delete thumbnail cache for permanently deleted image
+- [ ] Ensure no orphan thumbnail files remain
 
 Completion Check:
 
-- [ ] Tag filtering reliable
-- [ ] Tag filtering compatible with all query modes
+- [ ] Thumbnail cache consistent with database
 
 ---
 
-# SECTION 3 — System Reliability, Integrity, and Error Handling Enhancement
+## Part 3.3 — Permanent Delete Safety
 
-Goal: Strengthen system robustness, reliability, and error handling coverage.
-
----
-
-## Part 3.1 — Trash / Bin System
-
-- [ ] Move image to trash
-- [ ] Restore image from trash
-- [ ] Permanently delete image
-- [ ] Retrieve trash contents
-- [ ] Support sorting and pagination in trash
+- [ ] Permanent delete requires explicit operation
+- [ ] Permanent delete fully logged
+- [ ] Permanent delete deterministic
 
 Completion Check:
 
-- [ ] Trash state reliable
-- [ ] No unintended permanent data loss
-
----
-
-## Part 3.2 — Duplicate Query Expansion
-
-- [ ] Retrieve duplicate images
-- [ ] Retrieve duplicate groups
-- [ ] Retrieve images in duplicate group
-- [ ] Support sorting and pagination of duplicates
-
-Completion Check:
-
-- [ ] Duplicate state fully observable
-- [ ] Duplicate queries reliable
-
----
-
-## Part 3.3 — Error Handling Enhancement
-
-- [ ] Improve error classification coverage
-- [ ] Ensure consistent error reporting across all operations
-- [ ] Ensure recoverable errors do not break system state
-- [ ] Ensure graceful failure handling
-- [ ] Ensure safe handling of invalid queries
-- [ ] Ensure safe handling of missing files
-- [ ] Ensure safe handling of invalid tag operations
-- [ ] Ensure safe handling of invalid pagination states
-
-Completion Check:
-
-- [ ] System resilient to all supported operations
-- [ ] No silent failures
-- [ ] Errors observable and diagnosable
-
----
-
-## Part 3.4 — Data Integrity and Consistency
-
-- [ ] Detect missing image files
-- [ ] Detect broken references
-- [ ] Ensure consistent relationships between images and tags
-- [ ] Ensure consistent duplicate state
-- [ ] Ensure reliable data retrieval under all conditions
-
-Completion Check:
-
-- [ ] System integrity maintained
-- [ ] Data state reliable and deterministic
-
----
-
-## Part 3.5 — UI Data Management Layer Integration
-
-(UI data layer only — no UI features)
-
-- [ ] Integrate centralized UI data management layer
-- [ ] Ensure consistent data synchronization
-- [ ] Ensure safe handling of data updates
-- [ ] Ensure efficient data loading and caching
-
-Completion Check:
-
-- [ ] UI data layer stable
-- [ ] UI safely synchronized with backend state
+- [ ] No unintended permanent deletion
 
 ---
 
@@ -241,9 +173,9 @@ Completion Check:
 When all sections are complete:
 
 1. Update CAPABILITIES.md
-2. Declare backend query and organization system production-ready
-3. Create NEXT.md focused on advanced features or UI functionality
-4. Archive this file
+2. Declare worker system and delete functionality production-ready
+3. Archive this file
+4. Create new NEXT.md for next development phase
 
 System must remain:
 
@@ -252,3 +184,5 @@ System must remain:
 - Explicit
 - Observable
 - Reliable
+
+---

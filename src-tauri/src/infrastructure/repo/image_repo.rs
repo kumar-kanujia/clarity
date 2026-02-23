@@ -181,6 +181,29 @@ impl ImageRepository {
 
   // region: Image Query
 
+  pub async fn find_image_by_hash_and_status(
+    &self,
+    hash: &[u8],
+    status: ImageStatus,
+  ) -> Result<Option<ImageRow>, DatabaseError> {
+    let image = sqlx::query_as::<_, ImageRow>(
+      r#"
+        SELECT *
+        FROM images
+        WHERE content_hash = ?1
+          AND status = ?2
+          AND is_deleted = 0
+        LIMIT 1
+        "#,
+    )
+    .bind(hash)
+    .bind(status)
+    .fetch_optional(&self.db)
+    .await?;
+
+    Ok(image)
+  }
+
   pub async fn get_images_for_processing(
     &self,
     limit: i64,

@@ -47,6 +47,7 @@ pub fn process_batch(files: &mut [Image], thumbnail_target: &Path) {
       Err(err) => image.mark_image_metadata_error(err),
     });
 }
+
 fn create_thumbnail(image: &Image, thumbnail_target: &Path) -> Result<ImageMetadata, String> {
   let result =
     panic::catch_unwind(|| thumbnail::create_image_metadata(&image.path, thumbnail_target));

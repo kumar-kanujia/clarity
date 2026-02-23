@@ -7,7 +7,7 @@ use crate::{
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
-  setup::settings::MAX_WORKER_RETRIES,
+  setup::settings::{FILE_HASH_BATCH_FACTOR, MAX_WORKER_RETRIES},
 };
 
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ impl Worker for FileHashWorker {
   }
 
   fn batch_factor(&self) -> usize {
-    4
+    FILE_HASH_BATCH_FACTOR
   }
 
   async fn fetch_batch(&self, limit: i64) -> Result<Vec<Image>, DatabaseError> {

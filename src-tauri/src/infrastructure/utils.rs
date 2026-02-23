@@ -12,5 +12,5 @@ pub fn get_utc_timestamp(time: time::SystemTime) -> String {
 }
 
 pub fn get_num_threads() -> usize {
-  num_cpus::get_physical().saturating_sub(1).max(1)
+  num_cpus::get_physical().saturating_sub(2).max(1)
 }
