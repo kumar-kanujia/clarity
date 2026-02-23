@@ -102,3 +102,87 @@ impl ImageTagRepository {
     Ok(rows)
   }
 }
+
+#[cfg(test)]
+mod tests {
+
+  use super::*;
+
+  use sqlx::SqlitePool;
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_toggle_image_tag(pool: SqlitePool) {
+    let repo = ImageTagRepository::new(pool.clone());
+
+    // 1. Setup: Create one image and one tag
+    sqlx::query(
+      "INSERT INTO images (id, path, file_name, size_bytes) VALUES (1, 't.jpg', 't.jpg', 1)",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+      "INSERT INTO tags (id, text, color, tag_type) VALUES (1, 'Blue', '#0000FF', 'user')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // 2. First toggle (Insert)
+    let attached = repo.toggle_image_tag(1, 1).await.expect("Toggle failed");
+    assert!(attached, "First toggle should attach the tag");
+
+    // 3. Second toggle (Delete)
+    let attached_again = repo.toggle_image_tag(1, 1).await.expect("Toggle failed");
+
+    assert!(!attached_again, "Second toggle should detach the tag");
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_tag_attachment_queries(pool: SqlitePool) {
+    let repo = ImageTagRepository::new(pool.clone());
+
+    // 1. Setup: 1 Image, 2 Tags
+    sqlx::query(
+      "INSERT INTO images (id, path, file_name, size_bytes) VALUES (1, 'a.jpg', 'a.jpg', 1)",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+      "INSERT INTO tags (id, text, color, tag_type) VALUES (1, 'Tagged', '#FF0000', 'user')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    sqlx::query(
+      "INSERT INTO tags (id, text, color, tag_type) VALUES (2, 'Untagged', '#0000FF', 'user')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // 2. Attach Tag 1 to Image 1
+    repo.toggle_image_tag(1, 1).await.unwrap();
+
+    // 3. Test get_tags_attached_to_image
+    let attached = repo
+      .get_tags_attached_to_image(1, TagType::User, None)
+      .await
+      .unwrap();
+    assert_eq!(attached.len(), 1);
+
+    assert_eq!(attached[0].text, "Tagged");
+
+    // 4. Test get_tags_not_attached_to_image
+    let unattached = repo
+      .get_tags_not_attached_to_image(1, TagType::User, None)
+      .await
+      .unwrap();
+
+    assert_eq!(unattached.len(), 1);
+    assert_eq!(unattached[0].text, "Untagged");
+  }
+}

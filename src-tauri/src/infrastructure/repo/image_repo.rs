@@ -31,7 +31,7 @@ impl ImageRepository {
       return Ok(0);
     }
 
-    const CHUNK_SIZE: usize = 5000;
+    const CHUNK_SIZE: usize = 200;
 
     let mut tx = self.db.begin().await?;
     let mut total_inserted = 0;
@@ -189,9 +189,9 @@ impl ImageRepository {
   ) -> Result<Vec<ImageRow>, DatabaseError> {
     let result = sqlx::query_as::<_, ImageRow>(
       r#"
-        SELECT 
-          id, file_name, path, size_bytes, content_hash, 
-          width, height, thumbnail_path, status, retry_count, 
+        SELECT
+          id, file_name, path, size_bytes, content_hash,
+          width, height, thumbnail_path, status, retry_count,
           error_message, created_at, updated_at, is_favorite, is_deleted
         FROM images
         WHERE status = ?1 AND retry_count < ?2
@@ -216,13 +216,12 @@ impl ImageRepository {
     is_favorite: Option<bool>,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
     let mut qb = QueryBuilder::new(
-      r#" 
-        SELECT 
+      "
+        SELECT
           id, file_name, path, size_bytes, width,
-          height, thumbnail_path, created_at, is_favorite 
+          height, thumbnail_path, created_at, is_favorite
         FROM images
-        WHERE is_deleted = 
-    "#,
+        WHERE is_deleted = ",
     );
 
     qb.push_bind(is_deleted);
@@ -258,13 +257,13 @@ impl ImageRepository {
     tag_id: i64,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
     let mut qb = QueryBuilder::new(
-      r#" 
-        SELECT 
+      r#"
+        SELECT
           id, file_name, path, size_bytes, width,
-          height, thumbnail_path, images.created_at, is_favorite 
+          height, thumbnail_path, images.created_at, is_favorite
         FROM images
         JOIN image_tags ON images.id = image_tags.image_id
-        WHERE image_tags.tag_id = 
+        WHERE image_tags.tag_id =
     "#,
     );
     qb.push_bind(tag_id);
@@ -287,5 +286,154 @@ impl ImageRepository {
       .await?;
 
     Ok(result)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::infrastructure::utils::format_datetime;
+
+  use super::*;
+  use chrono::Utc;
+  use sqlx::SqlitePool;
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_create_images(pool: SqlitePool) {
+    let repo = ImageRepository::new(pool);
+    let now = Utc::now().naive_utc();
+
+    let files = vec![
+      FileMetaData {
+        path: "path/A.jpg".into(),
+        file_name: "A.jpg".into(),
+        size_bytes: 100,
+        created_at: format_datetime(now),
+      },
+      FileMetaData {
+        path: "path/B.jpg".into(),
+        file_name: "B.jpg".into(),
+        size_bytes: 200,
+        created_at: format_datetime(now),
+      },
+      // Duplicate path to test "OR IGNORE"
+      FileMetaData {
+        path: "path/A.jpg".into(),
+        file_name: "A.jpg".into(),
+        size_bytes: 100,
+        created_at: format_datetime(now),
+      },
+    ];
+
+    let count = repo.create_images_by_file_metadata(&files).await.unwrap();
+
+    // Result should be 2 because the 3rd item is a duplicate path
+    assert_eq!(count, 2);
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_image_updates_and_toggles(pool: SqlitePool) {
+    let repo = ImageRepository::new(pool.clone());
+
+    // Setup: Create an initial image
+    sqlx::query("INSERT INTO images (path, file_name, size_bytes, created_at) VALUES ('test.jpg', 'test.jpg', 500, datetime('now'))")
+          .execute(&pool).await.unwrap();
+
+    let img_id: i64 = sqlx::query_scalar("SELECT id FROM images LIMIT 1")
+      .fetch_one(&pool)
+      .await
+      .unwrap();
+
+    // 1. Test toggle_image_favorite
+    let first_toggle = repo.toggle_image_favorite(img_id).await.unwrap();
+    assert!(first_toggle, "Should be true after first toggle");
+
+    let second_toggle = repo.toggle_image_favorite(img_id).await.unwrap();
+    assert!(!second_toggle, "Should be false after second toggle");
+
+    // 2. Test set_image_deleted_status
+    repo.set_image_deleted_status(img_id, true).await.unwrap();
+    let is_deleted: bool = sqlx::query_scalar("SELECT is_deleted FROM images WHERE id = ?")
+      .bind(img_id)
+      .fetch_one(&pool)
+      .await
+      .unwrap();
+    assert!(is_deleted);
+
+    // 3. Test update_image_metadata (Passing a dummy Image struct)
+    let update_payload = vec![Image {
+      id: img_id,
+      width: 1920,
+      height: 1080,
+      thumbnail_path: "thumb.jpg".into(),
+      status: ImageStatus::Thumbnailed,
+      retry_count: 0,
+      error_message: None,
+      ..Default::default()
+    }];
+
+    let affected = repo.update_image_metadata(&update_payload).await.unwrap();
+    assert_eq!(affected, 1);
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_pagination_flow(pool: SqlitePool) {
+    let repo = ImageRepository::new(pool);
+    let now = Utc::now().naive_utc();
+
+    // Insert 3 images with distinct timestamps
+    for i in 1..=3 {
+      sqlx::query("INSERT INTO images (path, file_name, size_bytes, created_at, is_deleted) VALUES (?, ?, ?, ?, 0)")
+              .bind(format!("p{}.jpg", i))
+              .bind(format!("{}.jpg", i))
+              .bind(i * 100)
+              .bind(now + chrono::Duration::seconds(i))
+              .execute(&repo.db).await.unwrap();
+    }
+
+    // Page 1: Limit 2 (Should return images 3 and 2)
+    let page1 = repo
+      .get_images_paginated(None, 2, false, None)
+      .await
+      .unwrap();
+    assert_eq!(page1.len(), 2);
+    assert_eq!(page1[0].file_name, "3.jpg");
+
+    // Page 2: Using cursor from the last item of Page 1
+    let cursor = CreatedAtCursor {
+      created_at: format_datetime(page1[1].created_at),
+      id: page1[1].id,
+    };
+    let page2 = repo
+      .get_images_paginated(Some(cursor), 2, false, None)
+      .await
+      .unwrap();
+
+    assert_eq!(page2.len(), 1);
+    assert_eq!(page2[0].file_name, "1.jpg");
+  }
+
+  #[sqlx::test(migrations = "./migrations")]
+  async fn test_get_by_tag_paginated(pool: SqlitePool) {
+    let repo = ImageRepository::new(pool.clone());
+
+    // 1. Create Image
+    sqlx::query("INSERT INTO images (id, path, file_name, size_bytes, created_at, is_deleted) VALUES (10, 'tag_test.jpg', 'tag.jpg', 100, datetime('now'), 0)")
+          .execute(&pool).await.unwrap();
+
+    // 2. Create Tag and Link (Assuming your migration has an image_tags table)
+    sqlx::query("INSERT INTO tags (text) VALUES ('Nature')")
+      .execute(&pool)
+      .await
+      .unwrap();
+    sqlx::query("INSERT INTO image_tags (image_id, tag_id) VALUES (10, 1)")
+      .execute(&pool)
+      .await
+      .unwrap();
+
+    // 3. Query by Tag
+    let results = repo.get_images_by_tag_paginated(None, 10, 1).await.unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].id, 10);
   }
 }

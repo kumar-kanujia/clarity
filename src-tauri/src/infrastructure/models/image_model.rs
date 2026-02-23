@@ -39,5 +39,5 @@ pub struct ImageItemRow {
   pub height: Option<i64>,
   pub thumbnail_path: Option<String>,
   pub created_at: NaiveDateTime,
-  pub is_favorite: i64,
+  pub is_favorite: bool,
 }

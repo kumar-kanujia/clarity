@@ -66,3 +66,78 @@ fn generate_thumbnail(source: &Path, target: &Path) -> Result<(i64, i64), Proces
 
   Ok((width, height))
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use image::{DynamicImage, ImageFormat, RgbImage};
+  use std::fs;
+  use tempfile::tempdir;
+
+  // Helper to create a tiny valid image file for testing
+  fn create_test_image(path: &Path, width: u32, height: u32) {
+    let img = DynamicImage::ImageRgb8(RgbImage::new(width, height));
+    img.save_with_format(path, ImageFormat::Jpeg).unwrap();
+  }
+
+  #[test]
+  fn test_generate_thumbnail_success() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempdir()?;
+    let source_path = dir.path().join("input.jpg");
+    let target_path = dir.path().join("output.webp");
+
+    // 1. Setup: Create a 100x100 source image
+    create_test_image(&source_path, 100, 100);
+
+    // 2. Act
+    let (w, h) = generate_thumbnail(&source_path, &target_path)?;
+
+    // 3. Assert
+    assert_eq!(w, 100);
+    assert_eq!(h, 100);
+    assert!(target_path.exists());
+
+    // Verify it's actually a WebP (check magic bytes or try to open)
+    let output_img = image::open(&target_path)?;
+    assert_eq!(output_img.width(), THUMBNAIL_SIZE); // Assuming THUMBNAIL_SIZE is 200
+    Ok(())
+  }
+
+  #[test]
+  fn test_create_image_metadata_integration() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempdir()?;
+    let source_path = dir.path().join("source.jpg");
+    let thumb_dir = dir.path().join("thumbs");
+    fs::create_dir(&thumb_dir)?;
+
+    create_test_image(&source_path, 50, 50);
+
+    // Act
+    let meta = create_image_metadata(&source_path, &thumb_dir)?;
+
+    // Assert
+    assert_eq!(meta.width, 50);
+    assert_eq!(meta.height, 50);
+    // Verify the path contains a UUID-like string and .webp extension
+    assert!(meta.thumbnail_path.ends_with(".webp"));
+    assert!(Path::new(&meta.thumbnail_path).exists());
+
+    Ok(())
+  }
+
+  #[test]
+  fn test_generate_thumbnail_invalid_format() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempdir()?;
+    let txt_file = dir.path().join("not_an_image.txt");
+    fs::write(&txt_file, "I am definitely not a JPEG")?;
+
+    let target_path = dir.path().join("fail.webp");
+
+    // Act
+    let result = generate_thumbnail(&txt_file, &target_path);
+
+    // Assert
+    assert!(matches!(result, Err(ProcessingError::OpenImage { .. })));
+    Ok(())
+  }
+}

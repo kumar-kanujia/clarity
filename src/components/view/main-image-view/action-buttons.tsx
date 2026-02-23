@@ -36,9 +36,6 @@ export const FavoriteButton = ({
   favorite: boolean
 }) => {
   const { data, isPending, mutate } = useToggleFavorite(id)
-
-  // Use the mutation result if it exists (even if it's false!),
-  // otherwise fallback to the initial prop from the parent.
   const isFavorited = data ?? favorite
 
   return (
