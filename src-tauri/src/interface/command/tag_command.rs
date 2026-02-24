@@ -61,6 +61,16 @@ pub async fn undo_delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state), fields(tag_id=tag_id))]
+pub async fn delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<(), CommandError> {
+  let tag_repository = TagRepository::new(state.db.clone());
+  let tag_service = TagService::new(tag_repository);
+  tag_service.delete_tag(tag_id).await?;
+  tracing::info!(tag_id = tag_id, "Tag deleted");
+  Ok(())
+}
+
+#[tauri::command]
 #[tracing::instrument(skip(state))]
 pub async fn fetch_top_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, CommandError> {
   let tag_repository = TagRepository::new(state.db.clone());

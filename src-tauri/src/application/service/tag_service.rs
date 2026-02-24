@@ -62,6 +62,11 @@ impl TagService {
     Ok(())
   }
 
+  pub async fn delete_tag(&self, tag_id: i64) -> Result<(), AppError> {
+    self.repo.delete_tag(tag_id).await?;
+    Ok(())
+  }
+
   pub async fn list_user_tags(&self, limit: Option<i64>) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo

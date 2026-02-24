@@ -93,6 +93,23 @@ impl TagRepository {
     Ok(())
   }
 
+  pub async fn delete_tag(&self, tag_id: i64) -> Result<(), DatabaseError> {
+    let query_str = r#"
+            DELETE FROM tags
+            WHERE id = ?1
+        "#;
+    let result = sqlx::query(query_str)
+      .bind(tag_id)
+      .execute(&self.db)
+      .await?;
+
+    if result.rows_affected() == 0 {
+      return Err(DatabaseError::NotFound);
+    }
+
+    Ok(())
+  }
+
   // endregion
 
   // region: Tag Query
