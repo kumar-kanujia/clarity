@@ -1,11 +1,13 @@
 use crate::{
   application::pipeline::{
     stage::PipelineStage,
-    stages::{hash::HashStage, thumbnail::ThumbnailStage},
+    stages::{delete::DeleteStage, hash::HashStage, thumbnail::ThumbnailStage},
   },
   domain::image::Image,
   infrastructure::{models::image_model::ImageStatus, repo::image_repo::ImageRepository},
-  setup::settings::{FILE_HASH_BATCH_FACTOR, MAX_PIPELINE_RETRIES, THUMBNAIL_BATCH_FACTOR},
+  setup::settings::{
+    DELETE_BATCH_FACTOR, FILE_HASH_BATCH_FACTOR, MAX_PIPELINE_RETRIES, THUMBNAIL_BATCH_FACTOR,
+  },
 };
 
 use rayon::ThreadPoolBuilder;
@@ -44,11 +46,17 @@ impl PipelineOrchestrator {
 
     let thumb_batch_size = cmp::max(1, thread_count * THUMBNAIL_BATCH_FACTOR);
 
+    let delete_batch_size = cmp::max(1, thread_count * DELETE_BATCH_FACTOR);
+
     let (hash_tx, hash_rx) = mpsc::channel::<Image>(10_000);
     let (thumb_tx, thumb_rx) = mpsc::channel::<Image>(10_000);
+    let (delete_tx, delete_rx) = mpsc::channel::<Image>(10_000);
 
     let hash_stage = HashStage::new(repo.clone(), thumb_tx.clone());
-    let thumb_stage = ThumbnailStage::new(thumbnail_target, repo.clone());
+
+    let thumb_stage = ThumbnailStage::new(thumbnail_target, delete_tx.clone(), repo.clone());
+
+    let delete_stage = DeleteStage::new(repo.clone());
 
     tauri::async_runtime::spawn(hash_stage.run(hash_rx, hash_batch_size, shutdown_token.clone()));
     tauri::async_runtime::spawn(thumb_stage.run(
@@ -56,10 +64,16 @@ impl PipelineOrchestrator {
       thumb_batch_size,
       shutdown_token.clone(),
     ));
+    tauri::async_runtime::spawn(delete_stage.run(
+      delete_rx,
+      delete_batch_size,
+      shutdown_token.clone(),
+    ));
 
     let repo_recovery = repo.clone();
     let hash_tx_recovery = hash_tx.clone();
     let thumb_tx_recovery = thumb_tx.clone();
+    let delete_tx_recovery = delete_tx.clone();
 
     tauri::async_runtime::spawn(async move {
       tracing::info!("Starting Pipeline Recovery Sweep...");
@@ -96,6 +110,23 @@ impl PipelineOrchestrator {
           }
         }
         Err(e) => tracing::error!(error = ?e, "Failed to recover Hashed images"),
+      }
+
+      // Recover images that were thumbnailed, but the app closed before deletion
+      match repo_recovery
+        .get_images_for_processing(-1, MAX_PIPELINE_RETRIES, ImageStatus::Deleted)
+        .await
+      {
+        Ok(deleted_images) => {
+          let count = deleted_images.len();
+          for img in deleted_images {
+            let _ = delete_tx_recovery.send(img.into()).await;
+          }
+          if count > 0 {
+            tracing::info!("Recovered {} Deleted images to be deleted", count);
+          }
+        }
+        Err(e) => tracing::error!(error = ?e, "Failed to recover Deleted images"),
       }
     });
 

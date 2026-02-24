@@ -69,6 +69,30 @@ impl ImageRepository {
 
   // region: Image Update
 
+  pub async fn delete_images(&self, image_ids: &[i64]) -> Result<u64, DatabaseError> {
+    if image_ids.is_empty() {
+      return Ok(0);
+    }
+
+    let mut tx = self.db.begin().await?;
+
+    let mut qb = QueryBuilder::new("DELETE FROM images WHERE id IN (");
+
+    let mut separated = qb.separated(", ");
+
+    for id in image_ids {
+      separated.push_bind(id);
+    }
+
+    separated.push_unseparated(")");
+
+    let result = qb.build().execute(&mut *tx).await?;
+
+    tx.commit().await?;
+
+    Ok(result.rows_affected())
+  }
+
   pub async fn update_images_content_hash(&self, updates: &[Image]) -> Result<u64, DatabaseError> {
     if updates.is_empty() {
       return Ok(0);
@@ -159,6 +183,50 @@ impl ImageRepository {
       Some(is_fav) => Ok(is_fav == 1),
       None => Err(DatabaseError::NotFound),
     }
+  }
+
+  pub async fn update_status_all_deleted(&self) -> Result<Vec<ImageRow>, DatabaseError> {
+    let mut tx = self.db.begin().await?;
+
+    let mut qb = QueryBuilder::new("UPDATE images SET status = ");
+
+    qb.push_bind(ImageStatus::Deleted);
+
+    qb.push(" WHERE is_deleted = 1 RETURNING *");
+
+    let rows = qb.build_query_as::<ImageRow>().fetch_all(&mut *tx).await?;
+
+    tx.commit().await?;
+
+    Ok(rows)
+  }
+
+  pub async fn update_image_status(
+    &self,
+    image_ids: &[i64],
+    status: ImageStatus,
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
+    let mut tx = self.db.begin().await?;
+
+    let mut qb = QueryBuilder::new("UPDATE images SET status = ");
+
+    qb.push_bind(status);
+
+    qb.push("WHERE id IN (");
+
+    let mut separated = qb.separated(", ");
+
+    for id in image_ids {
+      separated.push_bind(id);
+    }
+
+    qb.push(") RETURNING *");
+
+    let rows = qb.build_query_as::<ImageRow>().fetch_all(&mut *tx).await?;
+
+    tx.commit().await?;
+
+    Ok(rows)
   }
 
   pub async fn set_image_deleted_status(
@@ -252,7 +320,7 @@ impl ImageRepository {
           id, file_name, path, size_bytes, width,
           height, thumbnail_path, created_at, is_favorite
         FROM images
-        WHERE is_deleted = ",
+        WHERE status != 3 AND is_deleted = ",
     );
 
     qb.push_bind(is_deleted);

@@ -35,7 +35,17 @@ impl PipelineStage for HashStage {
   }
 
   async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
-    items
+    let mut filtered_images = Vec::with_capacity(items.len());
+    for image in items {
+      if image.status == ImageStatus::Pending {
+        filtered_images.push(image);
+      } else {
+        if let Err(e) = self.next_stage_tx.send(image).await {
+          tracing::error!(error = ?e, "Failed to route image to thumbnail stage");
+        }
+      }
+    }
+    filtered_images
   }
 
   fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {

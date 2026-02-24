@@ -4,6 +4,11 @@ use std::fs::{self, File};
 use std::io::ErrorKind;
 use std::path::Path;
 
+pub fn delete_file<P: AsRef<Path>>(path: P) -> Result<(), FSError> {
+  fs::remove_file(path)?;
+  Ok(())
+}
+
 pub fn ensure_dir(path: &Path) -> Result<(), FSError> {
   fs::create_dir_all(path)?;
   Ok(())

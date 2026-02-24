@@ -12,3 +12,4 @@ pub const THUMBNAIL_SIZE: u32 = 256;
 
 pub const FILE_HASH_BATCH_FACTOR: usize = 4;
 pub const THUMBNAIL_BATCH_FACTOR: usize = 1;
+pub const DELETE_BATCH_FACTOR: usize = 4;

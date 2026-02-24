@@ -8,6 +8,7 @@ pub enum ImageStatus {
   Pending = 0,
   Hashed = 1,
   Thumbnailed = 2,
+  Deleted = 3,
 }
 
 #[derive(Debug, FromRow)]
