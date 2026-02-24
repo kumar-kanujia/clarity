@@ -131,39 +131,39 @@ Original files on disk must not be deleted.
 
 ## Part 3.1 — Permanent Image Delete Operation
 
-- [ ] Permanently delete image record
-- [ ] Remove tag assignments
-- [ ] Remove favorite state
-- [ ] Remove pipeline state
-- [ ] Remove duplicate relationships
+- [x] Permanently delete image record
+- [x] Remove tag assignments
+- [x] Remove favorite state
+- [x] Remove pipeline state
+- [x] Remove duplicate relationships
 
 Completion Check:
 
-- [ ] Image fully removed from database
-- [ ] No orphan references remain
+- [x] Image fully removed from database
+- [x] No orphan references remain
 
 ---
 
 ## Part 3.2 — Thumbnail Cleanup
 
-- [ ] Delete thumbnail cache for permanently deleted image
-- [ ] Ensure no orphan thumbnail files remain
+- [x] Delete thumbnail cache for permanently deleted image
+- [x] Ensure no orphan thumbnail files remain
 
 Completion Check:
 
-- [ ] Thumbnail cache consistent with database
+- [x] Thumbnail cache consistent with database
 
 ---
 
 ## Part 3.3 — Permanent Delete Safety
 
-- [ ] Permanent delete requires explicit operation
-- [ ] Permanent delete fully logged
-- [ ] Permanent delete deterministic
+- [x] Permanent delete requires explicit operation
+- [x] Permanent delete fully logged
+- [x] Permanent delete deterministic
 
 Completion Check:
 
-- [ ] No unintended permanent deletion
+- [x] No unintended permanent deletion
 
 ---
 

@@ -1,4 +1,5 @@
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { BinButton } from "@/features/bin/components"
 import { cn } from "@/lib/utils"
 
 export const AppHeader = ({ className }: { className?: string }) => {
@@ -18,6 +19,7 @@ export const AppHeader = ({ className }: { className?: string }) => {
           className="flex-1 w-full h-full select-none"
           data-tauri-drag-region
         />
+        <BinButton />
       </header>
     </div>
   )

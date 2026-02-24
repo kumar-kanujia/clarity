@@ -121,3 +121,21 @@ pub async fn delete_images(
 
   Ok(())
 }
+
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn empty_bin(state: State<'_, AppState>) -> Result<(), CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
+
+  let image_mutation_service = ImageMutationService::new(image_repository);
+
+  let images = image_mutation_service.hard_delete_all_images().await?;
+
+  for image in images {
+    state.pipline.ingest(image).await;
+  }
+
+  tracing::info!("Empty bin completed!");
+
+  Ok(())
+}

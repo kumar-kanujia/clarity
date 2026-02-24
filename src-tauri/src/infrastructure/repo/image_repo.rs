@@ -185,6 +185,22 @@ impl ImageRepository {
     }
   }
 
+  pub async fn update_status_all_deleted(&self) -> Result<Vec<ImageRow>, DatabaseError> {
+    let mut tx = self.db.begin().await?;
+
+    let mut qb = QueryBuilder::new("UPDATE images SET status = ");
+
+    qb.push_bind(ImageStatus::Deleted);
+
+    qb.push(" WHERE is_deleted = 1 RETURNING *");
+
+    let rows = qb.build_query_as::<ImageRow>().fetch_all(&mut *tx).await?;
+
+    tx.commit().await?;
+
+    Ok(rows)
+  }
+
   pub async fn update_image_status(
     &self,
     image_ids: &[i64],
@@ -195,6 +211,8 @@ impl ImageRepository {
     let mut qb = QueryBuilder::new("UPDATE images SET status = ");
 
     qb.push_bind(status);
+
+    qb.push("WHERE id IN (");
 
     let mut separated = qb.separated(", ");
 

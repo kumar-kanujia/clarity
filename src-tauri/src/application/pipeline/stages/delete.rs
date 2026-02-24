@@ -68,7 +68,7 @@ impl PipelineStage for DeleteStage {
         if !image.thumbnail_path.is_empty()
           && let Err(e) = ops::delete_file(image.thumbnail_path)
         {
-          tracing::error!(error = ?e, "Failed to delete file");
+          tracing::warn!(error = ?e, "Failed to delete thumbnail file");
         }
         image.id
       })

@@ -45,6 +45,12 @@ impl ImageMutationService {
   }
 
   #[tracing::instrument(skip(self))]
+  pub async fn hard_delete_all_images(&self) -> Result<Vec<Image>, AppError> {
+    let image_rows = self.repo.update_status_all_deleted().await?;
+    Ok(image_rows.into_iter().map(Image::from).collect())
+  }
+
+  #[tracing::instrument(skip(self))]
   pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<Vec<Image>, AppError> {
     if image_ids.is_empty() {
       return Ok(Vec::new());
