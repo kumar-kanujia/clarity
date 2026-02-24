@@ -1,169 +1,197 @@
-# NEXT — Worker Upgrade, Tag System Expansion, and Hard Delete Support
+# NEXT — Bulk Operations and Multi-Selection Support
 
-Context: Core backend functionality is complete and stable. Processing pipeline, tagging, and soft delete exist and function correctly.
+Context: Core backend functionality is complete and production-ready. Event-driven workers, full tag lifecycle, thumbnail pipeline, and permanent delete all function correctly.
 
-This phase focuses on:
+This phase upgrades the system to support deterministic bulk state transitions across multiple images. This enables efficient tagging, bin operations, permanent deletion, and prepares the system for duplicate resolution workflows.
 
-- Upgrading worker system from loop-based to event-driven
-- Expanding tag system with restore and permanent delete
-- Supporting permanent image deletion
+Bulk operations are backend primitives. UI selection must invoke these primitives and must not implement operational logic.
 
 Rule:
 Work top to bottom.
 Do not skip sections.
 Do not introduce implicit behavior.
-UI work is out of scope except data layer integration.
+All state transitions must remain explicit, deterministic, and observable.
 
 ---
 
-# SECTION 1 — Event-Driven Worker System Upgrade
+# SECTION 1 — Bulk Operations Backend
 
-Goal: Replace loop-based workers with event-driven processing.
+Goal: Implement deterministic bulk state transition primitives at the backend layer.
 
-Workers must execute only when work exists, not continuously poll.
+Bulk operations must execute within a single database transaction.
+Bulk operations must never internally call single-item operations.
 
 ---
 
-## Part 1.1 — Event-Driven Worker Architecture
+## Part 1.1 — Bulk Soft Delete
 
-- [x] Define worker event system
-- [x] Define event types for pipeline stages
-- [x] Ensure workers sleep when no work exists
-- [x] Ensure workers wake immediately when work is available
-- [x] Remove loop-based polling logic
+- [ ] Define bulk soft delete operation
+- [ ] Operation accepts arbitrary list of image IDs
+- [ ] Mark all specified images as soft-deleted
+- [ ] Do not modify images already soft-deleted
+- [ ] Do not modify original files on disk
+- [ ] Execute operation in single database transaction
+- [ ] Emit structured log for operation
 
 Completion Check:
 
-- [x] No continuous polling exists
-- [x] Workers activate only when events occur
-- [x] Worker behavior deterministic
+- [ ] Bulk soft delete deterministic
+- [ ] No partial state transitions possible
+- [ ] Referential integrity preserved
 
 ---
 
-## Part 1.2 — Pipeline Event Integration
+## Part 1.2 — Bulk Restore
 
-Events must be emitted when pipeline work becomes available.
-
-- [x] Emit event when image enters Pending state
-- [x] Emit event when hashing completes
-- [x] Emit event when thumbnail generation becomes available
-- [x] Ensure events emitted only after DB commit succeeds
-- [x] Ensure duplicate events do not cause duplicate processing
+- [ ] Define bulk restore operation
+- [ ] Operation accepts arbitrary list of image IDs
+- [ ] Restore all specified soft-deleted images
+- [ ] Do not affect already-active images
+- [ ] Execute operation in single database transaction
+- [ ] Emit structured log
 
 Completion Check:
 
-- [x] All pipeline stages triggered by events
-- [x] No missed processing
-- [x] No duplicate processing
+- [ ] Restore fully reversible
+- [ ] Image identity and relationships preserved
 
 ---
 
-## Part 1.3 — Worker Reliability and Safety
+## Part 1.3 — Bulk Permanent Delete
 
-- [x] Ensure worker crash isolation remains intact
-- [x] Ensure retry logic continues to function
-- [x] Ensure failed items do not block worker
-- [x] Ensure worker restart resumes processing correctly
+- [ ] Define bulk permanent delete operation
+- [ ] Operation accepts arbitrary list of image IDs
+- [ ] Remove image records from database
+- [ ] Remove tag assignments
+- [ ] Remove favorite state
+- [ ] Remove pipeline state
+- [ ] Remove duplicate relationships
+- [ ] Execute operation in single database transaction
+- [ ] Emit structured log
 
 Completion Check:
 
-- [x] Worker system reliable and fault-tolerant
-- [x] Worker system fully event-driven
+- [ ] Images fully removed from system state
+- [ ] No orphan records exist
 
 ---
 
-# SECTION 2 — Tag System Expansion
+## Part 1.4 — Bulk Tag Attach
 
-Goal: Complete tag delete, restore, and permanent delete functionality.
-
-Soft delete already exists.
-
----
-
-## Part 2.1 — Retrieve Deleted Tags
-
-- [x] Retrieve deleted tags
-- [x] Retrieve active tags only
-- [x] Retrieve all tags (active and deleted)
-- [ ] ~~Support sorting and pagination of deleted tags~~ Not in scope
+- [ ] Define bulk tag attach operation
+- [ ] Operation accepts image ID list and tag ID
+- [ ] Assign tag to all specified images
+- [ ] Prevent duplicate tag assignments
+- [ ] Execute operation in single database transaction
+- [ ] Emit structured log
 
 Completion Check:
 
-- [ ] Deleted tags fully observable
+- [ ] Tag assignment deterministic
+- [ ] Referential integrity preserved
 
 ---
 
-## Part 2.2 — Restore Deleted Tag
+## Part 1.5 — Bulk Tag Removal
 
-- [x] Restore deleted tag
-- [x] Restore preserves tag ID
-- [x] Restore preserves tag assignments
-- [x] Restore fails safely if tag conflict exists
+- [ ] Define bulk tag removal operation
+- [ ] Operation accepts image ID list and tag ID
+- [ ] Remove tag from specified images only
+- [ ] Execute operation in single database transaction
+- [ ] Emit structured log
 
 Completion Check:
 
-- [x] Tag restore reliable
-- [x] Tag relationships preserved
+- [ ] Tag removal deterministic
+- [ ] Referential integrity preserved
 
 ---
 
-## Part 2.3 — Permanent Tag Delete
+# SECTION 2 — Multi-Selection UI Integration
 
-- [x] Permanently delete tag record
-- [x] Remove all tag assignments
-- [x] Ensure referential integrity maintained
-- [x] Ensure no orphan tag references remain
+Goal: Integrate deterministic multi-selection with backend bulk operations.
+
+UI must maintain selection state independently.
+UI must invoke backend bulk operations exclusively.
+UI must not implement state transition logic.
+
+---
+
+## Part 2.1 — Selection Model
+
+- [ ] Support single selection
+- [ ] Support multi-selection
+- [ ] Support range selection
+- [ ] Support select all
+- [ ] Support selection clearing
 
 Completion Check:
 
-- [x] Tag fully removed from system
+- [ ] Selection model fully functional
+- [ ] Selection state deterministic and reliable
 
 ---
 
-# SECTION 3 — Permanent Image Delete
+## Part 2.2 — Bulk Action Integration
 
-Goal: Support permanent removal of image records from system.
-
-Permanent delete affects database and derived data only.
-Original files on disk must not be deleted.
-
----
-
-## Part 3.1 — Permanent Image Delete Operation
-
-- [x] Permanently delete image record
-- [x] Remove tag assignments
-- [x] Remove favorite state
-- [x] Remove pipeline state
-- [x] Remove duplicate relationships
+- [ ] Bulk tag attach from selection
+- [ ] Bulk tag removal from selection
+- [ ] Bulk soft delete from selection
+- [ ] Bulk restore from selection
+- [ ] Bulk permanent delete from selection
 
 Completion Check:
 
-- [x] Image fully removed from database
-- [x] No orphan references remain
+- [ ] UI invokes backend bulk operations correctly
+- [ ] No behavioral differences between single and bulk operations
 
 ---
 
-## Part 3.2 — Thumbnail Cleanup
+# SECTION 3 — Cache Consistency and Reliability Validation
 
-- [x] Delete thumbnail cache for permanently deleted image
-- [x] Ensure no orphan thumbnail files remain
-
-Completion Check:
-
-- [x] Thumbnail cache consistent with database
+Goal: Ensure cache consistency and validate reliability of bulk operations.
 
 ---
 
-## Part 3.3 — Permanent Delete Safety
+## Part 3.1 — Thumbnail Cache Consistency
 
-- [x] Permanent delete requires explicit operation
-- [x] Permanent delete fully logged
-- [x] Permanent delete deterministic
+- [ ] Delete thumbnail cache files for permanently deleted images
+- [ ] Thumbnail cleanup occurs only after database delete succeeds
+- [ ] Ensure cleanup failure does not corrupt database state
+- [ ] Emit structured log for cleanup
 
 Completion Check:
 
-- [x] No unintended permanent deletion
+- [ ] No orphan thumbnail files remain
+- [ ] Cache consistent with database
+
+---
+
+## Part 3.2 — Bulk Operation Reliability Validation
+
+- [ ] Validate bulk soft delete
+- [ ] Validate bulk restore
+- [ ] Validate bulk permanent delete
+- [ ] Validate bulk tag attach
+- [ ] Validate bulk tag removal
+
+Completion Check:
+
+- [ ] All bulk operations deterministic
+- [ ] All bulk operations reliable
+
+---
+
+## Part 3.3 — Failure Scenario Validation
+
+- [ ] Validate behavior under database interruption
+- [ ] Validate behavior under worker interaction
+- [ ] Validate behavior under partial system failure
+
+Completion Check:
+
+- [ ] System remains consistent
+- [ ] No orphan state created
 
 ---
 
@@ -171,10 +199,10 @@ Completion Check:
 
 When all sections are complete:
 
-1. Update CAPABILITIES.md
-2. Declare worker system and delete functionality production-ready
-3. Archive this file
-4. Create new NEXT.md for next development phase
+- [ ] Update CAPABILITIES.md
+- [ ] Promote bulk operations to production capability
+- [ ] Archive this file
+- [ ] Create new NEXT.md for duplicate detection phase
 
 System must remain:
 
@@ -183,5 +211,3 @@ System must remain:
 - Explicit
 - Observable
 - Reliable
-
----
