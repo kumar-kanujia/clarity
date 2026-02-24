@@ -1,7 +1,7 @@
 use crate::{
   application::error::AppError,
   domain::{file::FileMetaData, image::Image},
-  infrastructure::repo::image_repo::ImageRepository,
+  infrastructure::{models::image_model::ImageStatus, repo::image_repo::ImageRepository},
 };
 
 pub struct ImageMutationService {
@@ -42,6 +42,18 @@ impl ImageMutationService {
       .set_image_deleted_status(image_id, is_deleted)
       .await?;
     Ok(())
+  }
+
+  #[tracing::instrument(skip(self))]
+  pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<Vec<Image>, AppError> {
+    if image_ids.is_empty() {
+      return Ok(Vec::new());
+    }
+    let image_rows = self
+      .repo
+      .update_image_status(image_ids, ImageStatus::Deleted)
+      .await?;
+    Ok(image_rows.into_iter().map(Image::from).collect())
   }
 }
 

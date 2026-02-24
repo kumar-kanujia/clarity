@@ -9,17 +9,24 @@ use crate::{
 
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::mpsc;
 
 #[derive(Clone)]
 pub struct ThumbnailStage {
-  pub thumbnail_target: PathBuf,
+  thumbnail_target: PathBuf,
+  next_stage_tx: mpsc::Sender<Image>,
   repo: Arc<ImageRepository>,
 }
 
 impl ThumbnailStage {
-  pub fn new(thumbnail_target: PathBuf, repo: Arc<ImageRepository>) -> Self {
+  pub fn new(
+    thumbnail_target: PathBuf,
+    next_stage_tx: mpsc::Sender<Image>,
+    repo: Arc<ImageRepository>,
+  ) -> Self {
     Self {
       thumbnail_target,
+      next_stage_tx,
       repo,
     }
   }
@@ -37,10 +44,17 @@ impl PipelineStage for ThumbnailStage {
   /// Step 1: Check if we have a duplicate image
   /// Save new image with same thumbnail path
   async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
-    let mut duplicate_images = Vec::new();
-    let mut hashed_images = Vec::new();
+    let mut duplicate_images = Vec::with_capacity(items.len());
+    let mut hashed_images = Vec::with_capacity(items.len());
 
     for mut image in items {
+      if image.status != ImageStatus::Hashed {
+        if let Err(e) = self.next_stage_tx.send(image).await {
+          tracing::error!(error = ?e, "Failed to route image to thumbnail stage");
+        }
+        continue;
+      }
+
       if let Ok(duplicate_image) = self
         .repo
         .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)

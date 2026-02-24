@@ -98,3 +98,26 @@ pub async fn undo_soft_delete_image(
 
   Ok(())
 }
+
+#[tauri::command]
+#[tracing::instrument(skip(state), fields(count = image_ids.len()))]
+pub async fn delete_images(
+  state: State<'_, AppState>,
+  image_ids: Vec<i64>,
+) -> Result<(), CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
+
+  let image_mutation_service = ImageMutationService::new(image_repository);
+
+  let images = image_mutation_service
+    .hard_delete_images(&image_ids)
+    .await?;
+
+  for image in images {
+    state.pipline.ingest(image).await;
+  }
+
+  tracing::info!("Image soft delete completed!");
+
+  Ok(())
+}
