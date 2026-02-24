@@ -82,10 +82,10 @@ Soft delete already exists.
 
 ## Part 2.1 — Retrieve Deleted Tags
 
-- [ ] Retrieve deleted tags
-- [ ] Retrieve active tags only
-- [ ] Retrieve all tags (active and deleted)
-- [ ] Support sorting and pagination of deleted tags
+- [x] Retrieve deleted tags
+- [x] Retrieve active tags only
+- [x] Retrieve all tags (active and deleted)
+- [ ] ~~Support sorting and pagination of deleted tags~~ Not in scope
 
 Completion Check:
 
@@ -95,28 +95,28 @@ Completion Check:
 
 ## Part 2.2 — Restore Deleted Tag
 
-- [ ] Restore deleted tag
-- [ ] Restore preserves tag ID
-- [ ] Restore preserves tag assignments
-- [ ] Restore fails safely if tag conflict exists
+- [x] Restore deleted tag
+- [x] Restore preserves tag ID
+- [x] Restore preserves tag assignments
+- [x] Restore fails safely if tag conflict exists
 
 Completion Check:
 
-- [ ] Tag restore reliable
-- [ ] Tag relationships preserved
+- [x] Tag restore reliable
+- [x] Tag relationships preserved
 
 ---
 
 ## Part 2.3 — Permanent Tag Delete
 
-- [ ] Permanently delete tag record
-- [ ] Remove all tag assignments
-- [ ] Ensure referential integrity maintained
-- [ ] Ensure no orphan tag references remain
+- [x] Permanently delete tag record
+- [x] Remove all tag assignments
+- [x] Ensure referential integrity maintained
+- [x] Ensure no orphan tag references remain
 
 Completion Check:
 
-- [ ] Tag fully removed from system
+- [x] Tag fully removed from system
 
 ---
 

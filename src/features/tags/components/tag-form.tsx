@@ -40,7 +40,7 @@ export const tagFormSchema = z.object({
   tagText: z
     .string()
     .min(3, "Tag must be at least 3 characters.")
-    .max(6, "Tag cannot exceed 6 characters."),
+    .max(8, "Tag cannot exceed 8 characters."),
   color: ColorEnum
 })
 

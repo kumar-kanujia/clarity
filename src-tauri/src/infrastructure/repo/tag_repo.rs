@@ -93,11 +93,28 @@ impl TagRepository {
     Ok(())
   }
 
+  pub async fn delete_tag(&self, tag_id: i64) -> Result<(), DatabaseError> {
+    let query_str = r#"
+            DELETE FROM tags
+            WHERE id = ?1
+        "#;
+    let result = sqlx::query(query_str)
+      .bind(tag_id)
+      .execute(&self.db)
+      .await?;
+
+    if result.rows_affected() == 0 {
+      return Err(DatabaseError::NotFound);
+    }
+
+    Ok(())
+  }
+
   // endregion
 
   // region: Tag Query
 
-  pub async fn get_popular_tags(
+  pub async fn get_tags_order_by_image_count(
     &self,
     tag_type: TagType,
     limit: Option<i64>,
@@ -228,7 +245,10 @@ mod tests {
     .unwrap();
 
     // 2. Query popular tags
-    let popular = repo.get_popular_tags(TagType::User, Some(1)).await.unwrap();
+    let popular = repo
+      .get_tags_order_by_image_count(TagType::User, Some(1))
+      .await
+      .unwrap();
 
     assert_eq!(popular.len(), 1);
     assert_eq!(popular[0].text, "A");

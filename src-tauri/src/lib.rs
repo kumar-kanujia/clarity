@@ -10,7 +10,10 @@ use crate::{
     gallery_command::{fetch_bin, fetch_favorites, fetch_gallery, fetch_tag_gallery},
     image_command::{import_images, soft_delete_image, toggle_favorite, undo_soft_delete_image},
     image_tag_command::{fetch_attached_tags, fetch_available_tags, toggle_tag},
-    tag_command::{create_tag, edit_tag, fetch_all_tags, fetch_top_tags, soft_delete_tag},
+    tag_command::{
+      create_tag, delete_tag, edit_tag, fetch_all_tags, fetch_deleted_tags, fetch_top_tags,
+      soft_delete_tag, undo_delete_tag,
+    },
   },
   setup::{app_callback, app_setup, logger::Logger},
 };
@@ -36,9 +39,12 @@ pub fn run() {
       // Tags
       create_tag,
       edit_tag,
+      soft_delete_tag,
+      undo_delete_tag,
+      delete_tag,
       fetch_top_tags,
       fetch_all_tags,
-      soft_delete_tag,
+      fetch_deleted_tags,
       // Image tags
       toggle_tag,
       fetch_attached_tags,

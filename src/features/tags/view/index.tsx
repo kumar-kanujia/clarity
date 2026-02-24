@@ -5,7 +5,8 @@ import { CreateTagDialog } from "../components/create-tag-dialog"
 import { TagCard } from "../components/tag-card"
 import { DeleteTagDialog } from "../components/delete-tag-dialog"
 import { EditTagDialog } from "../components/edit-tag-dialog"
-import { getAllTagsQueryOption } from "../hooks"
+import { getAllTagsQueryOption, getInactiveTagsQueryOption } from "../hooks"
+import { Badge } from "@/components/ui/badge"
 
 const TagHeader = () => (
   <header className="h-16 border-b flex items-center justify-between px-8 bg-background/50 backdrop-blur-md sticky top-0 z-30 shrink-0">
@@ -33,26 +34,64 @@ const EmptyTagState = () => (
   </div>
 )
 
-export const TagsView = () => {
+const ActiveTags = () => {
   const { data: tags } = useSuspenseQuery(getAllTagsQueryOption())
-
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden relative">
-      <EditTagDialog />
-      <DeleteTagDialog />
-      <TagHeader />
-      <main className="flex-1 overflow-y-auto p-8">
-        {tags.length === 0 ? (
-          <EmptyTagState />
-        ) : (
-          <div className="max-w-7xl mx-auto">
+    <>
+      {tags.length === 0 ? (
+        <EmptyTagState />
+      ) : (
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-2">
+            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex justify-between items-center">
+              Active Tags <Badge>{tags.length}</Badge>
+            </span>
+          </div>
+          <div className="max-h-100 overflow-y-scroll pe-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {tags.map((tag) => (
                 <TagCard key={tag.id} tag={tag} />
               ))}
             </div>
           </div>
-        )}
+        </div>
+      )}
+    </>
+  )
+}
+
+const InactiveTags = () => {
+  const { data: tags } = useSuspenseQuery(getInactiveTagsQueryOption())
+
+  if (tags.length === 0) return null
+
+  return (
+    <div className="max-w-7xl mx-auto mt-4">
+      <div className="mb-2">
+        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex justify-between items-center">
+          Inactive Tags <Badge>{tags.length}</Badge>
+        </span>
+      </div>
+      <div className="h-50 pe-4 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {tags.map((tag) => (
+            <TagCard key={tag.id} tag={tag} isInactive />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export const TagsView = () => {
+  return (
+    <div className="flex flex-col h-full bg-background overflow-hidden relative">
+      <EditTagDialog />
+      <DeleteTagDialog />
+      <TagHeader />
+      <main className="flex-1 overflow-y-auto p-8">
+        <ActiveTags />
+        <InactiveTags />
       </main>
     </div>
   )
