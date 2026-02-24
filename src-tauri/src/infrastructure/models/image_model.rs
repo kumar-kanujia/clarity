@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use sqlx::prelude::{FromRow, Type};
 
-#[derive(Debug, Type, Default)]
+#[derive(Debug, Type, Default, PartialEq, Eq)]
 #[repr(i32)]
 pub enum ImageStatus {
   #[default]

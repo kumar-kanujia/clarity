@@ -22,7 +22,11 @@ pub async fn import_images(
 
   let image_import_workflow = ImageImportWorkflow::new(image_mutation_service);
 
-  let summary = image_import_workflow.scan_and_import_images(&paths).await?;
+  let (summary, new_images) = image_import_workflow.scan_and_import_images(&paths).await?;
+
+  for image in new_images {
+    state.pipline.ingest(image).await;
+  }
 
   tracing::info!(
     total_scanned = summary.total_scanned,

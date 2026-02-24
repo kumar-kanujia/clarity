@@ -1,5 +1,6 @@
 use crate::{
-  application::error::AppError, domain::file::FileMetaData,
+  application::error::AppError,
+  domain::{file::FileMetaData, image::Image},
   infrastructure::repo::image_repo::ImageRepository,
 };
 
@@ -12,17 +13,16 @@ impl ImageMutationService {
     Self { repo }
   }
 
-  #[tracing::instrument(skip(self))]
   pub async fn persist_file_metadata_for_images(
     &self,
     image_metadata: &[FileMetaData],
-  ) -> Result<i64, AppError> {
+  ) -> Result<Vec<Image>, AppError> {
     let imported = self
       .repo
       .create_images_by_file_metadata(image_metadata)
       .await?;
 
-    Ok(imported as i64)
+    Ok(imported.into_iter().map(Image::from).collect())
   }
 
   #[tracing::instrument(skip(self))]
@@ -84,7 +84,7 @@ mod tests {
       .unwrap();
 
     // Verifies the service correctly returns the count as i64
-    assert_eq!(result, 2);
+    assert_eq!(result.len(), 2);
   }
 
   #[tokio::test]
