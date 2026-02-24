@@ -34,6 +34,8 @@ impl PipelineStage for ThumbnailStage {
     "thumbnail_stage"
   }
 
+  /// Step 1: Check if we have a duplicate image
+  /// Save new image with same thumbnail path
   async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
     let mut duplicate_images = Vec::new();
     let mut hashed_images = Vec::new();
@@ -69,14 +71,14 @@ impl PipelineStage for ThumbnailStage {
     hashed_images
   }
 
-  /// Step 1: CPU-Bound Processing (Synchronous)
+  /// Step 2: CPU-Bound Processing (Synchronous)
   fn process_batch(&self, mut images: Vec<Image>) -> Vec<Image> {
     let target_dir = &self.thumbnail_target;
     thumbnail_service::process_batch(&mut images, target_dir);
     images
   }
 
-  /// Step 2: DB Updates & Routing (Asynchronous)
+  /// Step 1: DB Updates & Routing (Asynchronous)
   async fn handle_completed_batch(&self, items: Vec<Image>) -> Result<u64, DatabaseError> {
     let updated_count = self.repo.update_image_metadata(&items).await?;
     tracing::info!(

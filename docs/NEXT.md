@@ -1,10 +1,9 @@
----
-
 # NEXT — Worker Upgrade, Tag System Expansion, and Hard Delete Support
 
 Context: Core backend functionality is complete and stable. Processing pipeline, tagging, and soft delete exist and function correctly.
 
 This phase focuses on:
+
 - Upgrading worker system from loop-based to event-driven
 - Expanding tag system with restore and permanent delete
 - Supporting permanent image deletion
@@ -27,17 +26,17 @@ Workers must execute only when work exists, not continuously poll.
 
 ## Part 1.1 — Event-Driven Worker Architecture
 
-- [ ] Define worker event system
-- [ ] Define event types for pipeline stages
-- [ ] Ensure workers sleep when no work exists
-- [ ] Ensure workers wake immediately when work is available
-- [ ] Remove loop-based polling logic
+- [x] Define worker event system
+- [x] Define event types for pipeline stages
+- [x] Ensure workers sleep when no work exists
+- [x] Ensure workers wake immediately when work is available
+- [x] Remove loop-based polling logic
 
 Completion Check:
 
-- [ ] No continuous polling exists
-- [ ] Workers activate only when events occur
-- [ ] Worker behavior deterministic
+- [x] No continuous polling exists
+- [x] Workers activate only when events occur
+- [x] Worker behavior deterministic
 
 ---
 
@@ -45,31 +44,31 @@ Completion Check:
 
 Events must be emitted when pipeline work becomes available.
 
-- [ ] Emit event when image enters Pending state
-- [ ] Emit event when hashing completes
-- [ ] Emit event when thumbnail generation becomes available
-- [ ] Ensure events emitted only after DB commit succeeds
-- [ ] Ensure duplicate events do not cause duplicate processing
+- [x] Emit event when image enters Pending state
+- [x] Emit event when hashing completes
+- [x] Emit event when thumbnail generation becomes available
+- [x] Ensure events emitted only after DB commit succeeds
+- [x] Ensure duplicate events do not cause duplicate processing
 
 Completion Check:
 
-- [ ] All pipeline stages triggered by events
-- [ ] No missed processing
-- [ ] No duplicate processing
+- [x] All pipeline stages triggered by events
+- [x] No missed processing
+- [x] No duplicate processing
 
 ---
 
 ## Part 1.3 — Worker Reliability and Safety
 
-- [ ] Ensure worker crash isolation remains intact
-- [ ] Ensure retry logic continues to function
-- [ ] Ensure failed items do not block worker
-- [ ] Ensure worker restart resumes processing correctly
+- [x] Ensure worker crash isolation remains intact
+- [x] Ensure retry logic continues to function
+- [x] Ensure failed items do not block worker
+- [x] Ensure worker restart resumes processing correctly
 
 Completion Check:
 
-- [ ] Worker system reliable and fault-tolerant
-- [ ] Worker system fully event-driven
+- [x] Worker system reliable and fault-tolerant
+- [x] Worker system fully event-driven
 
 ---
 

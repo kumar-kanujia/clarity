@@ -9,8 +9,8 @@ use crate::{
 };
 
 use rayon::ThreadPoolBuilder;
-use std::path::PathBuf;
 use std::sync::Arc;
+use std::{cmp, path::PathBuf};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
@@ -40,8 +40,9 @@ impl PipelineOrchestrator {
       );
     }
 
-    let hash_batch_size = std::cmp::max(4, thread_count * FILE_HASH_BATCH_FACTOR);
-    let thumb_batch_size = std::cmp::max(1, thread_count * THUMBNAIL_BATCH_FACTOR);
+    let hash_batch_size = cmp::max(4, thread_count * FILE_HASH_BATCH_FACTOR);
+
+    let thumb_batch_size = cmp::max(1, thread_count * THUMBNAIL_BATCH_FACTOR);
 
     let (hash_tx, hash_rx) = mpsc::channel::<Image>(10_000);
     let (thumb_tx, thumb_rx) = mpsc::channel::<Image>(10_000);

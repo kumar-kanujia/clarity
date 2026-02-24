@@ -25,12 +25,11 @@ pub trait PipelineStage: Clone + Send + Sync + 'static {
   async fn handle_completed_batch(&self, items: Vec<Self::Output>) -> Result<u64, Self::Error>;
 
   /// The Event-Driven Engine.
-  /// You do not need to override this; it handles the queue listening automatically.
   async fn run(
     self,
     mut rx: mpsc::Receiver<Self::Input>,
     batch_size: usize,
-    shutdown: CancellationToken,
+    cancellation_token: CancellationToken,
   ) {
     let name = self.name();
     let stage_id = uuid::Uuid::new_v4().to_string();
@@ -43,9 +42,9 @@ pub trait PipelineStage: Clone + Send + Sync + 'static {
       loop {
         let mut batch = Vec::with_capacity(batch_size);
 
-        // 1. SLEEP UNTIL WORK ARRIVES (0% CPU Usage)
+        // 1. SLEEP UNTIL WORK ARRIVES
         tokio::select! {
-            _ = shutdown.cancelled() => {
+            _ = cancellation_token.cancelled() => {
                 tracing::info!("Shutdown signal received, exiting stage.");
                 break;
             }
@@ -83,6 +82,7 @@ pub trait PipelineStage: Clone + Send + Sync + 'static {
 
         // 4. PROCESS (Hand off to Rayon via spawn_blocking)
         let stage_clone = self.clone();
+
         let items_out =
           tokio::task::spawn_blocking(move || stage_clone.process_batch(items_to_process))
             .instrument(batch_span.clone())
