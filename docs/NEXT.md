@@ -25,85 +25,85 @@ Bulk operations must never internally call single-item operations.
 
 ## Part 1.1 — Bulk Soft Delete
 
-- [ ] Define bulk soft delete operation
-- [ ] Operation accepts arbitrary list of image IDs
-- [ ] Mark all specified images as soft-deleted
-- [ ] Do not modify images already soft-deleted
-- [ ] Do not modify original files on disk
-- [ ] Execute operation in single database transaction
-- [ ] Emit structured log for operation
+- [x] Define bulk soft delete operation
+- [x] Operation accepts arbitrary list of image IDs
+- [x] Mark all specified images as soft-deleted
+- [x] Do not modify images already soft-deleted
+- [x] Do not modify original files on disk
+- [x] Execute operation in single database transaction
+- [x] Emit structured log for operation
 
 Completion Check:
 
-- [ ] Bulk soft delete deterministic
-- [ ] No partial state transitions possible
-- [ ] Referential integrity preserved
+- [x] Bulk soft delete deterministic
+- [x] No partial state transitions possible
+- [x] Referential integrity preserved
 
 ---
 
 ## Part 1.2 — Bulk Restore
 
-- [ ] Define bulk restore operation
-- [ ] Operation accepts arbitrary list of image IDs
-- [ ] Restore all specified soft-deleted images
-- [ ] Do not affect already-active images
-- [ ] Execute operation in single database transaction
-- [ ] Emit structured log
+- [x] Define bulk restore operation
+- [x] Operation accepts arbitrary list of image IDs
+- [x] Restore all specified soft-deleted images
+- [x] Do not affect already-active images
+- [x] Execute operation in single database transaction
+- [x] Emit structured log
 
 Completion Check:
 
-- [ ] Restore fully reversible
-- [ ] Image identity and relationships preserved
+- [x] Restore fully reversible
+- [x] Image identity and relationships preserved
 
 ---
 
 ## Part 1.3 — Bulk Permanent Delete
 
-- [ ] Define bulk permanent delete operation
-- [ ] Operation accepts arbitrary list of image IDs
-- [ ] Remove image records from database
-- [ ] Remove tag assignments
-- [ ] Remove favorite state
-- [ ] Remove pipeline state
-- [ ] Remove duplicate relationships
-- [ ] Execute operation in single database transaction
-- [ ] Emit structured log
+- [x] Define bulk permanent delete operation
+- [x] Operation accepts arbitrary list of image IDs
+- [x] Remove image records from database
+- [x] Remove tag assignments
+- [x] Remove favorite state
+- [x] Remove pipeline state
+- [x] Remove duplicate relationships
+- [x] Execute operation in single database transaction
+- [x] Emit structured log
 
 Completion Check:
 
-- [ ] Images fully removed from system state
-- [ ] No orphan records exist
+- [x] Images fully removed from system state
+- [x] No orphan records exist
 
 ---
 
 ## Part 1.4 — Bulk Tag Attach
 
-- [ ] Define bulk tag attach operation
-- [ ] Operation accepts image ID list and tag ID
-- [ ] Assign tag to all specified images
-- [ ] Prevent duplicate tag assignments
-- [ ] Execute operation in single database transaction
-- [ ] Emit structured log
+- [x] Define bulk tag attach operation
+- [x] Operation accepts image ID list and tag ID
+- [x] Assign tag to all specified images
+- [x] Prevent duplicate tag assignments
+- [x] Execute operation in single database transaction
+- [x] Emit structured log
 
 Completion Check:
 
-- [ ] Tag assignment deterministic
-- [ ] Referential integrity preserved
+- [x] Tag assignment deterministic
+- [x] Referential integrity preserved
 
 ---
 
 ## Part 1.5 — Bulk Tag Removal
 
-- [ ] Define bulk tag removal operation
-- [ ] Operation accepts image ID list and tag ID
-- [ ] Remove tag from specified images only
-- [ ] Execute operation in single database transaction
-- [ ] Emit structured log
+- [x] Define bulk tag removal operation
+- [x] Operation accepts image ID list and tag ID
+- [x] Remove tag from specified images only
+- [x] Execute operation in single database transaction
+- [x] Emit structured log
 
 Completion Check:
 
-- [ ] Tag removal deterministic
-- [ ] Referential integrity preserved
+- [x] Tag removal deterministic
+- [x] Referential integrity preserved
 
 ---
 

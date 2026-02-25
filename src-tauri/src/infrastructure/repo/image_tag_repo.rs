@@ -15,7 +15,7 @@ impl ImageTagRepository {
     Self { db }
   }
 
-  // region: Tag Create
+  // region: Tag Mutation
 
   pub async fn toggle_image_tag(&self, image_id: i64, tag_id: i64) -> Result<bool, DatabaseError> {
     let mut tx = self.db.begin().await?;
@@ -40,6 +40,52 @@ impl ImageTagRepository {
     tx.commit().await?;
 
     Ok(insert_res.rows_affected() == 1)
+  }
+
+  pub async fn create_image_tags(
+    &self,
+    image_ids: Vec<i64>,
+    tag_id: i64,
+  ) -> Result<u64, DatabaseError> {
+    if image_ids.is_empty() {
+      return Ok(0);
+    }
+
+    let mut query_builder =
+      sqlx::QueryBuilder::new("INSERT OR IGNORE INTO image_tags (image_id, tag_id) ");
+
+    query_builder.push_values(image_ids.iter(), |mut b, image_id| {
+      b.push_bind(image_id).push_bind(tag_id);
+    });
+
+    let result = query_builder.build().execute(&self.db).await?;
+
+    Ok(result.rows_affected())
+  }
+
+  pub async fn delete_image_tags(
+    &self,
+    image_ids: Vec<i64>,
+    tag_id: i64,
+  ) -> Result<u64, DatabaseError> {
+    if image_ids.is_empty() {
+      return Ok(0);
+    }
+
+    let mut query_builder = sqlx::QueryBuilder::new("DELETE FROM image_tags WHERE tag_id = ");
+
+    query_builder.push_bind(tag_id);
+    query_builder.push(" AND image_id IN (");
+
+    let mut separated = query_builder.separated(", ");
+    for image_id in &image_ids {
+      separated.push_bind(image_id);
+    }
+    separated.push_unseparated(")");
+
+    let result = query_builder.build().execute(&self.db).await?;
+
+    Ok(result.rows_affected())
   }
 
   // endregion

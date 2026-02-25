@@ -18,6 +18,24 @@ impl ImageTagService {
     Ok(res)
   }
 
+  pub async fn attach_tag_to_images(
+    &self,
+    image_ids: Vec<i64>,
+    tag_id: i64,
+  ) -> Result<u64, AppError> {
+    let res = self.repo.create_image_tags(image_ids, tag_id).await?;
+    Ok(res)
+  }
+
+  pub async fn remove_tag_from_images(
+    &self,
+    image_ids: Vec<i64>,
+    tag_id: i64,
+  ) -> Result<u64, AppError> {
+    let res = self.repo.delete_image_tags(image_ids, tag_id).await?;
+    Ok(res)
+  }
+
   pub async fn list_attached_tags_on_image(
     &self,
     image_id: i64,

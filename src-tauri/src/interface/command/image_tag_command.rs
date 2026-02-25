@@ -28,6 +28,54 @@ pub async fn toggle_tag(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state), fields(count = image_ids.len(), tag_id = tag_id))]
+pub async fn attach_tag(
+  state: State<'_, AppState>,
+  image_ids: Vec<i64>,
+  tag_id: i64,
+) -> Result<u64, CommandError> {
+  let image_tag_repository = ImageTagRepository::new(state.db.clone());
+
+  let image_tag_service = ImageTagService::new(image_tag_repository);
+
+  let attached_tags = image_tag_service
+    .attach_tag_to_images(image_ids, tag_id)
+    .await?;
+
+  tracing::info!(
+    tag_id = tag_id,
+    count = attached_tags,
+    "Tag attachment on images completed"
+  );
+
+  Ok(attached_tags)
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(state), fields(count = image_ids.len(), tag_id = tag_id))]
+pub async fn remove_tag(
+  state: State<'_, AppState>,
+  image_ids: Vec<i64>,
+  tag_id: i64,
+) -> Result<u64, CommandError> {
+  let image_tag_repository = ImageTagRepository::new(state.db.clone());
+
+  let image_tag_service = ImageTagService::new(image_tag_repository);
+
+  let removed_count = image_tag_service
+    .remove_tag_from_images(image_ids, tag_id)
+    .await?;
+
+  tracing::info!(
+    tag_id = tag_id,
+    count = removed_count,
+    "Tag removal from images complete"
+  );
+
+  Ok(removed_count)
+}
+
+#[tauri::command]
 #[tracing::instrument(skip(state), fields(image_id = image_id, limit = limit))]
 pub async fn fetch_attached_tags(
   state: State<'_, AppState>,
