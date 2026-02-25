@@ -9,8 +9,8 @@ use crate::{
   interface::command::{
     gallery_command::{fetch_bin, fetch_favorites, fetch_gallery, fetch_tag_gallery},
     image_command::{
-      delete_images, empty_bin, import_images, soft_delete_image, toggle_favorite,
-      undo_soft_delete_image,
+      delete_images, empty_bin, import_images, soft_delete_image, soft_delete_images,
+      toggle_favorite, undo_soft_delete_image, undo_soft_delete_images,
     },
     image_tag_command::{fetch_attached_tags, fetch_available_tags, toggle_tag},
     tag_command::{
@@ -36,6 +36,8 @@ pub fn run() {
       toggle_favorite,
       soft_delete_image,
       undo_soft_delete_image,
+      soft_delete_images,
+      undo_soft_delete_images,
       delete_images,
       empty_bin,
       fetch_favorites,
