@@ -13,7 +13,8 @@ use crate::{
       toggle_favorite, undo_soft_delete_image, undo_soft_delete_images,
     },
     image_tag_command::{
-      attach_tag, fetch_attached_tags, fetch_available_tags, remove_tag, toggle_tag,
+      attach_tag, attached_tags, available_tags, fetch_attached_tags, fetch_available_tags,
+      remove_tag, toggle_tag,
     },
     tag_command::{
       create_tag, delete_tag, edit_tag, fetch_all_tags, fetch_deleted_tags, fetch_top_tags,
@@ -59,7 +60,9 @@ pub fn run() {
       attach_tag,
       remove_tag,
       fetch_attached_tags,
-      fetch_available_tags
+      fetch_available_tags,
+      attached_tags,
+      available_tags
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application");

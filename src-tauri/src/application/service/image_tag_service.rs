@@ -61,6 +61,38 @@ impl ImageTagService {
     let res = raw.into_iter().map(TagItem::from).collect();
     Ok(res)
   }
+
+  pub async fn list_attached_tags_on_images(
+    &self,
+    image_ids: Vec<i64>,
+    limit: Option<i64>,
+  ) -> Result<Vec<TagItem>, AppError> {
+    if image_ids.is_empty() {
+      return Ok(vec![]);
+    }
+    let raw = self
+      .repo
+      .get_tags_attached_to_images(image_ids, TagType::User, limit)
+      .await?;
+    let res = raw.into_iter().map(TagItem::from).collect();
+    Ok(res)
+  }
+
+  pub async fn list_available_tags_on_images(
+    &self,
+    image_ids: Vec<i64>,
+    limit: Option<i64>,
+  ) -> Result<Vec<TagItem>, AppError> {
+    if image_ids.is_empty() {
+      return Ok(vec![]);
+    }
+    let raw = self
+      .repo
+      .get_tags_not_attached_to_images(image_ids, TagType::User, limit)
+      .await?;
+    let res = raw.into_iter().map(TagItem::from).collect();
+    Ok(res)
+  }
 }
 
 #[cfg(test)]

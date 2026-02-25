@@ -147,6 +147,96 @@ impl ImageTagRepository {
 
     Ok(rows)
   }
+
+  pub async fn get_tags_attached_to_images(
+    &self,
+    image_ids: Vec<i64>,
+    tag_type: TagType,
+    limit: Option<i64>,
+  ) -> Result<Vec<TagItemRow>, DatabaseError> {
+    if image_ids.is_empty() {
+      return Ok(vec![]);
+    }
+
+    let mut qb = sqlx::QueryBuilder::new(
+      r#"
+        SELECT DISTINCT tags.id, tags.text, tags.color, tags.image_count
+        FROM tags
+        JOIN image_tags ON tags.id = image_tags.tag_id
+        WHERE tags.tag_type = 
+        "#,
+    );
+
+    qb.push_bind(tag_type);
+
+    qb.push(" AND image_tags.image_id IN (");
+
+    let mut separated = qb.separated(", ");
+    for id in &image_ids {
+      separated.push_bind(id);
+    }
+    separated.push_unseparated(")");
+
+    qb.push(" ORDER BY tags.image_count DESC");
+
+    if let Some(limit) = limit {
+      qb.push(" LIMIT ");
+      qb.push_bind(limit);
+    }
+
+    let rows = qb
+      .build_query_as::<TagItemRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(rows)
+  }
+
+  pub async fn get_tags_not_attached_to_images(
+    &self,
+    image_ids: Vec<i64>,
+    tag_type: TagType,
+    limit: Option<i64>,
+  ) -> Result<Vec<TagItemRow>, DatabaseError> {
+    let mut qb = sqlx::QueryBuilder::new(
+      r#"
+        SELECT tags.id, tags.text, tags.color, tags.image_count
+        FROM tags
+        WHERE tags.tag_type =
+        "#,
+    );
+
+    qb.push_bind(tag_type);
+
+    qb.push(
+      r#"
+        AND NOT EXISTS (
+            SELECT 1 FROM image_tags
+            WHERE image_tags.tag_id = tags.id
+            AND image_tags.image_id IN (
+        "#,
+    );
+
+    let mut separated = qb.separated(", ");
+    for id in &image_ids {
+      separated.push_bind(id);
+    }
+    separated.push_unseparated("))");
+
+    qb.push(" ORDER BY tags.image_count DESC");
+
+    if let Some(limit) = limit {
+      qb.push(" LIMIT ");
+      qb.push_bind(limit);
+    }
+
+    let rows = qb
+      .build_query_as::<TagItemRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(rows)
+  }
 }
 
 #[cfg(test)]
