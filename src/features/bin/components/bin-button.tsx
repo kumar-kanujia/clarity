@@ -41,15 +41,9 @@ export const BinButton = () => {
       <AlertDialogTrigger
         nativeButton={false}
         render={
-          <div className="me-4">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="hover:text-red-400"
-            >
-              <LucideTrash2 />
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon-sm" className="hover:text-red-400">
+            <LucideTrash2 />
+          </Button>
         }
       />
       <AlertDialogContent>
