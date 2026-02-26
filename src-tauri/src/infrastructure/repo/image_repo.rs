@@ -185,7 +185,7 @@ impl ImageRepository {
     }
   }
 
-  pub async fn update_status_all_deleted(&self) -> Result<Vec<ImageRow>, DatabaseError> {
+  pub async fn update_image_status_deleted_all(&self) -> Result<Vec<ImageRow>, DatabaseError> {
     let mut tx = self.db.begin().await?;
 
     let mut qb = QueryBuilder::new("UPDATE images SET status = ");
@@ -212,7 +212,7 @@ impl ImageRepository {
 
     qb.push_bind(status);
 
-    qb.push("WHERE id IN (");
+    qb.push("WHERE is_deleted = 1 AND id IN (");
 
     let mut separated = qb.separated(", ");
 
@@ -229,28 +229,36 @@ impl ImageRepository {
     Ok(rows)
   }
 
-  pub async fn set_image_deleted_status(
+  pub async fn update_image_deleted_status(
     &self,
-    image_id: i64,
+    image_ids: Vec<i64>,
     is_deleted: bool,
-  ) -> Result<(), DatabaseError> {
-    let image_result = sqlx::query(
-      r#"
-            UPDATE images
-            SET is_deleted = ?1
-            WHERE id = ?2
-      "#,
-    )
-    .bind(is_deleted)
-    .bind(image_id)
-    .execute(&self.db)
-    .await?;
+  ) -> Result<u64, DatabaseError> {
+    let mut tx = self.db.begin().await?;
 
-    if image_result.rows_affected() == 0 {
+    let mut qb = QueryBuilder::new("UPDATE images SET is_deleted = ");
+
+    qb.push_bind(is_deleted);
+
+    qb.push("WHERE id IN (");
+
+    let mut separated = qb.separated(", ");
+
+    for id in image_ids {
+      separated.push_bind(id);
+    }
+
+    qb.push(")");
+
+    let result = qb.build().execute(&mut *tx).await?;
+
+    if result.rows_affected() == 0 {
       return Err(DatabaseError::NotFound);
     }
 
-    Ok(())
+    tx.commit().await?;
+
+    Ok(result.rows_affected())
   }
 
   // endregion
@@ -449,8 +457,11 @@ mod tests {
     let second_toggle = repo.toggle_image_favorite(img_id).await.unwrap();
     assert!(!second_toggle, "Should be false after second toggle");
 
-    // 2. Test set_image_deleted_status
-    repo.set_image_deleted_status(img_id, true).await.unwrap();
+    // 2. Test update_image_deleted_status
+    repo
+      .update_image_deleted_status(vec![img_id], true)
+      .await
+      .unwrap();
     let is_deleted: bool = sqlx::query_scalar("SELECT is_deleted FROM images WHERE id = ?")
       .bind(img_id)
       .fetch_one(&pool)

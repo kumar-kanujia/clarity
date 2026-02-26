@@ -72,7 +72,7 @@ pub async fn soft_delete_image(
   let image_mutation_service = ImageMutationService::new(image_repository);
 
   image_mutation_service
-    .change_image_is_deleted(image_id, true)
+    .change_image_is_deleted(vec![image_id], true)
     .await?;
 
   tracing::info!("Image soft delete completed!");
@@ -91,12 +91,50 @@ pub async fn undo_soft_delete_image(
   let image_mutation_service = ImageMutationService::new(image_repository);
 
   image_mutation_service
-    .change_image_is_deleted(image_id, false)
+    .change_image_is_deleted(vec![image_id], false)
     .await?;
 
   tracing::info!("Image undo soft delete completed!");
 
   Ok(())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(state), fields(count = image_ids.len()))]
+pub async fn soft_delete_images(
+  state: State<'_, AppState>,
+  image_ids: Vec<i64>,
+) -> Result<u64, CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
+
+  let image_mutation_service = ImageMutationService::new(image_repository);
+
+  let count = image_mutation_service
+    .change_image_is_deleted(image_ids, true)
+    .await?;
+
+  tracing::info!("Image soft delete completed for {} images", count);
+
+  Ok(count)
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(state), fields(count = image_ids.len()))]
+pub async fn undo_soft_delete_images(
+  state: State<'_, AppState>,
+  image_ids: Vec<i64>,
+) -> Result<u64, CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
+
+  let image_mutation_service = ImageMutationService::new(image_repository);
+
+  let count = image_mutation_service
+    .change_image_is_deleted(image_ids, false)
+    .await?;
+
+  tracing::info!("Image undo soft delete completed for {} images", count);
+
+  Ok(count)
 }
 
 #[tauri::command]

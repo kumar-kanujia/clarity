@@ -4,6 +4,8 @@ import { convertFileSrc } from "@tauri-apps/api/core"
 
 import type { ImageItem } from "@/services/tauri"
 import { FavoriteButton, UndoBinButton } from "./action-buttons"
+import { useSelectStore } from "@/store"
+import { cn } from "@/lib/utils"
 
 interface ImageCardProps {
   image: ImageItem
@@ -29,7 +31,6 @@ export const ImageCard = memo(
               damping: 26
             }}
           />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
 
           <ActionButton
             imageId={image.id}
@@ -97,32 +98,56 @@ const Wrapper = ({
   index: number
   onClick?: () => void
   children: ReactNode
-}) => (
-  <motion.div
-    layout
-    layoutId={`image-${id}`}
-    onClick={onClick}
-    className="group relative cursor-pointer"
-    initial={{ opacity: 0, y: 12 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0 }}
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.99 }}
-    transition={{
-      layout: { type: "spring", stiffness: 380, damping: 32 },
-      opacity: {
-        duration: 0.2,
-        ease: "easeOut",
-        delay: Math.min(index * 0.02, 0.12)
-      },
-      y: {
-        type: "spring",
-        stiffness: 300,
-        damping: 28,
-        delay: Math.min(index * 0.02, 0.12)
-      }
-    }}
-  >
-    {children}
-  </motion.div>
-)
+}) => {
+  const { imageIds, toggle } = useSelectStore()
+
+  const selected = imageIds.has(id)
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    e.stopPropagation()
+    if (e.metaKey || e.ctrlKey) {
+      toggle(id)
+    } else {
+      onClick?.()
+    }
+  }
+
+  return (
+    <motion.div
+      layout
+      layoutId={`image-${id}`}
+      onClick={handleClick}
+      className={cn(
+        "group relative cursor-pointer rounded-2xl",
+        selected && "scale-95"
+      )}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{
+        layout: { type: "spring", stiffness: 380, damping: 32 },
+        opacity: {
+          duration: 0.2,
+          ease: "easeOut",
+          delay: Math.min(index * 0.02, 0.12)
+        },
+        y: {
+          type: "spring",
+          stiffness: 300,
+          damping: 28,
+          delay: Math.min(index * 0.02, 0.12)
+        }
+      }}
+    >
+      {children}
+      <div
+        className={cn(
+          "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none",
+          selected && "opacity-100"
+        )}
+      />
+    </motion.div>
+  )
+}

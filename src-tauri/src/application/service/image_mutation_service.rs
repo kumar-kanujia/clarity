@@ -34,19 +34,19 @@ impl ImageMutationService {
   #[tracing::instrument(skip(self))]
   pub async fn change_image_is_deleted(
     &self,
-    image_id: i64,
+    image_ids: Vec<i64>,
     is_deleted: bool,
-  ) -> Result<(), AppError> {
-    self
+  ) -> Result<u64, AppError> {
+    let changed = self
       .repo
-      .set_image_deleted_status(image_id, is_deleted)
+      .update_image_deleted_status(image_ids, is_deleted)
       .await?;
-    Ok(())
+    Ok(changed)
   }
 
   #[tracing::instrument(skip(self))]
   pub async fn hard_delete_all_images(&self) -> Result<Vec<Image>, AppError> {
-    let image_rows = self.repo.update_status_all_deleted().await?;
+    let image_rows = self.repo.update_image_status_deleted_all().await?;
     Ok(image_rows.into_iter().map(Image::from).collect())
   }
 
@@ -141,7 +141,10 @@ mod tests {
     .unwrap();
 
     // Mark as deleted
-    service.change_image_is_deleted(200, true).await.unwrap();
+    service
+      .change_image_is_deleted(vec![200], true)
+      .await
+      .unwrap();
 
     let is_del: bool = sqlx::query_scalar("SELECT is_deleted FROM images WHERE id = 200")
       .fetch_one(&pool)
@@ -155,7 +158,7 @@ mod tests {
     let (service, _) = setup_service().await;
 
     // Try to delete an image that doesn't exist
-    let result = service.change_image_is_deleted(999, true).await;
+    let result = service.change_image_is_deleted(vec![999], true).await;
 
     // This verifies that the Repository's DatabaseError::NotFound
     // is correctly converted into an AppError (assuming your ? handles this)

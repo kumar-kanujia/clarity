@@ -1,4 +1,6 @@
 import {
+  attachedTags,
+  availableTags,
   fetchAllTags,
   fetchAttachedTags,
   fetchAvailableTags,
@@ -72,5 +74,19 @@ export const getInactiveTagsQueryOption = () =>
     queryKey: inactiveTagQueryKey,
     queryFn: () => fetchDeletedTags(),
     // Global tags rarely change, cache them for 5 minutes
+    staleTime: 1000 * 60 * 5
+  })
+
+export const getSelectAvilableTagsQueryOptions = (imageIds: number[]) =>
+  queryOptions({
+    queryKey: ["tags", "select", "available", ...imageIds],
+    queryFn: () => availableTags({ imageIds }),
+    staleTime: 1000 * 60 * 5
+  })
+
+export const getSelectAttachedTagsQueryOptions = (imageIds: number[]) =>
+  queryOptions({
+    queryKey: ["tags", "select", "attached", ...imageIds],
+    queryFn: () => attachedTags({ imageIds }),
     staleTime: 1000 * 60 * 5
   })

@@ -62,10 +62,11 @@ const ActiveContextMenu = ({
 
   const { mutate: moveToBin, isPending: isMoveToBinPending } =
     useMoveToBin(imageId)
+
   const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
 
   return (
-    <ContextMenu onOpenChange={setIsOpen}>
+    <ContextMenu onOpenChange={setIsOpen} open={isOpen}>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
 
       {/* Restored original styling */}

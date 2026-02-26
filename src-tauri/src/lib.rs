@@ -9,10 +9,13 @@ use crate::{
   interface::command::{
     gallery_command::{fetch_bin, fetch_favorites, fetch_gallery, fetch_tag_gallery},
     image_command::{
-      delete_images, empty_bin, import_images, soft_delete_image, toggle_favorite,
-      undo_soft_delete_image,
+      delete_images, empty_bin, import_images, soft_delete_image, soft_delete_images,
+      toggle_favorite, undo_soft_delete_image, undo_soft_delete_images,
     },
-    image_tag_command::{fetch_attached_tags, fetch_available_tags, toggle_tag},
+    image_tag_command::{
+      attach_tag, attached_tags, available_tags, fetch_attached_tags, fetch_available_tags,
+      remove_tag, toggle_tag,
+    },
     tag_command::{
       create_tag, delete_tag, edit_tag, fetch_all_tags, fetch_deleted_tags, fetch_top_tags,
       soft_delete_tag, undo_delete_tag,
@@ -36,6 +39,8 @@ pub fn run() {
       toggle_favorite,
       soft_delete_image,
       undo_soft_delete_image,
+      soft_delete_images,
+      undo_soft_delete_images,
       delete_images,
       empty_bin,
       fetch_favorites,
@@ -52,8 +57,12 @@ pub fn run() {
       fetch_deleted_tags,
       // Image tags
       toggle_tag,
+      attach_tag,
+      remove_tag,
       fetch_attached_tags,
-      fetch_available_tags
+      fetch_available_tags,
+      attached_tags,
+      available_tags
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application");

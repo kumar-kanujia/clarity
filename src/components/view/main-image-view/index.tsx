@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
+import { useLocation } from "@tanstack/react-router"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { motion } from "motion/react"
 
@@ -10,13 +11,13 @@ import {
   EndBanner,
   EmptyState,
   ErrorBanner,
-  LoadingBanner
+  LoadingBanner,
+  ImageLightbox
 } from "@/components/common"
 
 import { ImageOptions } from "./image-options"
 import { ImageCard } from "./image-card"
-import { useLocation } from "@tanstack/react-router"
-import { ImageLightbox } from "@/components/common/lightbox"
+import { useSelectStore } from "@/store"
 
 interface MainImageViewProps<T extends AnySuspenseInfiniteQueryOptions> {
   queryOptions: T
@@ -27,6 +28,8 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
 }: MainImageViewProps<T>) => {
   const [index, setIndex] = useState(0)
   const [isViewBoxOpen, setIsViewBoxOpen] = useState(false)
+
+  const { reset } = useSelectStore()
 
   const { pathname } = useLocation()
 
@@ -128,6 +131,7 @@ export const MainImageView = <T extends AnySuspenseInfiniteQueryOptions>({
       <div
         ref={parentRef}
         className="h-full w-full overflow-y-auto overflow-x-hidden relative"
+        onClick={() => reset()}
       >
         <motion.div
           animate={{

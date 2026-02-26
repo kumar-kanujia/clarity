@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { toggleTag, type TagItem } from "@/services/tauri"
+import { attachTag, removeTag, toggleTag, type TagItem } from "@/services/tauri"
 import {
   allTagsQueryKey,
   attachedTagsQueryKey,
@@ -92,6 +92,48 @@ export const useToggleTag = () => {
       qc.invalidateQueries({ queryKey: [...availableTagsQueryKey, imageId] })
       qc.invalidateQueries({ queryKey: [...tagQueryKey, tagId] })
       qc.invalidateQueries({ queryKey: allTagsQueryKey })
+    }
+  })
+
+  return { mutate, isSuccess, isPending }
+}
+
+export const useAttachTag = () => {
+  const qc = useQueryClient()
+
+  const { mutate, isSuccess, isPending } = useMutation({
+    mutationFn: async ({
+      imageIds,
+      tagId
+    }: {
+      imageIds: number[]
+      tagId: number
+    }) => {
+      return attachTag({ imageIds, tagId })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries()
+    }
+  })
+
+  return { mutate, isSuccess, isPending }
+}
+
+export const useRemoveTag = () => {
+  const qc = useQueryClient()
+
+  const { mutate, isSuccess, isPending } = useMutation({
+    mutationFn: async ({
+      imageIds,
+      tagId
+    }: {
+      imageIds: number[]
+      tagId: number
+    }) => {
+      return removeTag({ imageIds, tagId })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries()
     }
   })
 
