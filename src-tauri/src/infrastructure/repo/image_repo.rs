@@ -212,7 +212,7 @@ impl ImageRepository {
 
     qb.push_bind(status);
 
-    qb.push("WHERE id IN (");
+    qb.push("WHERE is_deleted = 1 AND id IN (");
 
     let mut separated = qb.separated(", ");
 

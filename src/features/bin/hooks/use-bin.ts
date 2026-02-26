@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
+  deleteImages,
   emptyBin,
   softDeleteImage,
   softDeleteImages,
@@ -214,6 +215,49 @@ export const useUndoMultipleMoveToBin = () => {
     onSettled: () => {
       // refresh gallery in background so restored images appear there
       qc.invalidateQueries({ queryKey: galleryQueryKey })
+    }
+  })
+
+  return { mutate, isPending, isSuccess, isError }
+}
+
+export const useMultipleEmptyBin = () => {
+  const qc = useQueryClient()
+
+  const { mutate, isPending, isSuccess, isError } = useMutation({
+    mutationFn: async (imageIds: number[]) => deleteImages({ imageIds }),
+    onMutate: async (imageIds: number[]) => {
+      // 1. Cancel outgoing fetches for the gallery
+      await qc.cancelQueries({ queryKey: binQueryKey })
+
+      // 2. Snapshot the previous state
+      const prevBinGallery = qc.getQueryData(binQueryKey)
+
+      // 3. Optimistically REMOVE the image from the gallery UI instantly
+      qc.setQueryData(binQueryKey, (oldData: any) => {
+        if (!oldData) return oldData
+
+        const idsSet = new Set(imageIds)
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            data: page.data.filter((item: any) => !idsSet.has(item.id))
+          }))
+        }
+      })
+
+      return { prevBinGallery }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback if the Tauri command fails
+      if (context?.prevBinGallery) {
+        qc.setQueryData(binQueryKey, context.prevBinGallery)
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: binQueryKey })
     }
   })
 

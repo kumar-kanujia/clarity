@@ -119,31 +119,31 @@ UI must not implement state transition logic.
 
 ## Part 2.1 — Selection Model
 
-- [ ] Support single selection
-- [ ] Support multi-selection
-- [ ] Support range selection
-- [ ] Support select all
-- [ ] Support selection clearing
+- [x] Support single selection
+- [x] Support multi-selection
+- [ ] ~~Support range selection~~
+- [ ] ~~Support select all~~
+- [x] Support selection clearing
 
 Completion Check:
 
-- [ ] Selection model fully functional
-- [ ] Selection state deterministic and reliable
+- [x] Selection model fully functional
+- [x] Selection state deterministic and reliable
 
 ---
 
 ## Part 2.2 — Bulk Action Integration
 
-- [ ] Bulk tag attach from selection
-- [ ] Bulk tag removal from selection
-- [ ] Bulk soft delete from selection
-- [ ] Bulk restore from selection
-- [ ] Bulk permanent delete from selection
+- [x] Bulk tag attach from selection
+- [x] Bulk tag removal from selection
+- [x] Bulk soft delete from selection
+- [x] Bulk restore from selection
+- [x] Bulk permanent delete from selection
 
 Completion Check:
 
-- [ ] UI invokes backend bulk operations correctly
-- [ ] No behavioral differences between single and bulk operations
+- [x] UI invokes backend bulk operations correctly
+- [x] No behavioral differences between single and bulk operations
 
 ---
 
@@ -155,43 +155,43 @@ Goal: Ensure cache consistency and validate reliability of bulk operations.
 
 ## Part 3.1 — Thumbnail Cache Consistency
 
-- [ ] Delete thumbnail cache files for permanently deleted images
-- [ ] Thumbnail cleanup occurs only after database delete succeeds
-- [ ] Ensure cleanup failure does not corrupt database state
-- [ ] Emit structured log for cleanup
+- [x] Delete thumbnail cache files for permanently deleted images
+- [x] Thumbnail cleanup occurs only after database delete succeeds
+- [x] Ensure cleanup failure does not corrupt database state
+- [x] Emit structured log for cleanup
 
 Completion Check:
 
-- [ ] No orphan thumbnail files remain
-- [ ] Cache consistent with database
+- [x] No orphan thumbnail files remain
+- [x] Cache consistent with database
 
 ---
 
 ## Part 3.2 — Bulk Operation Reliability Validation
 
-- [ ] Validate bulk soft delete
-- [ ] Validate bulk restore
-- [ ] Validate bulk permanent delete
-- [ ] Validate bulk tag attach
-- [ ] Validate bulk tag removal
+- [x] Validate bulk soft delete
+- [x] Validate bulk restore
+- [x] Validate bulk permanent delete
+- [x] Validate bulk tag attach
+- [x] Validate bulk tag removal
 
 Completion Check:
 
-- [ ] All bulk operations deterministic
-- [ ] All bulk operations reliable
+- [x] All bulk operations deterministic
+- [x] All bulk operations reliable
 
 ---
 
 ## Part 3.3 — Failure Scenario Validation
 
-- [ ] Validate behavior under database interruption
-- [ ] Validate behavior under worker interaction
-- [ ] Validate behavior under partial system failure
+- [x] Validate behavior under database interruption
+- [x] Validate behavior under worker interaction
+- [x] Validate behavior under partial system failure
 
 Completion Check:
 
-- [ ] System remains consistent
-- [ ] No orphan state created
+- [x] System remains consistent
+- [x] No orphan state created
 
 ---
 
@@ -199,10 +199,10 @@ Completion Check:
 
 When all sections are complete:
 
-- [ ] Update CAPABILITIES.md
-- [ ] Promote bulk operations to production capability
-- [ ] Archive this file
-- [ ] Create new NEXT.md for duplicate detection phase
+- Update CAPABILITIES.md
+- Promote bulk operations to production capability
+- Archive this file
+- Create new NEXT.md for duplicate detection phase
 
 System must remain:
 
