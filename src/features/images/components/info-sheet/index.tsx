@@ -17,7 +17,7 @@ export const InfoSheet = () => {
   if (!isOpen || !image) return null
 
   return (
-    <aside className="w-80 shrink-0 flex-col h-full border-l bg-background shadow-sm hidden md:flex">
+    <aside className="w-80 shrink-0 flex-col h-full border-l bg-background shadow-sm hidden md:flex select-none">
       <div
         className="flex items-center justify-end pt-3 pe-2 h-8"
         data-tauri-drag-region

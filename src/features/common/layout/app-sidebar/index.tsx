@@ -3,6 +3,7 @@ import {
   Aperture,
   BookmarkX,
   HeartIcon,
+  Settings,
   TagIcon,
   Tags,
   Trash
@@ -11,6 +12,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -20,9 +22,9 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar"
 
-import { AddImageButton } from "@/features/images/components"
 import { getTopQueryOptions } from "@/features/tags/queries"
 import { useQuery } from "@tanstack/react-query"
+import { ImportDialog } from "../../components/import -dialog"
 
 export const AppSidebar = () => {
   const { pathname } = useLocation()
@@ -42,7 +44,7 @@ export const AppSidebar = () => {
         className="h-8 flex items-center justify-end px-2 mb-2"
         data-tauri-drag-region
       >
-        <AddImageButton />
+        <ImportDialog />
         <SidebarTrigger variant="ghost" size="icon-sm" />
       </div>
       <SidebarHeader>
@@ -120,6 +122,21 @@ export const AppSidebar = () => {
           </>
         )}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu className="pt-2 border-t">
+          <SidebarMenuItem>
+            <Link to="/settings">
+              <SidebarMenuButton
+                tooltip={"Settings"}
+                isActive={pathname === "/settings"}
+              >
+                <Settings />
+                <p className="text-nowrap">Settings</p>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }

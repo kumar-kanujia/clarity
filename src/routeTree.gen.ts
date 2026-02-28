@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UntaggedRouteImport } from './routes/untagged'
 import { Route as TrashRouteImport } from './routes/trash'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TagsIndexRouteImport } from './routes/tags/index'
@@ -24,6 +25,11 @@ const UntaggedRoute = UntaggedRouteImport.update({
 const TrashRoute = TrashRouteImport.update({
   id: '/trash',
   path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -50,6 +56,7 @@ const TagsTagidRoute = TagsTagidRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/settings': typeof SettingsRoute
   '/trash': typeof TrashRoute
   '/untagged': typeof UntaggedRoute
   '/tags/$tagid': typeof TagsTagidRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/settings': typeof SettingsRoute
   '/trash': typeof TrashRoute
   '/untagged': typeof UntaggedRoute
   '/tags/$tagid': typeof TagsTagidRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/settings': typeof SettingsRoute
   '/trash': typeof TrashRoute
   '/untagged': typeof UntaggedRoute
   '/tags/$tagid': typeof TagsTagidRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/favorites'
+    | '/settings'
     | '/trash'
     | '/untagged'
     | '/tags/$tagid'
     | '/tags/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/favorites' | '/trash' | '/untagged' | '/tags/$tagid' | '/tags'
+  to:
+    | '/'
+    | '/favorites'
+    | '/settings'
+    | '/trash'
+    | '/untagged'
+    | '/tags/$tagid'
+    | '/tags'
   id:
     | '__root__'
     | '/'
     | '/favorites'
+    | '/settings'
     | '/trash'
     | '/untagged'
     | '/tags/$tagid'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
+  SettingsRoute: typeof SettingsRoute
   TrashRoute: typeof TrashRoute
   UntaggedRoute: typeof UntaggedRoute
   TagsTagidRoute: typeof TagsTagidRoute
@@ -116,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/trash'
       fullPath: '/trash'
       preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -152,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
+  SettingsRoute: SettingsRoute,
   TrashRoute: TrashRoute,
   UntaggedRoute: UntaggedRoute,
   TagsTagidRoute: TagsTagidRoute,
