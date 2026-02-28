@@ -1,8 +1,8 @@
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 
-import { AppLayout } from "@/components/layout"
-import { Providers } from "@/components/providers"
 import type { QueryClient } from "@tanstack/react-query"
+import { AppLayout } from "@/features/common/layout"
+import { Providers } from "@/features/common/providers"
 
 const RootLayout = () => (
   <Providers>

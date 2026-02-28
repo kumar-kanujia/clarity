@@ -8,9 +8,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog"
-import { useDeleteTagStore } from "../store"
 import { useEffect, useState } from "react"
-import { useDeleteTag } from "../hooks"
+import { useDeleteTagStore } from "../store/tag-store"
+import { useDeleteTag } from "../hooks/use-tag"
 
 export const DeleteTagDialog = () => {
   const [open, setOpen] = useState(false)

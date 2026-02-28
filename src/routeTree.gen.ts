@@ -9,26 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as UntaggedRouteImport } from './routes/untagged'
+import { Route as TrashRouteImport } from './routes/trash'
 import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as BinRouteImport } from './routes/bin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TagsIndexRouteImport } from './routes/tags/index'
 import { Route as TagsTagidRouteImport } from './routes/tags/$tagid'
 
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const UntaggedRoute = UntaggedRouteImport.update({
+  id: '/untagged',
+  path: '/untagged',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BinRoute = BinRouteImport.update({
-  id: '/bin',
-  path: '/bin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,26 +49,26 @@ const TagsTagidRoute = TagsTagidRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/bin': typeof BinRoute
   '/favorites': typeof FavoritesRoute
-  '/settings': typeof SettingsRoute
+  '/trash': typeof TrashRoute
+  '/untagged': typeof UntaggedRoute
   '/tags/$tagid': typeof TagsTagidRoute
   '/tags/': typeof TagsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/bin': typeof BinRoute
   '/favorites': typeof FavoritesRoute
-  '/settings': typeof SettingsRoute
+  '/trash': typeof TrashRoute
+  '/untagged': typeof UntaggedRoute
   '/tags/$tagid': typeof TagsTagidRoute
   '/tags': typeof TagsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/bin': typeof BinRoute
   '/favorites': typeof FavoritesRoute
-  '/settings': typeof SettingsRoute
+  '/trash': typeof TrashRoute
+  '/untagged': typeof UntaggedRoute
   '/tags/$tagid': typeof TagsTagidRoute
   '/tags/': typeof TagsIndexRoute
 }
@@ -76,39 +76,46 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/bin'
     | '/favorites'
-    | '/settings'
+    | '/trash'
+    | '/untagged'
     | '/tags/$tagid'
     | '/tags/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bin' | '/favorites' | '/settings' | '/tags/$tagid' | '/tags'
+  to: '/' | '/favorites' | '/trash' | '/untagged' | '/tags/$tagid' | '/tags'
   id:
     | '__root__'
     | '/'
-    | '/bin'
     | '/favorites'
-    | '/settings'
+    | '/trash'
+    | '/untagged'
     | '/tags/$tagid'
     | '/tags/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BinRoute: typeof BinRoute
   FavoritesRoute: typeof FavoritesRoute
-  SettingsRoute: typeof SettingsRoute
+  TrashRoute: typeof TrashRoute
+  UntaggedRoute: typeof UntaggedRoute
   TagsTagidRoute: typeof TagsTagidRoute
   TagsIndexRoute: typeof TagsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/untagged': {
+      id: '/untagged'
+      path: '/untagged'
+      fullPath: '/untagged'
+      preLoaderRoute: typeof UntaggedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -116,13 +123,6 @@ declare module '@tanstack/react-router' {
       path: '/favorites'
       fullPath: '/favorites'
       preLoaderRoute: typeof FavoritesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bin': {
-      id: '/bin'
-      path: '/bin'
-      fullPath: '/bin'
-      preLoaderRoute: typeof BinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -151,9 +151,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BinRoute: BinRoute,
   FavoritesRoute: FavoritesRoute,
-  SettingsRoute: SettingsRoute,
+  TrashRoute: TrashRoute,
+  UntaggedRoute: UntaggedRoute,
   TagsTagidRoute: TagsTagidRoute,
   TagsIndexRoute: TagsIndexRoute,
 }

@@ -1,12 +1,11 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import type { TagItem } from "@/services/tauri"
 import { Edit2, TagIcon, Trash2, TrashIcon, Undo2 } from "lucide-react"
-import { useDeleteTagStore } from "../store"
-import { useEditTagStore } from "../store/edit-tag-store"
 import { useRouter } from "@tanstack/react-router"
-import { useRestoreTag, useSoftDeleteTag } from "../hooks"
+import type { TagItem } from "@/tauri"
+import { Card, CardContent } from "@/components/ui/card"
+import { useRestoreTag, useSoftDeleteTag } from "../hooks/use-tag"
+import { useDeleteTagStore, useEditTagStore } from "../store/tag-store"
 
 export const TagCard = ({
   tag,

@@ -1,26 +1,14 @@
-import { TagIcon } from "lucide-react"
+import { Plus, TagIcon } from "lucide-react"
 import { useSuspenseQuery } from "@tanstack/react-query"
-
 import { CreateTagDialog } from "../components/create-tag-dialog"
-import { TagCard } from "../components/tag-card"
-import { DeleteTagDialog } from "../components/delete-tag-dialog"
-import { EditTagDialog } from "../components/edit-tag-dialog"
-import { getAllTagsQueryOption, getInactiveTagsQueryOption } from "../hooks"
+import { getAllTagsQueryOption, getInactiveTagsQueryOption } from "../queries"
 import { Badge } from "@/components/ui/badge"
-
-const TagHeader = () => (
-  <header className="h-16 border-b flex items-center justify-between px-8 bg-background/50 backdrop-blur-md sticky top-0 z-30 shrink-0">
-    <div className="flex flex-col">
-      <h1 className="text-sm font-bold tracking-widest uppercase">
-        Management
-      </h1>
-      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
-        Organize your images with Tags
-      </p>
-    </div>
-    <CreateTagDialog />
-  </header>
-)
+import { TagCard } from "../components/tag-card"
+import { EditTagDialog } from "../components/edit-tag-dialog"
+import { DeleteTagDialog } from "../components/delete-tag-dialog"
+import { AppHeader } from "@/features/common/layout/app-header"
+import { Button } from "@/components/ui/button"
+import { DialogTrigger } from "@/components/ui/dialog"
 
 const EmptyTagState = () => (
   <div className="flex flex-col items-center justify-center h-full text-center min-h-[50vh]">
@@ -85,10 +73,18 @@ const InactiveTags = () => {
 
 export const TagsView = () => {
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden relative">
+    <div className="flex flex-col size-full bg-background overflow-hidden relative">
+      <AppHeader>
+        <div className="ms-auto px-4">
+          <CreateTagDialog>
+            <DialogTrigger render={<Button variant="ghost" />}>
+              <Plus /> Create Tag
+            </DialogTrigger>
+          </CreateTagDialog>
+        </div>
+      </AppHeader>
       <EditTagDialog />
       <DeleteTagDialog />
-      <TagHeader />
       <main className="flex-1 overflow-y-auto p-8">
         <ActiveTags />
         <InactiveTags />

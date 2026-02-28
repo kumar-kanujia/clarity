@@ -1,22 +1,26 @@
-import { createFileRoute } from "@tanstack/react-router"
 import { Suspense, useMemo } from "react"
-import { getGalleryQueryOptions } from "@/features/gallery/hooks"
-import { MainImageView } from "@/components/view"
-import { ErrorBanner, LoadingBanner } from "@/components/common"
+import { createFileRoute } from "@tanstack/react-router"
+
+import { getAllImageQueryOptions } from "@/features/images/queries"
+import { ImageGridView } from "@/features/images/view"
+import { State } from "@/features/common/components/state"
 
 export const Route = createFileRoute("/")({
   component: HomePage,
   loader: ({ context }) => {
-    context.queryClient.ensureInfiniteQueryData(getGalleryQueryOptions())
+    context.queryClient.ensureInfiniteQueryData(getAllImageQueryOptions())
   },
-  errorComponent: ErrorBanner
+  errorComponent: () => (
+    <State variant="error" message="Something went wrong!" />
+  )
 })
 
 function HomePage() {
-  const queryOptions = useMemo(() => getGalleryQueryOptions(), [])
+  const queryOptions = useMemo(() => getAllImageQueryOptions(), [])
+
   return (
-    <Suspense fallback={<LoadingBanner />}>
-      <MainImageView queryOptions={queryOptions} />
+    <Suspense fallback={<State variant="loading" />}>
+      <ImageGridView queryOptions={queryOptions} />
     </Suspense>
   )
 }

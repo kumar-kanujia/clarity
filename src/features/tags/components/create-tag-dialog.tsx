@@ -1,15 +1,12 @@
-import { useState } from "react"
-import { Plus } from "lucide-react"
+import { useState, type ReactNode } from "react"
 import type { UseFormSetError } from "react-hook-form"
 
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-
+import { Dialog } from "@/components/ui/dialog"
 import { useCreateTag } from "../hooks"
-import { type CreateTagParams } from "@/services/tauri"
-import { TagForm, TAG_COLORS, type TagFormValues } from "./tag-form"
+import { TAG_COLORS, TagForm, type TagFormValues } from "./tag-form"
+import type { CreateTagParams } from "@/tauri"
 
-export const CreateTagDialog = () => {
+export const CreateTagDialog = ({ children }: { children?: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false)
   const { mutate, isPending } = useCreateTag()
 
@@ -40,14 +37,7 @@ export const CreateTagDialog = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger
-        render={
-          <Button variant="outline" size="lg">
-            <Plus className="size-6 mr-2" />
-            New Tag
-          </Button>
-        }
-      />
+      {children}
       <TagForm
         title="Create New Tag"
         submitLabel={isPending ? "Creating..." : "Create"}
