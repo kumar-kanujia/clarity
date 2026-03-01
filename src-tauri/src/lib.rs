@@ -7,7 +7,7 @@ mod tests;
 
 use crate::{
   interface::command::{
-    gallery_command::{fetch_all_images, fetch_favorites, fetch_tag_gallery, fetch_trash},
+    gallery_command::{fetch_all_images, fetch_favorites, fetch_tag_images, fetch_trash},
     image_command::{
       delete_from_trash, empty_trash, import_images, move_to_trash, restore_from_trash,
       toggle_favorite,
@@ -38,6 +38,7 @@ pub fn run() {
       import_images,
       fetch_all_images,
       fetch_favorites,
+      fetch_tag_images,
       toggle_favorite,
       fetch_trash,
       move_to_trash,
@@ -60,7 +61,6 @@ pub fn run() {
       available_tags_multiple,
       attached_tags_multiple,
       delete_from_trash,
-      fetch_tag_gallery,
       attach_tag,
       remove_tag,
     ])
