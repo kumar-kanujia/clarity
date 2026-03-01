@@ -27,7 +27,7 @@ export const TagCard = ({
   return (
     <Card
       key={tag.id}
-      className="group relative overflow-hidden border bg-background hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-xl"
+      className="group relative overflow-hidden border bg-background hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-xl cursor-pointer"
       onClick={() => {
         if (isInactive) return
         navigate({ to: "/tags/$tagid", params: { tagid: tag.id.toString() } })

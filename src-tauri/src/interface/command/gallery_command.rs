@@ -12,7 +12,7 @@ use tauri::State;
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor))]
-pub async fn fetch_gallery(
+pub async fn fetch_all(
   state: State<'_, AppState>,
   cursor: Option<CreatedAtCursor>,
 ) -> Result<ImageItemResult, CommandError> {
@@ -34,7 +34,7 @@ pub async fn fetch_gallery(
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor))]
-pub async fn fetch_bin(
+pub async fn fetch_trash(
   state: State<'_, AppState>,
   cursor: Option<CreatedAtCursor>,
 ) -> Result<ImageItemResult, CommandError> {

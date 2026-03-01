@@ -7,7 +7,7 @@ mod tests;
 
 use crate::{
   interface::command::{
-    gallery_command::{fetch_bin, fetch_favorites, fetch_gallery, fetch_tag_gallery},
+    gallery_command::{fetch_all, fetch_favorites, fetch_tag_gallery, fetch_trash},
     image_command::{
       delete_images, empty_bin, import_images, soft_delete_image, soft_delete_images,
       toggle_favorite, undo_soft_delete_image, undo_soft_delete_images,
@@ -35,16 +35,17 @@ pub fn run() {
     .setup(app_setup)
     .invoke_handler(tauri::generate_handler![
       import_images,
-      fetch_gallery,
+      fetch_all,
+      fetch_favorites,
       toggle_favorite,
+      fetch_trash,
+      //
       soft_delete_image,
       undo_soft_delete_image,
       soft_delete_images,
       undo_soft_delete_images,
       delete_images,
       empty_bin,
-      fetch_favorites,
-      fetch_bin,
       fetch_tag_gallery,
       // Tags
       create_tag,

@@ -4,10 +4,14 @@ import { toggleFavorite } from "@/tauri"
 
 import { allImagesQueryKey, favoritesQueryKey } from "../queries"
 
+type ImageItem = { id: number; isFavorite: boolean; [key: string]: unknown }
+type PageData = { data: ImageItem[]; [key: string]: unknown }
+type InfiniteQueryData = { pages: PageData[]; pageParams: unknown[] }
+
 export const useToggleFavorite = () => {
   const qc = useQueryClient()
 
-  const { mutate, data, isPending, isSuccess, isError } = useMutation({
+  return useMutation({
     mutationKey: ["toggle-favorite"],
     mutationFn: async ({ imageId }: { imageId: number }) =>
       toggleFavorite({ imageId }),
@@ -17,17 +21,17 @@ export const useToggleFavorite = () => {
         qc.cancelQueries({ queryKey: allImagesQueryKey }),
         qc.cancelQueries({ queryKey: favoritesQueryKey })
       ])
-      const previousAll = qc.getQueryData(allImagesQueryKey)
+      const previousAll = qc.getQueryData<InfiniteQueryData>(allImagesQueryKey)
       const previousFavorites = qc.getQueryData(favoritesQueryKey)
 
-      qc.setQueryData(allImagesQueryKey, (oldData: any) => {
+      qc.setQueryData<InfiniteQueryData>(allImagesQueryKey, (oldData) => {
         if (!oldData) return oldData
 
         return {
           ...oldData,
-          pages: oldData.pages.map((page: any) => ({
+          pages: oldData.pages.map((page) => ({
             ...page,
-            data: page.data.map((item: any) =>
+            data: page.data.map((item) =>
               item.id === imageId
                 ? { ...item, isFavorite: !item.isFavorite }
                 : item
@@ -39,7 +43,7 @@ export const useToggleFavorite = () => {
       return { previousAll, previousFavorites }
     },
 
-    onError: (_T, _Y, context) => {
+    onError: (_error, _variables, context) => {
       if (context?.previousAll) {
         qc.setQueryData(allImagesQueryKey, context.previousAll)
       }
@@ -49,9 +53,8 @@ export const useToggleFavorite = () => {
     },
 
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: allImagesQueryKey })
       qc.invalidateQueries({ queryKey: favoritesQueryKey })
     }
   })
-
-  return { mutate, data, isPending, isSuccess, isError }
 }

@@ -1,9 +1,9 @@
 import { infiniteQueryOptions } from "@tanstack/react-query"
 
 import {
-  fetchBin,
   fetchFavorites,
-  fetchGallery,
+  fetchAll,
+  fetchTrash,
   type CreatedAtCursor
 } from "@/tauri"
 
@@ -13,7 +13,7 @@ export const getAllImageQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: allImagesQueryKey,
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchGallery({
+      const res = await fetchAll({
         cursor: pageParam ?? undefined
       })
       return res
@@ -47,7 +47,7 @@ export const getTrashImageQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: trashQueryKey,
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchBin({
+      const res = await fetchTrash({
         cursor: pageParam ?? undefined
       })
       return res
