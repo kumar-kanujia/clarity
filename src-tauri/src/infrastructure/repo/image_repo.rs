@@ -357,6 +357,44 @@ impl ImageRepository {
     Ok(result)
   }
 
+  pub async fn get_untagged_images_paginated(
+    &self,
+    cursor: Option<CreatedAtCursor>,
+    limit: i64,
+  ) -> Result<Vec<ImageItemRow>, DatabaseError> {
+    let mut qb = QueryBuilder::new(
+      r#"
+        SELECT
+          id, file_name, path, size_bytes, width,
+          height, thumbnail_path, created_at, is_favorite
+        FROM images
+        WHERE NOT EXISTS (
+          SELECT 1 FROM image_tags WHERE image_tags.image_id = images.id
+        )
+    "#,
+    );
+
+    qb.push(" AND is_deleted = 0");
+
+    if let Some(cursor) = cursor {
+      qb.push(" AND (images.created_at, images.id) < (");
+      qb.push_bind(cursor.created_at);
+      qb.push(", ");
+      qb.push_bind(cursor.id);
+      qb.push(")");
+    }
+
+    qb.push(" ORDER BY images.created_at DESC, images.id DESC LIMIT ");
+    qb.push_bind(limit);
+
+    let result = qb
+      .build_query_as::<ImageItemRow>()
+      .fetch_all(&self.db)
+      .await?;
+
+    Ok(result)
+  }
+
   pub async fn get_images_by_tag_paginated(
     &self,
     cursor: Option<CreatedAtCursor>,

@@ -79,6 +79,23 @@ impl ImageQueryService {
     Ok(ImageItemResult { data, next_cursor })
   }
 
+  pub async fn list_untagged_image_items(
+    &self,
+    limit: i64,
+    cursor: Option<CreatedAtCursor>,
+  ) -> Result<ImageItemResult, AppError> {
+    let raw_images = self
+      .repo
+      .get_untagged_images_paginated(cursor, limit + 1)
+      .await?;
+
+    let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
+
+    let data = self.filter_and_process_image(images_to_process).await?;
+
+    Ok(ImageItemResult { data, next_cursor })
+  }
+
   pub async fn list_tagged_image_items(
     &self,
     tag_id: i64,

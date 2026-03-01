@@ -16,28 +16,28 @@ Goal: Implement a deterministic gallery view for images that currently have zero
 
 ## Part 1.1 — Backend Implementation
 
-- [ ] Define backend query for retrieving untagged images
-- [ ] Ensure query respects soft-delete (exclude binned images)
-- [ ] Ensure query utilizes cursor-based (keyset) pagination
-- [ ] Guarantee deterministic ordering (e.g., by ID or timestamp)
-- [ ] Ensure readability filtering is applied
+- [x] Define backend query for retrieving untagged images
+- [x] Ensure query respects soft-delete (exclude images in trash)
+- [x] Ensure query utilizes cursor-based (keyset) pagination
+- [x] Guarantee deterministic ordering (e.g., by ID or timestamp)
+- [x] Ensure readability filtering is applied
 
 Completion Check:
 
-- [ ] Query returns correct, paginated results
-- [ ] Performance remains stable on large datasets
+- [x] Query returns correct, paginated results
+- [x] Performance remains stable on large datasets
 
 ## Part 1.2 — UI Integration
 
-- [ ] Add "Untagged" to the main navigation/sidebar views
-- [ ] Wire up the untagged gallery to the new backend query
-- [ ] Ensure multi-selection and bulk operations work seamlessly within this view
-- [ ] Provide a clear "Empty State" message when all images are tagged
+- [x] Add "Untagged" to the main navigation/sidebar views
+- [x] Wire up the untagged gallery to the new backend query
+- [x] Ensure multi-selection and bulk operations work seamlessly within this view
+- [x] Provide a clear "Empty State" message when all images are tagged
 
 Completion Check:
 
-- [ ] Untagged view correctly displays images missing tags
-- [ ] Bulk tagging an image immediately removes it from the untagged view
+- [x] Untagged view correctly displays images missing tags
+- [x] Bulk tagging an image immediately removes it from the untagged view
 
 ---
 

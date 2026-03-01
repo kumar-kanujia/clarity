@@ -5,10 +5,12 @@ import {
   fetchAllImages,
   fetchTrash,
   fetchTagImages,
-  type CreatedAtCursor
+  type CreatedAtCursor,
+  fetchUntaggedImages
 } from "@/tauri"
 
 export const allImagesQueryKey = ["all"] as const
+export const untaggedImagesQueryKey = ["untagged"] as const
 export const favoritesQueryKey = ["favorite"] as const
 export const trashQueryKey = ["trash"] as const
 export const tagQueryKey = ["tag"] as const
@@ -30,6 +32,13 @@ export const getAllImageQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: allImagesQueryKey,
     queryFn: cursorQueryFn(fetchAllImages),
+    ...paginationBase
+  })
+
+export const getUntaggedImageQueryOptions = () =>
+  infiniteQueryOptions({
+    queryKey: untaggedImagesQueryKey,
+    queryFn: cursorQueryFn(fetchUntaggedImages),
     ...paginationBase
   })
 
