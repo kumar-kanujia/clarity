@@ -197,6 +197,45 @@ Safety guarantees:
 
 ---
 
+### Bulk Operations
+
+**Status:** ✅ Implemented
+
+Provides deterministic bulk state transition primitives executed within a single database transaction.
+
+Supported bulk operations:
+
+- **Bulk Soft Delete:** Marks multiple specified images as soft-deleted without modifying original files.
+- **Bulk Restore:** Restores multiple soft-deleted images.
+- **Bulk Permanent Delete:** Fully removes multiple image records, tag assignments, favorite states, pipeline states, duplicate relationships, and safely cleans up thumbnail cache files.
+- **Bulk Tag Attach:** Assigns a tag to multiple images, preventing duplicate assignments.
+- **Bulk Tag Removal:** Removes a tag from multiple specified images.
+
+Integrity guarantees:
+
+- Operations never internally call single-item operations.
+- No partial state transitions are possible.
+- Referential integrity is strictly preserved.
+- Thumbnail cache cleanup occurs only after a successful database delete.
+- Structured logs are emitted for all bulk operations.
+
+---
+
+### Multi-Selection UI
+
+**Status:** ✅ Implemented
+
+Integrates deterministic multi-selection with backend bulk operations.
+
+- Maintains selection state independently without implementing state transition logic.
+- Supported selection models:
+  - Single selection
+  - Multi-selection
+  - Selection clearing
+- Directly invokes backend bulk actions for tag attach, tag removal, soft delete, restore, and permanent delete.
+
+---
+
 ### Structured Error Handling & Logging
 
 **Status:** ✅ Implemented
@@ -258,7 +297,7 @@ Four distinct gallery views:
 | ----------- | ----------------------- |
 | Gallery     | Active images           |
 | Favorites   | Favorited active images |
-| Bin         | Soft-deleted images     |
+| Trash       | Soft-deleted images     |
 | Tag Gallery | Images filtered by tag  |
 
 Properties:
