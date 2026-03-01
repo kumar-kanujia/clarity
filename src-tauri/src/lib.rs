@@ -9,8 +9,8 @@ use crate::{
   interface::command::{
     gallery_command::{fetch_all, fetch_favorites, fetch_tag_gallery, fetch_trash},
     image_command::{
-      delete_images, empty_bin, import_images, soft_delete_image, soft_delete_images,
-      toggle_favorite, undo_soft_delete_image, undo_soft_delete_images,
+      empty_trash, import_images, move_to_trash, remove_from_trash, restore_from_trash,
+      toggle_favorite,
     },
     image_tag_command::{
       attach_tag, attached_tags, available_tags, fetch_attached_tags, fetch_available_tags,
@@ -39,13 +39,11 @@ pub fn run() {
       fetch_favorites,
       toggle_favorite,
       fetch_trash,
+      move_to_trash,
+      restore_from_trash,
+      empty_trash,
       //
-      soft_delete_image,
-      undo_soft_delete_image,
-      soft_delete_images,
-      undo_soft_delete_images,
-      delete_images,
-      empty_bin,
+      remove_from_trash,
       fetch_tag_gallery,
       // Tags
       create_tag,

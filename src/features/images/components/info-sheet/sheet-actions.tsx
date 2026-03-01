@@ -23,7 +23,10 @@ export const SheetActions = ({
         <Button
           variant={"outline"}
           onClick={() =>
-            undoMoveToTrash({ imageId }, { onSuccess: () => close() })
+            undoMoveToTrash(
+              { imageIds: [imageId] },
+              { onSuccess: () => close() }
+            )
           }
           disabled={isPendingUndo}
         >
@@ -34,7 +37,9 @@ export const SheetActions = ({
       {pathname !== "/trash" && (
         <Button
           variant={"destructive"}
-          onClick={() => moveToTrash({ imageId }, { onSuccess: () => close() })}
+          onClick={() =>
+            moveToTrash({ imageIds: [imageId] }, { onSuccess: () => close() })
+          }
           disabled={isPendingMove}
         >
           <Trash />

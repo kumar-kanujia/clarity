@@ -26,7 +26,7 @@ export const FavoriteButton = ({
       size="icon-sm"
       variant="secondary"
       className={cn(
-        "rounded-2xl bg-zinc-900/20 backdrop-blur-xl border border-white/10 hover:bg-white hover:text-zinc-950 transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100",
+        "rounded-2xl bg-background/20 backdrop-blur-xl border border-primary-foreground/10 hover:bg-white hover:text-zinc-950 transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100",
         state &&
           "bg-red-500 text-white border-red-500 hover:bg-red-600 hover:text-white opacity-100",
         className

@@ -18,6 +18,7 @@ import { FavoriteButton } from "../components/image-grid/favorite-button"
 import { cn } from "@/lib/utils"
 import { AppHeader } from "@/features/common/layout/app-header"
 import { InfoSheet } from "../components/info-sheet"
+import { EmptyTrash } from "../components/image-actions"
 
 interface ImageGridViewProps<T extends AnySuspenseInfiniteQueryOptions> {
   queryOptions: T
@@ -64,7 +65,13 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <main className="flex flex-1 flex-col">
-        <AppHeader />
+        <AppHeader>
+          {isTrashRoute && (
+            <div className="ms-auto px-4">
+              <EmptyTrash />
+            </div>
+          )}
+        </AppHeader>
         <div className="flex-1 overflow-hidden">
           <div className="px-2 select-none h-screen">
             <ImageGrid
