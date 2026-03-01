@@ -13,7 +13,7 @@ use crate::{
       toggle_favorite,
     },
     image_tag_command::{
-      attach_tag, attached_tags, available_tags, fetch_attached_tags, fetch_available_tags,
+      attach_tag, attached_tags, attached_tags_multiple, available_tags, available_tags_multiple,
       remove_tag, toggle_tag,
     },
     tag_command::{
@@ -46,22 +46,23 @@ pub fn run() {
       // Tags
       create_tag,
       edit_tag,
+      fetch_top_tags,
       fetch_active_tags,
       fetch_inactive_tags,
       mark_tag_inactive,
       mark_tag_active,
       delete_tag,
+      // Image Tags
+      attached_tags,
+      available_tags,
+      toggle_tag,
       //
+      available_tags_multiple,
+      attached_tags_multiple,
       delete_from_trash,
       fetch_tag_gallery,
-      fetch_top_tags,
-      toggle_tag,
       attach_tag,
       remove_tag,
-      fetch_attached_tags,
-      fetch_available_tags,
-      attached_tags,
-      available_tags
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application");

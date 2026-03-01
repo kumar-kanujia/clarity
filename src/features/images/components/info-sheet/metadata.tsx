@@ -9,7 +9,9 @@ import { Calendar, FileImage, HardDrive, Monitor } from "lucide-react"
 export const Metadata = ({ image }: { image: ImageItem }) => {
   return (
     <div className="space-y-4">
-      <h4 className="text-sm font-medium leading-none">Properties</h4>
+      <h4 className="text-sm font-medium leading-none text-muted-foreground">
+        Properties
+      </h4>
 
       <div className="grid gap-4 text-sm">
         <div className="flex items-start gap-3">

@@ -21,10 +21,26 @@ import {
   topTagsQueryKey
 } from "../queries"
 
+import {
+  attachedTagsQueryKey,
+  availableTagsQueryKey
+} from "@/features/images/queries"
+
 const tagQueryKeys = {
-  all: [allTagsQueryKey, topTagsQueryKey],
+  all: [
+    allTagsQueryKey,
+    topTagsQueryKey,
+    attachedTagsQueryKey,
+    availableTagsQueryKey
+  ],
   inactive: [inactiveTagQueryKey],
-  allAndInactive: [allTagsQueryKey, topTagsQueryKey, inactiveTagQueryKey]
+  allAndInactive: [
+    allTagsQueryKey,
+    topTagsQueryKey,
+    inactiveTagQueryKey,
+    attachedTagsQueryKey,
+    availableTagsQueryKey
+  ]
 }
 
 const invalidateKeys = (qc: QueryClient, keys: QueryKey[]) =>

@@ -72,7 +72,7 @@ export const ImportDialog = () => {
 
             <TabsContent
               value="images"
-              className="mt-4"
+              className="mt-4 cursor-pointer"
               onClick={() => {
                 selectFiles("images").then(setFiles)
               }}
@@ -89,7 +89,7 @@ export const ImportDialog = () => {
 
             <TabsContent
               value="folder"
-              className="mt-4"
+              className="mt-4 cursor-pointer"
               onClick={() => {
                 selectFiles("folders").then(setFiles)
               }}

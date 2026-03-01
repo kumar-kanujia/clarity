@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { Metadata } from "./metadata"
 import { SheetActions } from "./sheet-actions"
 import { useEffect } from "react"
+import { Tags } from "./tags"
 
 export const InfoSheet = () => {
   const { image, isOpen, closeInfoSheet } = useInfoStore()
@@ -36,7 +37,8 @@ export const InfoSheet = () => {
             className="w-full h-auto max-h-62.5 object-contain"
           />
         </div>
-
+        <Separator />
+        <Tags imageId={image.id} />
         <Separator />
         <Metadata image={image} />
         <Separator />
