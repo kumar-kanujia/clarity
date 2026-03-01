@@ -21,6 +21,7 @@ import { InfoSheet } from "../components/info-sheet"
 import {
   EmptyTrash,
   MoveToTrash,
+  TagAction,
   RemoveSelected,
   RestoreImages
 } from "../components/image-actions"
@@ -107,6 +108,7 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
             )}
             {!isTrashRoute && (
               <>
+                <TagAction imageIds={Array.from(selectedIds)} />
                 <MoveToTrash
                   imageIds={Array.from(selectedIds)}
                   onSuccess={reset}
