@@ -5,15 +5,10 @@ import { convertFileSrc } from "@tauri-apps/api/core"
 import { Separator } from "@/components/ui/separator"
 import { Metadata } from "./metadata"
 import { SheetActions } from "./sheet-actions"
-import { useEffect } from "react"
 import { Tags } from "./tags"
 
 export const InfoSheet = () => {
   const { image, isOpen, closeInfoSheet } = useInfoStore()
-
-  useEffect(() => {
-    closeInfoSheet()
-  }, [])
 
   if (!isOpen || !image) return null
 

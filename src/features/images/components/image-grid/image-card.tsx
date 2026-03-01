@@ -1,4 +1,4 @@
-import React, { memo, useState, type ReactNode } from "react"
+import React, { memo, type ReactNode } from "react"
 import { motion } from "motion/react"
 import { Square, SquareCheck } from "lucide-react"
 
@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 import type { ImageItem } from "@/tauri"
 import { convertFileSrc } from "@tauri-apps/api/core"
-import { useInfoStore, useLightBox } from "../../store"
+import { useInfoStore, useLightBox, useSelectStore } from "../../store"
 
 export const ImageCard = memo(
   ({
@@ -18,24 +18,27 @@ export const ImageCard = memo(
     index: number
     children?: ReactNode
   }) => {
-    const [selected, setSelected] = useState(false)
-    const { open } = useLightBox()
+    const { selectedIds, toggleSelect, reset } = useSelectStore()
+    const { open: openLightbox } = useLightBox()
     const { openInfoSheet } = useInfoStore()
+
+    const selected = selectedIds.has(image.id)
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.button === 0 && e.altKey) {
-        open(index)
+        openLightbox(index)
       } else if (e.button === 0 && e.metaKey) {
-        setSelected(!selected)
+        toggleSelect(image.id)
+      } else if (selectedIds.size > 0) {
+        reset()
       } else {
-        setSelected(false)
         openInfoSheet(image)
       }
     }
 
     const onSquareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation()
-      setSelected(!selected)
+      toggleSelect(image.id)
     }
 
     return (

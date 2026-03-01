@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
 
 import type { AnySuspenseInfiniteQueryOptions } from "@/types"
@@ -13,12 +13,19 @@ import {
 } from "../components"
 import { State } from "@/features/common/components/state"
 import { useLocation } from "@tanstack/react-router"
-import { useLightboxPrefetch } from "../store"
+import { useInfoStore, useLightboxPrefetch, useSelectStore } from "../store"
 import { FavoriteButton } from "../components/image-grid/favorite-button"
 import { cn } from "@/lib/utils"
 import { AppHeader } from "@/features/common/layout/app-header"
 import { InfoSheet } from "../components/info-sheet"
-import { EmptyTrash } from "../components/image-actions"
+import {
+  EmptyTrash,
+  MoveToTrash,
+  RemoveSelected,
+  RestoreImages
+} from "../components/image-actions"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
 
 interface ImageGridViewProps<T extends AnySuspenseInfiniteQueryOptions> {
   queryOptions: T
@@ -39,6 +46,14 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
   } = useSuspenseInfiniteQuery<ImageItemResult>(queryOptions)
 
   const images = useMemo(() => data.pages.flatMap((page) => page.data), [data])
+
+  const { selectedIds, reset } = useSelectStore()
+  const { closeInfoSheet } = useInfoStore()
+
+  useEffect(() => {
+    closeInfoSheet()
+    reset()
+  }, [pathname])
 
   useLightboxPrefetch({
     totalImages: images.length,
@@ -66,11 +81,39 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
     <div className="flex h-screen w-full overflow-hidden">
       <main className="flex flex-1 flex-col">
         <AppHeader>
-          {isTrashRoute && (
-            <div className="ms-auto px-4">
-              <EmptyTrash />
-            </div>
-          )}
+          <div className="ms-auto px-4 flex items-center justify-end gap-x-1">
+            {selectedIds.size > 0 && (
+              <>
+                <Button variant="ghost" onClick={reset}>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedIds.size}
+                  </p>
+                  <X className="size-4" />
+                </Button>
+              </>
+            )}
+            {isTrashRoute && (
+              <>
+                <RestoreImages
+                  imageIds={Array.from(selectedIds)}
+                  onSuccess={reset}
+                />
+                <RemoveSelected
+                  imageIds={Array.from(selectedIds)}
+                  onSuccess={reset}
+                />
+                <EmptyTrash />
+              </>
+            )}
+            {!isTrashRoute && (
+              <>
+                <MoveToTrash
+                  imageIds={Array.from(selectedIds)}
+                  onSuccess={reset}
+                />
+              </>
+            )}
+          </div>
         </AppHeader>
         <div className="flex-1 overflow-hidden">
           <div className="px-2 select-none h-screen">

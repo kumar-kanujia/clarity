@@ -57,10 +57,10 @@ pub fn run() {
       attached_tags,
       available_tags,
       toggle_tag,
+      delete_from_trash,
       //
       available_tags_multiple,
       attached_tags_multiple,
-      delete_from_trash,
       attach_tag,
       remove_tag,
     ])
