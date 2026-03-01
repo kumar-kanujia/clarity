@@ -5,7 +5,7 @@ use sqlx::prelude::{FromRow, Type};
 pub enum TagType {
   User,
   System,
-  Deleted,
+  Inactive,
 }
 
 #[allow(dead_code)]

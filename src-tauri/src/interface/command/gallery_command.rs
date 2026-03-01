@@ -12,7 +12,7 @@ use tauri::State;
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor))]
-pub async fn fetch_gallery(
+pub async fn fetch_all_images(
   state: State<'_, AppState>,
   cursor: Option<CreatedAtCursor>,
 ) -> Result<ImageItemResult, CommandError> {
@@ -34,7 +34,7 @@ pub async fn fetch_gallery(
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor))]
-pub async fn fetch_bin(
+pub async fn fetch_trash(
   state: State<'_, AppState>,
   cursor: Option<CreatedAtCursor>,
 ) -> Result<ImageItemResult, CommandError> {
@@ -78,7 +78,7 @@ pub async fn fetch_favorites(
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor, tag_id = tag_id))]
-pub async fn fetch_tag_gallery(
+pub async fn fetch_tag_images(
   state: State<'_, AppState>,
   tag_id: i64,
   cursor: Option<CreatedAtCursor>,
@@ -94,7 +94,7 @@ pub async fn fetch_tag_gallery(
   tracing::info!(
     data = paginated_images.data.len(),
     tag_id = tag_id,
-    "Fetch images for tag completed"
+    "Fetch images for selected tag"
   );
 
   Ok(paginated_images)

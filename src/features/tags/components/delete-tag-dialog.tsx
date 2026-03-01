@@ -8,8 +8,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog"
-import { useDeleteTagStore } from "../store"
 import { useEffect, useState } from "react"
+import { useDeleteTagStore } from "../store/tag-store"
+
 import { useDeleteTag } from "../hooks"
 
 export const DeleteTagDialog = () => {

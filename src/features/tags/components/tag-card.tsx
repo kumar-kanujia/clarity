@@ -1,12 +1,11 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import type { TagItem } from "@/services/tauri"
 import { Edit2, TagIcon, Trash2, TrashIcon, Undo2 } from "lucide-react"
-import { useDeleteTagStore } from "../store"
-import { useEditTagStore } from "../store/edit-tag-store"
 import { useRouter } from "@tanstack/react-router"
-import { useRestoreTag, useSoftDeleteTag } from "../hooks"
+import type { TagItem } from "@/tauri"
+import { Card, CardContent } from "@/components/ui/card"
+import { useMarkTagActive, useMarkTagInactive } from "../hooks"
+import { useDeleteTagStore, useEditTagStore } from "../store/tag-store"
 
 export const TagCard = ({
   tag,
@@ -20,15 +19,16 @@ export const TagCard = ({
   const { openDeleteDialog } = useDeleteTagStore()
   const { openEditDialog } = useEditTagStore()
 
-  const { mutate: softDelete, isPending: softDeletePending } =
-    useSoftDeleteTag()
+  const { mutate: markInactive, isPending: markInactivePending } =
+    useMarkTagInactive()
 
-  const { mutate: restore, isPending: restorePending } = useRestoreTag()
+  const { mutate: markActive, isPending: markActivePending } =
+    useMarkTagActive()
 
   return (
     <Card
       key={tag.id}
-      className="group relative overflow-hidden border bg-background hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-xl"
+      className="group relative overflow-hidden border bg-background hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-xl cursor-pointer"
       onClick={() => {
         if (isInactive) return
         navigate({ to: "/tags/$tagid", params: { tagid: tag.id.toString() } })
@@ -66,8 +66,8 @@ export const TagCard = ({
                   className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (restorePending) return
-                    restore(tag.id)
+                    if (markActivePending) return
+                    markActive(tag.id)
                   }}
                 >
                   <Undo2 />
@@ -103,8 +103,8 @@ export const TagCard = ({
                   className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (softDeletePending) return
-                    softDelete(tag.id)
+                    if (markInactivePending) return
+                    markInactive(tag.id)
                   }}
                 >
                   <Trash2 />

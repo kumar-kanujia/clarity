@@ -1,23 +1,24 @@
-import { MainImageView } from "@/components/view"
-import { getFavoritesQueryOptions } from "@/features/favorites/hooks"
-import { useSelectStore } from "@/store"
+import { StateWithHeader } from "@/features/common/components/state"
+import { getFavoriteImageQueryOptions } from "@/features/images/queries"
+import { ImageGridView } from "@/features/images/view"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo } from "react"
+import { Suspense, useMemo } from "react"
 
 export const Route = createFileRoute("/favorites")({
-  component: Favorites,
+  component: FavoritesPage,
   loader: ({ context }) => {
-    context.queryClient.ensureInfiniteQueryData(getFavoritesQueryOptions())
-  }
+    context.queryClient.ensureInfiniteQueryData(getFavoriteImageQueryOptions())
+  },
+  errorComponent: () => (
+    <StateWithHeader variant="error" message="Something went wrong!" />
+  )
 })
 
-function Favorites() {
-  const { reset } = useSelectStore()
-
-  useEffect(() => {
-    reset()
-  }, [])
-
-  const queryOptions = useMemo(() => getFavoritesQueryOptions(), [])
-  return <MainImageView queryOptions={queryOptions} />
+function FavoritesPage() {
+  const queryOptions = useMemo(() => getFavoriteImageQueryOptions(), [])
+  return (
+    <Suspense fallback={<StateWithHeader variant="loading" />}>
+      <ImageGridView queryOptions={queryOptions} />
+    </Suspense>
+  )
 }

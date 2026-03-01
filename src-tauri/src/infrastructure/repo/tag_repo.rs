@@ -216,7 +216,7 @@ mod tests {
     let repo = TagRepository::new(pool);
 
     // Try to update a tag ID that doesn't exist
-    let result = repo.update_tag_type(999, TagType::Deleted).await;
+    let result = repo.update_tag_type(999, TagType::Inactive).await;
 
     match result {
       Err(DatabaseError::NotFound) => (), // Success

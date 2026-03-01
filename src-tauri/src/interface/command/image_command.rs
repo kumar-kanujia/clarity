@@ -62,46 +62,8 @@ pub async fn toggle_favorite(
 }
 
 #[tauri::command]
-#[tracing::instrument(skip(state), fields(image_id = image_id))]
-pub async fn soft_delete_image(
-  state: State<'_, AppState>,
-  image_id: i64,
-) -> Result<(), CommandError> {
-  let image_repository = ImageRepository::new(state.db.clone());
-
-  let image_mutation_service = ImageMutationService::new(image_repository);
-
-  image_mutation_service
-    .change_image_is_deleted(vec![image_id], true)
-    .await?;
-
-  tracing::info!("Image soft delete completed!");
-
-  Ok(())
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(state), fields(image_id = image_id))]
-pub async fn undo_soft_delete_image(
-  state: State<'_, AppState>,
-  image_id: i64,
-) -> Result<(), CommandError> {
-  let image_repository = ImageRepository::new(state.db.clone());
-
-  let image_mutation_service = ImageMutationService::new(image_repository);
-
-  image_mutation_service
-    .change_image_is_deleted(vec![image_id], false)
-    .await?;
-
-  tracing::info!("Image undo soft delete completed!");
-
-  Ok(())
-}
-
-#[tauri::command]
 #[tracing::instrument(skip(state), fields(count = image_ids.len()))]
-pub async fn soft_delete_images(
+pub async fn move_to_trash(
   state: State<'_, AppState>,
   image_ids: Vec<i64>,
 ) -> Result<u64, CommandError> {
@@ -113,14 +75,14 @@ pub async fn soft_delete_images(
     .change_image_is_deleted(image_ids, true)
     .await?;
 
-  tracing::info!("Image soft delete completed for {} images", count);
+  tracing::info!("{} images moved to trash!", count);
 
   Ok(count)
 }
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(count = image_ids.len()))]
-pub async fn undo_soft_delete_images(
+pub async fn restore_from_trash(
   state: State<'_, AppState>,
   image_ids: Vec<i64>,
 ) -> Result<u64, CommandError> {
@@ -132,14 +94,14 @@ pub async fn undo_soft_delete_images(
     .change_image_is_deleted(image_ids, false)
     .await?;
 
-  tracing::info!("Image undo soft delete completed for {} images", count);
+  tracing::info!("{} images restored from trash!", count);
 
   Ok(count)
 }
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(count = image_ids.len()))]
-pub async fn delete_images(
+pub async fn delete_from_trash(
   state: State<'_, AppState>,
   image_ids: Vec<i64>,
 ) -> Result<(), CommandError> {
@@ -162,7 +124,7 @@ pub async fn delete_images(
 
 #[tauri::command]
 #[tracing::instrument(skip(state))]
-pub async fn empty_bin(state: State<'_, AppState>) -> Result<(), CommandError> {
+pub async fn empty_trash(state: State<'_, AppState>) -> Result<(), CommandError> {
   let image_repository = ImageRepository::new(state.db.clone());
 
   let image_mutation_service = ImageMutationService::new(image_repository);

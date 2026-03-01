@@ -1,0 +1,127 @@
+import { useState, type ReactNode } from "react"
+import { TagIcon, Trash2 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger
+} from "@/components/ui/context-menu"
+import {
+  getAttachedTagsQueryOptions,
+  getAvailableTagsQueryOptions
+} from "../../queries"
+import { useMoveToTrash, useToggleTag } from "../../hooks"
+
+interface ImageOptionsProps {
+  children: ReactNode
+  imageId: number
+  hideOptions?: boolean
+}
+export const ImageOptions = ({
+  children,
+  imageId,
+  hideOptions
+}: ImageOptionsProps) => {
+  if (hideOptions) return <>{children}</>
+
+  return <ActiveContextMenu imageId={imageId}>{children}</ActiveContextMenu>
+}
+
+const ActiveContextMenu = ({
+  children,
+  imageId
+}: {
+  children: ReactNode
+  imageId: number
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const { data: attachedTagData, isSuccess: attachedTagFetchSuccess } =
+    useQuery({
+      ...getAttachedTagsQueryOptions(imageId, 5),
+      enabled: isOpen
+    })
+
+  const { data: availableTagData, isSuccess: availableTagFetchSuccess } =
+    useQuery({
+      ...getAvailableTagsQueryOptions(imageId, 5),
+      enabled: isOpen
+    })
+
+  const { mutate: moveToTrash, isPending: isMoveToTrashPending } =
+    useMoveToTrash()
+
+  const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
+
+  return (
+    <ContextMenu onOpenChange={setIsOpen} open={isOpen}>
+      <ContextMenuTrigger>{children}</ContextMenuTrigger>
+
+      {/* Restored original styling */}
+      <ContextMenuContent className="bg-background/80 w-48">
+        {attachedTagFetchSuccess && attachedTagData.length > 0 && (
+          <>
+            <ContextMenuGroup>
+              <ContextMenuLabel>Attached Tags</ContextMenuLabel>
+              {attachedTagData.map((tag) => (
+                <ContextMenuItem
+                  key={tag.id}
+                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
+                  disabled={isTagPending}
+                >
+                  {/* Restored original TagIcon styling */}
+                  <TagIcon
+                    style={{ backgroundColor: tag.tagColor }}
+                    className="p-2 rounded-3xl mr-2"
+                  />
+                  {tag.tagName}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuGroup>
+            <ContextMenuSeparator />
+          </>
+        )}
+
+        {availableTagFetchSuccess && availableTagData.length > 0 && (
+          <>
+            <ContextMenuGroup>
+              <ContextMenuLabel>Attach a new tag</ContextMenuLabel>
+              {availableTagData.map((tag) => (
+                <ContextMenuItem
+                  key={tag.id}
+                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
+                  disabled={isTagPending}
+                >
+                  {/* Restored original TagIcon styling */}
+                  <TagIcon
+                    style={{ backgroundColor: tag.tagColor }}
+                    className="p-2 rounded-3xl mr-2"
+                  />
+                  {tag.tagName}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuGroup>
+            <ContextMenuSeparator />
+          </>
+        )}
+
+        <ContextMenuGroup>
+          <ContextMenuItem
+            variant="destructive"
+            onClick={(e) => {
+              e.stopPropagation()
+              moveToTrash({ imageIds: [imageId] })
+            }}
+            disabled={isMoveToTrashPending}
+          >
+            <Trash2 className="mr-2 size-4" /> Move to Trash
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}

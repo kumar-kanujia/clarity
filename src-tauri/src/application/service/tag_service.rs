@@ -75,10 +75,13 @@ impl TagService {
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }
 
-  pub async fn list_user_deleted_tags(&self, limit: Option<i64>) -> Result<Vec<TagItem>, AppError> {
+  pub async fn list_user_inactive_tags(
+    &self,
+    limit: Option<i64>,
+  ) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::Deleted, limit)
+      .get_tags_order_by_image_count(TagType::Inactive, limit)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }
@@ -152,7 +155,7 @@ mod tests {
 
     // Perform "soft delete" (changing type to Deleted)
     service
-      .change_tag_type(tag_id, TagType::Deleted)
+      .change_tag_type(tag_id, TagType::Inactive)
       .await
       .unwrap();
 
