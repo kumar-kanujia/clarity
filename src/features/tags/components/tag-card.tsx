@@ -4,7 +4,7 @@ import { Edit2, TagIcon, Trash2, TrashIcon, Undo2 } from "lucide-react"
 import { useRouter } from "@tanstack/react-router"
 import type { TagItem } from "@/tauri"
 import { Card, CardContent } from "@/components/ui/card"
-import { useRestoreTag, useSoftDeleteTag } from "../hooks/use-tag"
+import { useMarkTagActive, useMarkTagInactive } from "../hooks"
 import { useDeleteTagStore, useEditTagStore } from "../store/tag-store"
 
 export const TagCard = ({
@@ -19,10 +19,11 @@ export const TagCard = ({
   const { openDeleteDialog } = useDeleteTagStore()
   const { openEditDialog } = useEditTagStore()
 
-  const { mutate: softDelete, isPending: softDeletePending } =
-    useSoftDeleteTag()
+  const { mutate: markInactive, isPending: markInactivePending } =
+    useMarkTagInactive()
 
-  const { mutate: restore, isPending: restorePending } = useRestoreTag()
+  const { mutate: markActive, isPending: markActivePending } =
+    useMarkTagActive()
 
   return (
     <Card
@@ -65,8 +66,8 @@ export const TagCard = ({
                   className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (restorePending) return
-                    restore(tag.id)
+                    if (markActivePending) return
+                    markActive(tag.id)
                   }}
                 >
                   <Undo2 />
@@ -102,8 +103,8 @@ export const TagCard = ({
                   className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (softDeletePending) return
-                    softDelete(tag.id)
+                    if (markInactivePending) return
+                    markInactive(tag.id)
                   }}
                 >
                   <Trash2 />

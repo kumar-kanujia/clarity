@@ -7,9 +7,9 @@ mod tests;
 
 use crate::{
   interface::command::{
-    gallery_command::{fetch_all, fetch_favorites, fetch_tag_gallery, fetch_trash},
+    gallery_command::{fetch_all_images, fetch_favorites, fetch_tag_gallery, fetch_trash},
     image_command::{
-      empty_trash, import_images, move_to_trash, remove_from_trash, restore_from_trash,
+      delete_from_trash, empty_trash, import_images, move_to_trash, restore_from_trash,
       toggle_favorite,
     },
     image_tag_command::{
@@ -17,8 +17,8 @@ use crate::{
       remove_tag, toggle_tag,
     },
     tag_command::{
-      create_tag, delete_tag, edit_tag, fetch_all_tags, fetch_deleted_tags, fetch_top_tags,
-      soft_delete_tag, undo_delete_tag,
+      create_tag, delete_tag, edit_tag, fetch_active_tags, fetch_inactive_tags, fetch_top_tags,
+      mark_tag_active, mark_tag_inactive,
     },
   },
   setup::{app_callback, app_setup, logger::Logger},
@@ -34,27 +34,27 @@ pub fn run() {
     .plugin(tauri_plugin_opener::init())
     .setup(app_setup)
     .invoke_handler(tauri::generate_handler![
+      // Images
       import_images,
-      fetch_all,
+      fetch_all_images,
       fetch_favorites,
       toggle_favorite,
       fetch_trash,
       move_to_trash,
       restore_from_trash,
       empty_trash,
-      //
-      remove_from_trash,
-      fetch_tag_gallery,
       // Tags
       create_tag,
       edit_tag,
-      soft_delete_tag,
-      undo_delete_tag,
+      fetch_active_tags,
+      fetch_inactive_tags,
+      mark_tag_inactive,
+      mark_tag_active,
       delete_tag,
+      //
+      delete_from_trash,
+      fetch_tag_gallery,
       fetch_top_tags,
-      fetch_all_tags,
-      fetch_deleted_tags,
-      // Image tags
       toggle_tag,
       attach_tag,
       remove_tag,

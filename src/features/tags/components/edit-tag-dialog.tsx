@@ -3,7 +3,7 @@ import { TagForm, type TagFormValues } from "./tag-form"
 import type { UseFormSetError } from "react-hook-form"
 import { useEditTagStore } from "../store/tag-store"
 import type { EditTagParams } from "@/tauri"
-import { useEditTag } from "../hooks/use-tag"
+import { useEditTag } from "../hooks"
 
 export const EditTagDialog = () => {
   const { isOpen, tag, closeEditDialog } = useEditTagStore()

@@ -1,12 +1,12 @@
-import { fetchAllTags, fetchDeletedTags, fetchTopTags } from "@/tauri"
+import { fetchActiveTags, fetchInactiveTags, fetchTopTags } from "@/tauri"
 import { queryOptions } from "@tanstack/react-query"
 
-export const allTagsQueryKey = ["tags", "all"]
+export const allTagsQueryKey = ["tags", "active"]
 
 export const getAllTagsQueryOption = () =>
   queryOptions({
     queryKey: allTagsQueryKey,
-    queryFn: () => fetchAllTags(),
+    queryFn: () => fetchActiveTags(),
     staleTime: 1000 * 60 * 5
   })
 
@@ -15,7 +15,7 @@ export const inactiveTagQueryKey = ["tags", "inactive"]
 export const getInactiveTagsQueryOption = () =>
   queryOptions({
     queryKey: inactiveTagQueryKey,
-    queryFn: () => fetchDeletedTags(),
+    queryFn: () => fetchInactiveTags(),
     staleTime: 1000 * 60 * 5
   })
 

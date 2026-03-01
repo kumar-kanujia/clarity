@@ -11,13 +11,13 @@ import { Button } from "@/components/ui/button"
 import { DialogTrigger } from "@/components/ui/dialog"
 
 const EmptyTagState = () => (
-  <div className="flex flex-col items-center justify-center h-full text-center min-h-[50vh]">
+  <div className="flex flex-col items-center justify-center h-full text-center min-h-[25vh]">
     <div className="w-20 h-20 bg-muted/30 border rounded-3xl flex items-center justify-center mb-6 shadow-xl">
       <TagIcon className="w-10 h-10 text-muted-foreground" />
     </div>
-    <h2 className="text-xl font-bold mb-2">No tags found</h2>
+    <h2 className="text-xl font-bold mb-2">No Active tags found</h2>
     <p className="text-muted-foreground max-w-sm text-sm">
-      Create a custom tag to start categorizing your visual library.
+      Create a new tag to start categorizing your visual library
     </p>
   </div>
 )

@@ -12,7 +12,7 @@ use tauri::State;
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor))]
-pub async fn fetch_all(
+pub async fn fetch_all_images(
   state: State<'_, AppState>,
   cursor: Option<CreatedAtCursor>,
 ) -> Result<ImageItemResult, CommandError> {

@@ -40,24 +40,47 @@ pub async fn edit_tag(
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(tag_id=tag_id))]
-pub async fn soft_delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<(), CommandError> {
+pub async fn mark_tag_inactive(
+  state: State<'_, AppState>,
+  tag_id: i64,
+) -> Result<(), CommandError> {
   let tag_repository = TagRepository::new(state.db.clone());
   let tag_service = TagService::new(tag_repository);
   tag_service
-    .change_tag_type(tag_id, TagType::Deleted)
+    .change_tag_type(tag_id, TagType::Inactive)
     .await?;
-  tracing::info!(tag_id = tag_id, "Tag softly deleted");
+  tracing::info!(tag_id = tag_id, "Tag marked inactive");
   Ok(())
 }
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(tag_id=tag_id))]
-pub async fn undo_delete_tag(state: State<'_, AppState>, tag_id: i64) -> Result<(), CommandError> {
+pub async fn mark_tag_active(state: State<'_, AppState>, tag_id: i64) -> Result<(), CommandError> {
   let tag_repository = TagRepository::new(state.db.clone());
   let tag_service = TagService::new(tag_repository);
   tag_service.change_tag_type(tag_id, TagType::User).await?;
-  tracing::info!(tag_id = tag_id, "Undo tag soft delete");
+  tracing::info!(tag_id = tag_id, "Tag marked active");
   Ok(())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn fetch_active_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, CommandError> {
+  let tag_repository = TagRepository::new(state.db.clone());
+  let tag_service = TagService::new(tag_repository);
+  let tags = tag_service.list_user_tags(None).await?;
+  tracing::info!(count = tags.len(), "Fetched all active tags");
+  Ok(tags)
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn fetch_inactive_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, CommandError> {
+  let tag_repository = TagRepository::new(state.db.clone());
+  let tag_service = TagService::new(tag_repository);
+  let tags = tag_service.list_user_inactive_tags(None).await?;
+  tracing::info!(count = tags.len(), "Fetched all deleted tags");
+  Ok(tags)
 }
 
 #[tauri::command]
@@ -79,25 +102,5 @@ pub async fn fetch_top_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, 
     .list_user_tags(Some(TAG_TOP_FETCH_LIMIT))
     .await?;
   tracing::info!(count = tags.len(), "Fetched top tags");
-  Ok(tags)
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(state))]
-pub async fn fetch_all_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, CommandError> {
-  let tag_repository = TagRepository::new(state.db.clone());
-  let tag_service = TagService::new(tag_repository);
-  let tags = tag_service.list_user_tags(None).await?;
-  tracing::info!(count = tags.len(), "Fetched all tags");
-  Ok(tags)
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(state))]
-pub async fn fetch_deleted_tags(state: State<'_, AppState>) -> Result<Vec<TagItem>, CommandError> {
-  let tag_repository = TagRepository::new(state.db.clone());
-  let tag_service = TagService::new(tag_repository);
-  let tags = tag_service.list_user_deleted_tags(None).await?;
-  tracing::info!(count = tags.len(), "Fetched all deleted tags");
   Ok(tags)
 }

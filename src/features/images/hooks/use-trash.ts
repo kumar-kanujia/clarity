@@ -7,9 +7,9 @@ import {
 import { allImagesQueryKey, trashQueryKey } from "../queries"
 
 import {
+  deleteFromTrash,
   emptyTrash,
   moveToTrash,
-  removeFromTrash,
   restoreFromTrash
 } from "@/tauri"
 
@@ -70,9 +70,9 @@ export const useUndoMoveToTrash = () =>
     invalidateQueryKey: allImagesQueryKey
   })
 
-export const useRemoveFromTrash = () =>
+export const useDeleteFromTrash = () =>
   useOptimisticImageMutation({
-    mutationFn: (imageIds) => removeFromTrash({ imageIds }),
+    mutationFn: (imageIds) => deleteFromTrash({ imageIds }),
     optimisticQueryKey: trashQueryKey,
     invalidateQueryKey: trashQueryKey
   })

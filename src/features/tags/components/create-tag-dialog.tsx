@@ -2,9 +2,9 @@ import { useState, type ReactNode } from "react"
 import type { UseFormSetError } from "react-hook-form"
 
 import { Dialog } from "@/components/ui/dialog"
-import { useCreateTag } from "../hooks"
 import { TAG_COLORS, TagForm, type TagFormValues } from "./tag-form"
 import type { CreateTagParams } from "@/tauri"
+import { useCreateTag } from "../hooks"
 
 export const CreateTagDialog = ({ children }: { children?: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false)

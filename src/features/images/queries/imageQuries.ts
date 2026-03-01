@@ -2,7 +2,7 @@ import { infiniteQueryOptions } from "@tanstack/react-query"
 
 import {
   fetchFavorites,
-  fetchAll,
+  fetchAllImages,
   fetchTrash,
   type CreatedAtCursor
 } from "@/tauri"
@@ -13,7 +13,7 @@ export const getAllImageQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: allImagesQueryKey,
     queryFn: async ({ pageParam = null }) => {
-      const res = await fetchAll({
+      const res = await fetchAllImages({
         cursor: pageParam ?? undefined
       })
       return res

@@ -101,7 +101,7 @@ pub async fn restore_from_trash(
 
 #[tauri::command]
 #[tracing::instrument(skip(state), fields(count = image_ids.len()))]
-pub async fn remove_from_trash(
+pub async fn delete_from_trash(
   state: State<'_, AppState>,
   image_ids: Vec<i64>,
 ) -> Result<(), CommandError> {
