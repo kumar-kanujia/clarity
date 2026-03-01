@@ -121,6 +121,7 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
           <div className="px-2 select-none h-screen">
             <ImageGrid
               images={images}
+              hideOptions={isTrashRoute}
               fetchMore={fetchNextPage}
               hasMore={hasNextPage && !isFetchingNextPage}
               renderImageAction={(image) => {

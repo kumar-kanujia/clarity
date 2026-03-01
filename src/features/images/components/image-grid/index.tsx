@@ -6,12 +6,14 @@ import type { ImageItem } from "@/tauri"
 import { ImageCard } from "./image-card"
 
 import { useResponsiveCols } from "../../hooks"
+import { ImageOptions } from "./image-options"
 
 interface ImageGridProps {
   images: ImageItem[]
   fetchMore: () => void
   hasMore: boolean
   children?: ReactNode
+  hideOptions?: boolean
   renderImageAction?: (image: ImageItem) => ReactNode
 }
 
@@ -20,7 +22,8 @@ export const ImageGrid = ({
   fetchMore,
   hasMore,
   children,
-  renderImageAction
+  renderImageAction,
+  hideOptions
 }: ImageGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null)
   const cols = useResponsiveCols()
@@ -74,9 +77,15 @@ export const ImageGrid = ({
                 {rowImages.map((image, i) => {
                   const actualIndex = startIndex + i
                   return (
-                    <ImageCard key={image.id} image={image} index={actualIndex}>
-                      {renderImageAction?.(image)}
-                    </ImageCard>
+                    <ImageOptions imageId={image.id} hideOptions={hideOptions}>
+                      <ImageCard
+                        key={image.id}
+                        image={image}
+                        index={actualIndex}
+                      >
+                        {renderImageAction?.(image)}
+                      </ImageCard>
+                    </ImageOptions>
                   )
                 })}
               </div>

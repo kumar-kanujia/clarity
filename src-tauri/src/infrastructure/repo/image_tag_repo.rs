@@ -147,7 +147,6 @@ impl ImageTagRepository {
 
     Ok(rows)
   }
-
   pub async fn get_tags_attached_to_images(
     &self,
     image_ids: Vec<i64>,
@@ -160,11 +159,11 @@ impl ImageTagRepository {
 
     let mut qb = sqlx::QueryBuilder::new(
       r#"
-        SELECT DISTINCT tags.id, tags.text, tags.color, tags.image_count
-        FROM tags
-        JOIN image_tags ON tags.id = image_tags.tag_id
-        WHERE tags.tag_type = 
-        "#,
+      SELECT tags.id, tags.text, tags.color, tags.image_count
+      FROM tags
+      JOIN image_tags ON tags.id = image_tags.tag_id
+      WHERE tags.tag_type =
+    "#,
     );
 
     qb.push_bind(tag_type);
@@ -176,6 +175,15 @@ impl ImageTagRepository {
       separated.push_bind(id);
     }
     separated.push_unseparated(")");
+
+    qb.push(
+      r#"
+      GROUP BY tags.id, tags.text, tags.color, tags.image_count
+      HAVING COUNT(DISTINCT image_tags.image_id) =
+    "#,
+    );
+
+    qb.push_bind(image_ids.len() as i64);
 
     qb.push(" ORDER BY tags.image_count DESC");
 
@@ -198,30 +206,42 @@ impl ImageTagRepository {
     tag_type: TagType,
     limit: Option<i64>,
   ) -> Result<Vec<TagItemRow>, DatabaseError> {
+    if image_ids.is_empty() {
+      return Ok(vec![]);
+    }
+
     let mut qb = sqlx::QueryBuilder::new(
       r#"
-        SELECT tags.id, tags.text, tags.color, tags.image_count
-        FROM tags
-        WHERE tags.tag_type =
-        "#,
-    );
-
-    qb.push_bind(tag_type);
-
-    qb.push(
-      r#"
-        AND NOT EXISTS (
-            SELECT 1 FROM image_tags
-            WHERE image_tags.tag_id = tags.id
-            AND image_tags.image_id IN (
-        "#,
+      SELECT tags.id, tags.text, tags.color, tags.image_count
+      FROM tags
+      LEFT JOIN image_tags
+        ON tags.id = image_tags.tag_id
+        AND image_tags.image_id IN (
+    "#,
     );
 
     let mut separated = qb.separated(", ");
     for id in &image_ids {
       separated.push_bind(id);
     }
-    separated.push_unseparated("))");
+    separated.push_unseparated(")");
+
+    qb.push(
+      r#"
+      WHERE tags.tag_type =
+    "#,
+    );
+
+    qb.push_bind(tag_type);
+
+    qb.push(
+      r#"
+      GROUP BY tags.id, tags.text, tags.color, tags.image_count
+      HAVING COUNT(DISTINCT image_tags.image_id) <
+    "#,
+    );
+
+    qb.push_bind(image_ids.len() as i64);
 
     qb.push(" ORDER BY tags.image_count DESC");
 

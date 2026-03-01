@@ -44,6 +44,7 @@ pub fn run() {
       move_to_trash,
       restore_from_trash,
       empty_trash,
+      delete_from_trash,
       // Tags
       create_tag,
       edit_tag,
@@ -57,8 +58,6 @@ pub fn run() {
       attached_tags,
       available_tags,
       toggle_tag,
-      delete_from_trash,
-      //
       available_tags_multiple,
       attached_tags_multiple,
       attach_tag,
