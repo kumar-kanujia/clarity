@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   attachedTagsQueryKey,
   availableTagsQueryKey,
-  tagQueryKey
+  tagQueryKey,
+  untaggedImagesQueryKey
 } from "../queries"
 
 interface ToggleTagVars {
@@ -54,17 +55,28 @@ export const useToggleTag = () => {
       await Promise.all([
         qc.cancelQueries({ queryKey: attachedKey }),
         qc.cancelQueries({ queryKey: availableKey }),
-        qc.cancelQueries({ queryKey: tagGalleryKey })
+        qc.cancelQueries({ queryKey: tagGalleryKey }),
+        qc.cancelQueries({ queryKey: untaggedImagesQueryKey })
       ])
 
       const prevAttached = qc.getQueryData<TagItem[]>(attachedKey) ?? []
       const prevAvailable = qc.getQueryData<TagItem[]>(availableKey) ?? []
       const prevTagImages = qc.getQueryData<PaginatedData>(tagGalleryKey)
+      const prevUntaggedImages = qc.getQueryData<PaginatedData>(
+        untaggedImagesQueryKey
+      )
+
       qc.setQueryData(tagGalleryKey, (old: PaginatedData | undefined) =>
         filterImageFromPages(old, imageId)
       )
 
+      qc.setQueryData(
+        untaggedImagesQueryKey,
+        (old: PaginatedData | undefined) => filterImageFromPages(old, imageId)
+      )
+
       const isAttached = prevAttached.some((t) => t.id === tagId)
+
       const [nextAttached, nextAvailable] = isAttached
         ? swapTag(prevAttached, prevAvailable, tagId)
         : swapTag(prevAvailable, prevAttached, tagId)
@@ -78,7 +90,8 @@ export const useToggleTag = () => {
         prevTagImages,
         attachedKey,
         availableKey,
-        tagGalleryKey
+        tagGalleryKey,
+        prevUntaggedImages
       }
     },
 
@@ -87,12 +100,14 @@ export const useToggleTag = () => {
       qc.setQueryData(ctx.attachedKey, ctx.prevAttached)
       qc.setQueryData(ctx.availableKey, ctx.prevAvailable)
       qc.setQueryData(ctx.tagGalleryKey, ctx.prevTagImages)
+      qc.setQueryData(untaggedImagesQueryKey, ctx.prevUntaggedImages)
     },
 
     onSettled: (_data, _err, { imageId, tagId }) => {
       qc.invalidateQueries({ queryKey: [...attachedTagsQueryKey, imageId] })
       qc.invalidateQueries({ queryKey: [...availableTagsQueryKey, imageId] })
       qc.invalidateQueries({ queryKey: [...tagQueryKey, tagId] })
+      qc.invalidateQueries({ queryKey: untaggedImagesQueryKey })
     }
   })
 }
@@ -126,7 +141,8 @@ export const useAttachTag = () => {
         ...perImageKeys.flatMap(({ attachedKey, availableKey }) => [
           qc.cancelQueries({ queryKey: attachedKey }),
           qc.cancelQueries({ queryKey: availableKey })
-        ])
+        ]),
+        qc.cancelQueries({ queryKey: untaggedImagesQueryKey })
       ])
 
       const prevPerImage = perImageKeys.map(
@@ -142,6 +158,9 @@ export const useAttachTag = () => {
       const prevMultiAttached = qc.getQueryData<TagItem[]>(multiAttachedKey)
       const prevMultiAvailable = qc.getQueryData<TagItem[]>(multiAvailableKey)
       const prevTagImages = qc.getQueryData<PaginatedData>(tagGalleryKey)
+      const prevUntaggedImages = qc.getQueryData<PaginatedData>(
+        untaggedImagesQueryKey
+      )
 
       // Optimistically update per-image queries
       prevPerImage.forEach(
@@ -168,6 +187,15 @@ export const useAttachTag = () => {
         qc.setQueryData(multiAvailableKey, nextMultiAvailable)
       }
 
+      qc.setQueryData(
+        untaggedImagesQueryKey,
+        (old: PaginatedData | undefined) =>
+          imageIds.reduce(
+            (acc, imageId) => filterImageFromPages(acc, imageId),
+            old
+          )
+      )
+
       return {
         prevPerImage,
         prevMultiAttached,
@@ -175,7 +203,8 @@ export const useAttachTag = () => {
         prevTagImages,
         tagGalleryKey,
         multiAttachedKey,
-        multiAvailableKey
+        multiAvailableKey,
+        prevUntaggedImages
       }
     },
 
@@ -190,6 +219,7 @@ export const useAttachTag = () => {
       qc.setQueryData(ctx.multiAttachedKey, ctx.prevMultiAttached)
       qc.setQueryData(ctx.multiAvailableKey, ctx.prevMultiAvailable)
       qc.setQueryData(ctx.tagGalleryKey, ctx.prevTagImages)
+      qc.setQueryData(untaggedImagesQueryKey, ctx.prevUntaggedImages)
     },
 
     onSettled: (_data, _err, { imageIds, tagId }) => {
@@ -200,6 +230,7 @@ export const useAttachTag = () => {
       qc.invalidateQueries({ queryKey: [...attachedTagsQueryKey, imageIds] })
       qc.invalidateQueries({ queryKey: [...availableTagsQueryKey, imageIds] })
       qc.invalidateQueries({ queryKey: [...tagQueryKey, tagId] })
+      qc.invalidateQueries({ queryKey: untaggedImagesQueryKey })
     }
   })
 }
@@ -309,6 +340,7 @@ export const useRemoveTag = () => {
       qc.invalidateQueries({ queryKey: [...attachedTagsQueryKey, imageIds] })
       qc.invalidateQueries({ queryKey: [...availableTagsQueryKey, imageIds] })
       qc.invalidateQueries({ queryKey: [...tagQueryKey, tagId] })
+      qc.invalidateQueries({ queryKey: untaggedImagesQueryKey })
     }
   })
 }

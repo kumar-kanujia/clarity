@@ -77,6 +77,28 @@ pub async fn fetch_favorites(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state), fields(cursor = ?cursor))]
+pub async fn fetch_untagged_images(
+  state: State<'_, AppState>,
+  cursor: Option<CreatedAtCursor>,
+) -> Result<ImageItemResult, CommandError> {
+  let image_repository = ImageRepository::new(state.db.clone());
+
+  let image_query_service = ImageQueryService::new(image_repository);
+
+  let paginated_images = image_query_service
+    .list_untagged_image_items(FETCH_LIMIT, cursor)
+    .await?;
+
+  tracing::info!(
+    data = paginated_images.data.len(),
+    "Fetch images for untagged completed:"
+  );
+
+  Ok(paginated_images)
+}
+
+#[tauri::command]
 #[tracing::instrument(skip(state), fields(cursor = ?cursor, tag_id = tag_id))]
 pub async fn fetch_tag_images(
   state: State<'_, AppState>,
