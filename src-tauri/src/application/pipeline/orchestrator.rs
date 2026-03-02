@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::thread;
 use std::{cmp, sync::Arc};
 
-use tokio::sync::Notify;
+use tokio::sync::{Notify, mpsc};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -59,6 +59,9 @@ impl PipelineOrchestrator {
     let thread_count = Self::num_threads();
     Self::init_rayon(thread_count);
 
+    let (tx, mut rx) = mpsc::channel::<PipelineSignal>(1024);
+    let handle = PipelineHandle { tx };
+
     let hash_batch = cmp::max(4, thread_count * FILE_HASH_BATCH_FACTOR);
     let thumb_batch = cmp::max(1, thread_count * THUMBNAIL_BATCH_FACTOR);
     let delete_batch = cmp::max(1, thread_count * DELETE_BATCH_FACTOR);
@@ -67,7 +70,7 @@ impl PipelineOrchestrator {
     let thumb_notify = Arc::new(Notify::new());
     let delete_notify = Arc::new(Notify::new());
 
-    let hash_stage = Arc::new(HashStage::new(repo.clone()));
+    let hash_stage = Arc::new(HashStage::new(repo.clone(), handle.clone()));
     let thumb_stage = Arc::new(ThumbnailStage::new(repo.clone(), thumbnail_target));
     let delete_stage = Arc::new(DeleteStage::new(repo.clone()));
 
@@ -89,18 +92,15 @@ impl PipelineOrchestrator {
       shutdown_token.clone(),
     ));
 
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<PipelineSignal>(1024);
-
-    let hash_n = Arc::clone(&hash_notify);
-    let thumb_n = Arc::clone(&thumb_notify);
-    let delete_n = Arc::clone(&delete_notify);
-
-    let token = shutdown_token.clone();
+    let dispatcher_token = shutdown_token.clone();
+    let hash_n = hash_notify.clone();
+    let thumb_n = thumb_notify.clone();
+    let delete_n = delete_notify.clone();
 
     tauri::async_runtime::spawn(async move {
       loop {
         tokio::select! {
-            _ = token.cancelled() => {
+            _ = dispatcher_token.cancelled() => {
                 tracing::info!("Signal dispatcher shutting down.");
                 break;
             }
@@ -115,10 +115,7 @@ impl PipelineOrchestrator {
       }
     });
 
-    let handle = PipelineHandle { tx };
-
     let recovery_handle = handle.clone();
-
     tauri::async_runtime::spawn(async move {
       tracing::info!("Emitting recovery signals for all stages...");
       recovery_handle.emit(PipelineSignal::ImageAdded).await;

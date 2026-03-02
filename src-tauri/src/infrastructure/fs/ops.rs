@@ -1,11 +1,14 @@
 use crate::infrastructure::fs::error::FSError;
 
 use std::fs::{self, File};
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 use std::path::Path;
 
 pub fn delete_file<P: AsRef<Path>>(path: P) -> Result<(), FSError> {
-  fs::remove_file(path)?;
+  fs::remove_file(&path).map_err(|err: Error| match err.kind() {
+    ErrorKind::NotFound => FSError::FileNotFound(String::new()),
+    _ => FSError::Io(err),
+  })?;
   Ok(())
 }
 

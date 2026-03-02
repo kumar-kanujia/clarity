@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
@@ -6,7 +6,7 @@ use crate::{
   application::pipeline::stage::PipelineStage,
   domain::image::Image,
   infrastructure::{
-    fs::ops,
+    fs::{error::FSError, ops},
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
@@ -38,7 +38,7 @@ impl PipelineStage for DeleteStage {
   }
 
   async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<DeletionTarget>, DatabaseError> {
-    let models = self
+    let rows = self
       .repo
       .get_images_for_processing(
         batch_size as i64,
@@ -47,36 +47,41 @@ impl PipelineStage for DeleteStage {
       )
       .await?;
 
-    if models.is_empty() {
+    if rows.is_empty() {
       return Ok(vec![]);
     }
 
-    let images: Vec<Image> = models.into_iter().map(Into::into).collect();
+    let mut batch = Vec::with_capacity(rows.len());
 
-    let mut batch = Vec::with_capacity(images.len());
+    let mut thumbnails_scheduled_for_deletion = HashSet::new();
 
-    for image in images {
-      if let Ok(duplicate_image) = self
-        .repo
-        .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
-        .await
-        && let Some(_) = duplicate_image
-      {
-        tracing::info!(
-          "Duplicate content found for {}. Unlinking existing thumbnail.",
-          image.id
-        );
-        batch.push(DeletionTarget {
-          id: image.id,
-          path: image.path.clone(),
-          thumbnail_path: None,
-        });
-        continue;
-      }
+    for row in rows {
+      let image: Image = row.into();
+
+      let has_active_sibling = matches!(
+        self
+          .repo
+          .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
+          .await,
+        Ok(Some(_))
+      );
+
+      let should_delete_thumb = if has_active_sibling {
+        false
+      } else {
+        thumbnails_scheduled_for_deletion.insert(image.content_hash.clone())
+      };
+
+      let thumbnail_path = if should_delete_thumb && !image.thumbnail_path.is_empty() {
+        Some(image.thumbnail_path)
+      } else {
+        None
+      };
+
       batch.push(DeletionTarget {
         id: image.id,
-        path: image.path.clone(),
-        thumbnail_path: Some(image.thumbnail_path),
+        path: image.path,
+        thumbnail_path,
       });
     }
 
@@ -87,17 +92,20 @@ impl PipelineStage for DeleteStage {
     targets
       .into_par_iter()
       .filter_map(|target| {
-        if let Err(e) = ops::delete_file(&target.path) {
-          tracing::error!(error = ?e, path = %target.path, "Failed to delete image file");
-          return None; // Don't mark as deleted in DB if file removal failed.
+        if let Err(err) = ops::delete_file(&target.path) {
+          match err {
+            FSError::FileNotFound(_) => tracing::warn!(path = %target.path, "File already missing from disk, proceeding with DB cleanup."),
+            _ => {
+              tracing::error!(error = ?err, path = %target.path, "Failed to delete image file. Skipping DB cleanup.");
+              return None;
+            }
+          }
         }
 
         if let Some(ref thumb) = target.thumbnail_path {
-          if !thumb.is_empty() {
             if let Err(e) = ops::delete_file(thumb) {
               tracing::warn!(error = ?e, path = %thumb, "Failed to delete thumbnail");
             }
-          }
         }
 
         Some(target)

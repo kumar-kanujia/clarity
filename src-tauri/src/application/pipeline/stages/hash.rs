@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use crate::{
-  application::{pipeline::stage::PipelineStage, service::file_hash_service},
+  application::{
+    pipeline::{orchestrator::PipelineHandle, signal::PipelineSignal, stage::PipelineStage},
+    service::file_hash_service,
+  },
   domain::image::Image,
   infrastructure::{
     models::image_model::ImageStatus,
@@ -12,11 +15,12 @@ use crate::{
 
 pub struct HashStage {
   repo: Arc<ImageRepository>,
+  handle: PipelineHandle,
 }
 
 impl HashStage {
-  pub fn new(repo: Arc<ImageRepository>) -> Self {
-    Self { repo }
+  pub fn new(repo: Arc<ImageRepository>, handle: PipelineHandle) -> Self {
+    Self { repo, handle }
   }
 }
 
@@ -29,16 +33,15 @@ impl PipelineStage for HashStage {
   }
 
   async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<Image>, DatabaseError> {
-    let models = self
+    self
       .repo
       .get_images_for_processing(
         batch_size as i64,
         MAX_PIPELINE_RETRIES,
         ImageStatus::Pending,
       )
-      .await?;
-
-    Ok(models.into_iter().map(Into::into).collect())
+      .await
+      .map(|models| models.into_iter().map(Into::into).collect())
   }
 
   fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
@@ -47,8 +50,10 @@ impl PipelineStage for HashStage {
   }
 
   async fn commit_batch(&self, items: Vec<Image>) -> Result<u64, DatabaseError> {
-    let count = items.len() as u64;
-    self.repo.update_images_content_hash(&items).await?;
+    let count = self.repo.update_images_content_hash(&items).await?;
+    if count > 0 {
+      self.handle.emit(PipelineSignal::ImageHashed).await;
+    }
     Ok(count)
   }
 }
