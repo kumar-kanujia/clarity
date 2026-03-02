@@ -60,7 +60,7 @@ pub async fn toggle_favorite(
 }
 
 #[tauri::command]
-#[tracing::instrument(skip(state), fields(count = image_ids.len()))]
+#[tracing::instrument(skip(state, image_ids), fields(count = image_ids.len()))]
 pub async fn move_to_trash(
   state: State<'_, AppState>,
   image_ids: Vec<i64>,

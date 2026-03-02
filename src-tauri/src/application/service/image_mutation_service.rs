@@ -31,7 +31,7 @@ impl ImageMutationService {
     Ok(is_favorite)
   }
 
-  #[tracing::instrument(skip(self))]
+  #[tracing::instrument(skip(self, image_ids))]
   pub async fn change_image_is_deleted(
     &self,
     image_ids: Vec<i64>,
@@ -50,7 +50,7 @@ impl ImageMutationService {
     Ok(rows_affected)
   }
 
-  #[tracing::instrument(skip(self))]
+  #[tracing::instrument(skip(self, image_ids))]
   pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<u64, AppError> {
     if image_ids.is_empty() {
       return Ok(0);

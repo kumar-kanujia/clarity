@@ -7,7 +7,7 @@ use crate::{
   },
   domain::image::Image,
   infrastructure::{
-    models::image_model::ImageStatus,
+    models::image_model::{ImageRow, ImageStatus},
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
   setup::settings::MAX_PIPELINE_RETRIES,
@@ -25,6 +25,7 @@ impl HashStage {
 }
 
 impl PipelineStage for HashStage {
+  type RawItem = ImageRow;
   type Item = Image;
   type Error = DatabaseError;
 
@@ -32,7 +33,7 @@ impl PipelineStage for HashStage {
     "hash_stage"
   }
 
-  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<Image>, DatabaseError> {
+  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<ImageRow>, DatabaseError> {
     self
       .repo
       .get_images_for_processing(
@@ -41,7 +42,10 @@ impl PipelineStage for HashStage {
         ImageStatus::Pending,
       )
       .await
-      .map(|models| models.into_iter().map(Into::into).collect())
+  }
+
+  async fn filter_batch(&self, rows: Vec<ImageRow>) -> Result<Vec<Self::Item>, Self::Error> {
+    Ok(rows.into_iter().map(Into::into).collect())
   }
 
   fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {

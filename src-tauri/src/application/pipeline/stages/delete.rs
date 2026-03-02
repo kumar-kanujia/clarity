@@ -7,7 +7,7 @@ use crate::{
   domain::image::Image,
   infrastructure::{
     fs::{error::FSError, ops},
-    models::image_model::ImageStatus,
+    models::image_model::{ImageRow, ImageStatus},
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
   setup::settings::MAX_PIPELINE_RETRIES,
@@ -30,6 +30,7 @@ impl DeleteStage {
 }
 
 impl PipelineStage for DeleteStage {
+  type RawItem = ImageRow;
   type Item = DeletionTarget;
   type Error = DatabaseError;
 
@@ -37,16 +38,18 @@ impl PipelineStage for DeleteStage {
     "delete_stage"
   }
 
-  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<DeletionTarget>, DatabaseError> {
-    let rows = self
+  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<ImageRow>, DatabaseError> {
+    self
       .repo
       .get_images_for_processing(
         batch_size as i64,
         MAX_PIPELINE_RETRIES,
         ImageStatus::Deleted,
       )
-      .await?;
+      .await
+  }
 
+  async fn filter_batch(&self, rows: Vec<Self::RawItem>) -> Result<Vec<Self::Item>, Self::Error> {
     if rows.is_empty() {
       return Ok(vec![]);
     }

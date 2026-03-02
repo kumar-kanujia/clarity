@@ -7,6 +7,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::Instrument;
 
 pub trait PipelineStage: Send + Sync + 'static {
+  type RawItem: Send + 'static;
   type Item: Send + 'static;
   type Error: fmt::Debug + Send + 'static;
 
@@ -15,6 +16,11 @@ pub trait PipelineStage: Send + Sync + 'static {
   fn fetch_batch(
     &self,
     batch_size: usize,
+  ) -> impl future::Future<Output = Result<Vec<Self::RawItem>, Self::Error>> + Send;
+
+  fn filter_batch(
+    &self,
+    items: Vec<Self::RawItem>,
   ) -> impl future::Future<Output = Result<Vec<Self::Item>, Self::Error>> + Send;
 
   fn process_batch(&self, items: Vec<Self::Item>) -> Vec<Self::Item>;
@@ -51,9 +57,9 @@ pub trait PipelineStage: Send + Sync + 'static {
           let batch_span = tracing::info_span!("batch", stage = name, bid = batch_counter,);
           let start = Instant::now();
 
-          let items = match self
+          let raw_items = match self
             .fetch_batch(batch_size)
-            .instrument(tracing::info_span!("fetch_batch", stage = name))
+            .instrument(batch_span.clone())
             .await
           {
             Ok(items) => items,
@@ -63,13 +69,33 @@ pub trait PipelineStage: Send + Sync + 'static {
             }
           };
 
-          let fetched_count = items.len();
+          let raw_fetched_count = raw_items.len();
+
+          if raw_fetched_count == 0 {
+            break;
+          }
+
+          let valid_items = match self
+            .filter_batch(raw_items)
+            .instrument(batch_span.clone())
+            .await
+          {
+            Ok(items) => items,
+            Err(e) => {
+              tracing::error!(error = ?e, "filter_batch failed, parking stage.");
+              break;
+            }
+          };
+
+          if valid_items.is_empty() {
+            continue;
+          }
 
           let stage_clone = Arc::clone(&self);
 
           let processed = tokio::task::spawn_blocking(move || {
             let _enter = batch_span.enter();
-            stage_clone.process_batch(items)
+            stage_clone.process_batch(valid_items)
           })
           .await
           .unwrap_or_else(|e| {
@@ -77,31 +103,33 @@ pub trait PipelineStage: Send + Sync + 'static {
             Vec::new()
           });
 
-          if !processed.is_empty() {
-            let processed_count = processed.len();
+          if processed.is_empty() {
+            continue;
+          }
 
-            match self
-              .commit_batch(processed)
-              .instrument(tracing::info_span!("commit_batch", stage = name))
-              .await
-            {
-              Ok(committed) => {
-                tracing::info!(
-                  fetched = fetched_count,
-                  processed = processed_count,
-                  committed,
-                  duration_ms = start.elapsed().as_millis(),
-                  "Batch complete.",
-                );
-              }
-              Err(e) => {
-                tracing::error!(error = ?e, "commit_batch failed, parking stage.");
-                break;
-              }
+          let processed_count = processed.len();
+
+          match self
+            .commit_batch(processed)
+            .instrument(tracing::info_span!("commit_batch", stage = name))
+            .await
+          {
+            Ok(committed) => {
+              tracing::info!(
+                fetched = raw_fetched_count,
+                processed = processed_count,
+                committed,
+                duration_ms = start.elapsed().as_millis(),
+                "Batch complete.",
+              );
+            }
+            Err(e) => {
+              tracing::error!(error = ?e, "commit_batch failed, parking stage.");
+              break;
             }
           }
 
-          if fetched_count < batch_size {
+          if raw_fetched_count < batch_size {
             break;
           }
         }
