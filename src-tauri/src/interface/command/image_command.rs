@@ -1,6 +1,6 @@
 use crate::{
   application::{
-    service::image_mutation_service::ImageMutationService,
+    pipeline::signal::PipelineSignal, service::image_mutation_service::ImageMutationService,
     workflow::image_import_wrokflow::ImageImportWorkflow,
   },
   infrastructure::repo::image_repo::ImageRepository,
@@ -22,11 +22,9 @@ pub async fn import_images(
 
   let image_import_workflow = ImageImportWorkflow::new(image_mutation_service);
 
-  let (summary, new_images) = image_import_workflow.scan_and_import_images(&paths).await?;
+  let summary = image_import_workflow.scan_and_import_images(&paths).await?;
 
-  for image in new_images {
-    state.pipline.ingest(image).await;
-  }
+  state.pipline_handle.emit(PipelineSignal::ImageAdded).await;
 
   tracing::info!(
     total_scanned = summary.total_scanned,
@@ -62,7 +60,7 @@ pub async fn toggle_favorite(
 }
 
 #[tauri::command]
-#[tracing::instrument(skip(state), fields(count = image_ids.len()))]
+#[tracing::instrument(skip(state, image_ids), fields(count = image_ids.len()))]
 pub async fn move_to_trash(
   state: State<'_, AppState>,
   image_ids: Vec<i64>,
@@ -109,15 +107,18 @@ pub async fn delete_from_trash(
 
   let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let images = image_mutation_service
+  let count = image_mutation_service
     .hard_delete_images(&image_ids)
     .await?;
 
-  for image in images {
-    state.pipline.ingest(image).await;
+  if count > 0 {
+    state
+      .pipline_handle
+      .emit(PipelineSignal::ImageDeleted)
+      .await;
   }
 
-  tracing::info!("Image soft delete completed!");
+  tracing::info!("{} images removed from trash!", count);
 
   Ok(())
 }
@@ -129,13 +130,15 @@ pub async fn empty_trash(state: State<'_, AppState>) -> Result<(), CommandError>
 
   let image_mutation_service = ImageMutationService::new(image_repository);
 
-  let images = image_mutation_service.hard_delete_all_images().await?;
+  let count = image_mutation_service.hard_delete_all_images().await?;
 
-  for image in images {
-    state.pipline.ingest(image).await;
+  if count > 0 {
+    state
+      .pipline_handle
+      .emit(PipelineSignal::ImageDeleted)
+      .await;
   }
-
-  tracing::info!("Empty bin completed!");
+  tracing::info!("Empty bin completed! {} images removed!", count);
 
   Ok(())
 }

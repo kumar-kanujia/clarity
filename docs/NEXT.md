@@ -47,6 +47,7 @@ Goal: Audit and improve existing backend commands to ensure maximum consistency,
 
 ## Part 2.1 — Command Audit & Consistency
 
+- [x] Improve image pipline
 - [ ] Review all single-item and bulk commands for consistent parameter handling
 - [ ] Ensure single DB transactions are strictly used where multiple mutations occur
 - [ ] Audit all SQL queries for N+1 execution flaws
