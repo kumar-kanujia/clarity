@@ -17,7 +17,7 @@ use crate::{
 
 #[derive(Clone)]
 pub struct PipelineHandle {
-  tx: tokio::sync::mpsc::Sender<PipelineSignal>,
+  tx: mpsc::Sender<PipelineSignal>,
 }
 
 impl PipelineHandle {
@@ -59,7 +59,7 @@ impl PipelineOrchestrator {
     let thread_count = Self::num_threads();
     Self::init_rayon(thread_count);
 
-    let (tx, mut rx) = mpsc::channel::<PipelineSignal>(1024);
+    let (tx, rx) = mpsc::channel::<PipelineSignal>(16);
     let handle = PipelineHandle { tx };
 
     let hash_batch = cmp::max(4, thread_count * FILE_HASH_BATCH_FACTOR);
@@ -92,38 +92,48 @@ impl PipelineOrchestrator {
       shutdown_token.clone(),
     ));
 
-    let dispatcher_token = shutdown_token.clone();
-    let hash_n = hash_notify.clone();
-    let thumb_n = thumb_notify.clone();
-    let delete_n = delete_notify.clone();
-
-    tauri::async_runtime::spawn(async move {
-      loop {
-        tokio::select! {
-            _ = dispatcher_token.cancelled() => {
-                tracing::info!("Signal dispatcher shutting down.");
-                break;
-            }
-            Some(signal) = rx.recv() => {
-                match signal {
-                    PipelineSignal::ImageAdded   => hash_n.notify_one(),
-                    PipelineSignal::ImageHashed  => thumb_n.notify_one(),
-                    PipelineSignal::ImageDeleted => delete_n.notify_one(),
-                }
-            }
-        }
-      }
-    });
-
-    let recovery_handle = handle.clone();
-    tauri::async_runtime::spawn(async move {
-      tracing::info!("Emitting recovery signals for all stages...");
-      recovery_handle.emit(PipelineSignal::ImageAdded).await;
-      recovery_handle.emit(PipelineSignal::ImageHashed).await;
-      recovery_handle.emit(PipelineSignal::ImageDeleted).await;
-      tracing::info!("Recovery signals emitted.");
-    });
+    tauri::async_runtime::spawn(Self::run_dispatcher(
+      rx,
+      hash_notify,
+      thumb_notify,
+      delete_notify,
+      shutdown_token,
+    ));
 
     handle
+  }
+
+  async fn run_dispatcher(
+    mut rx: mpsc::Receiver<PipelineSignal>,
+    hash_notify: Arc<Notify>,
+    thumb_notify: Arc<Notify>,
+    delete_notify: Arc<Notify>,
+    shutdown_token: CancellationToken,
+  ) {
+    tracing::info!("Emitting recovery signals for all stages.");
+    hash_notify.notify_one();
+    thumb_notify.notify_one();
+    delete_notify.notify_one();
+
+    loop {
+      tokio::select! {
+          biased;
+          _ = shutdown_token.cancelled() => {
+            tracing::info!("Signal dispatcher shutting down.");
+            return;
+          }
+          res = rx.recv() => {
+          match res {
+            Some(PipelineSignal::ImageAdded)   => hash_notify.notify_one(),
+            Some(PipelineSignal::ImageHashed)  => thumb_notify.notify_one(),
+            Some(PipelineSignal::ImageDeleted) => delete_notify.notify_one(),
+            None => {
+              tracing::info!("All pipeline handles dropped. Shutting down dispatcher.");
+              return;
+            }
+          }
+        }
+      }
+    }
   }
 }

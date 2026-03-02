@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[allow(clippy::needless_raw_strings)]
 use crate::{
   domain::{file::FileMetaData, image::Image},
@@ -259,26 +261,29 @@ impl ImageRepository {
 
   // region: Image Query
 
-  pub async fn find_image_by_hash_and_status(
+  pub async fn get_images_by_hashes_and_status(
     &self,
-    hash: &[u8],
+    hashes: &HashSet<Vec<u8>>,
     status: ImageStatus,
-  ) -> Result<Option<ImageRow>, DatabaseError> {
-    let image = sqlx::query_as::<_, ImageRow>(
-      r#"
-        SELECT *
-        FROM images
-        WHERE content_hash = ?1
-          AND status = ?2
-        LIMIT 1
-        "#,
-    )
-    .bind(hash)
-    .bind(status)
-    .fetch_optional(&self.db)
-    .await?;
+  ) -> Result<Vec<ImageRow>, DatabaseError> {
+    if hashes.is_empty() {
+      return Ok(Vec::new());
+    }
 
-    Ok(image)
+    let mut qb = QueryBuilder::new("SELECT * FROM images WHERE content_hash IN (");
+
+    let mut separated = qb.separated(", ");
+
+    for hash in hashes {
+      separated.push_bind(hash);
+    }
+
+    separated.push_unseparated(") AND status = ");
+    qb.push_bind(status);
+
+    let rows = qb.build_query_as::<ImageRow>().fetch_all(&self.db).await?;
+
+    Ok(rows)
   }
 
   pub async fn get_images_for_processing(

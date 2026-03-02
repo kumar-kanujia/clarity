@@ -44,7 +44,8 @@ impl PipelineStage for HashStage {
       .await
   }
 
-  async fn filter_batch(&self, rows: Vec<ImageRow>) -> Result<Vec<Self::Item>, Self::Error> {
+  /// All pending rows are valid candidates for hashing — no filtering needed.
+  async fn filter_batch(&self, rows: Vec<ImageRow>) -> Result<Vec<Image>, DatabaseError> {
     Ok(rows.into_iter().map(Into::into).collect())
   }
 

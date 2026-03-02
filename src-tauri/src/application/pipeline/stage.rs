@@ -43,16 +43,22 @@ pub trait PipelineStage: Send + Sync + 'static {
       tracing::info!(batch_size, "Stage started.");
       let mut batch_counter: u64 = 0;
 
-      loop {
+      '_park: loop {
         tokio::select! {
-            _ = cancellation_token.cancelled() => {
-                tracing::info!("Shutdown signal received, exiting stage safely.");
-                return;
-            }
-            _ = notify.notified() => {}
+          biased;
+          _ = cancellation_token.cancelled() => {
+              tracing::info!("Shutdown signal received, exiting stage.");
+              return;
+          }
+          _ = notify.notified() => {}
         }
 
-        loop {
+        'drain: loop {
+          if cancellation_token.is_cancelled() {
+            tracing::info!("Cancellation detected mid-drain, exiting.");
+            return;
+          }
+
           batch_counter += 1;
           let batch_span = tracing::info_span!("batch", stage = name, bid = batch_counter,);
           let start = Instant::now();
@@ -65,14 +71,14 @@ pub trait PipelineStage: Send + Sync + 'static {
             Ok(items) => items,
             Err(e) => {
               tracing::error!(error = ?e, "fetch_batch failed, parking stage.");
-              break;
+              break 'drain;
             }
           };
 
-          let raw_fetched_count = raw_items.len();
+          let raw_count = raw_items.len();
 
-          if raw_fetched_count == 0 {
-            break;
+          if raw_count == 0 {
+            break 'drain;
           }
 
           let valid_items = match self
@@ -83,28 +89,38 @@ pub trait PipelineStage: Send + Sync + 'static {
             Ok(items) => items,
             Err(e) => {
               tracing::error!(error = ?e, "filter_batch failed, parking stage.");
-              break;
+              break 'drain;
             }
           };
 
           if valid_items.is_empty() {
-            continue;
+            if raw_count < batch_size {
+              break 'drain;
+            }
+            continue 'drain;
           }
 
           let stage_clone = Arc::clone(&self);
+          let span_clone = batch_span.clone();
 
-          let processed = tokio::task::spawn_blocking(move || {
-            let _enter = batch_span.enter();
+          let processed = match tokio::task::spawn_blocking(move || {
+            let _enter = span_clone.enter();
             stage_clone.process_batch(valid_items)
           })
           .await
-          .unwrap_or_else(|e| {
-            tracing::error!(error = ?e, "process_batch panicked");
-            Vec::new()
-          });
+          {
+            Ok(items) => items,
+            Err(panic) => {
+              tracing::error!(error = ?panic, "process_batch panicked, parking stage.");
+              Vec::new()
+            }
+          };
 
           if processed.is_empty() {
-            continue;
+            if raw_count < batch_size {
+              break 'drain;
+            }
+            continue 'drain;
           }
 
           let processed_count = processed.len();
@@ -116,7 +132,7 @@ pub trait PipelineStage: Send + Sync + 'static {
           {
             Ok(committed) => {
               tracing::info!(
-                fetched = raw_fetched_count,
+                fetched = raw_count,
                 processed = processed_count,
                 committed,
                 duration_ms = start.elapsed().as_millis(),
@@ -125,12 +141,12 @@ pub trait PipelineStage: Send + Sync + 'static {
             }
             Err(e) => {
               tracing::error!(error = ?e, "commit_batch failed, parking stage.");
-              break;
+              break 'drain;
             }
           }
 
-          if raw_fetched_count < batch_size {
-            break;
+          if raw_count < batch_size {
+            break 'drain;
           }
         }
       }

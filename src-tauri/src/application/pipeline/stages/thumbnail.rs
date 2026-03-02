@@ -1,4 +1,8 @@
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
+use std::{
+  collections::{HashMap, HashSet},
+  path::PathBuf,
+  sync::Arc,
+};
 
 use crate::{
   application::{pipeline::stage::PipelineStage, service::thumbnail_service},
@@ -40,48 +44,56 @@ impl PipelineStage for ThumbnailStage {
       .await
   }
 
-  async fn filter_batch(&self, items: Vec<ImageRow>) -> Result<Vec<Self::Item>, Self::Error> {
-    let mut duplicate_images = Vec::with_capacity(items.len());
-    let mut images_to_process = Vec::with_capacity(items.len());
-    let mut seen_hashes_in_batch = HashSet::with_capacity(items.len());
+  async fn filter_batch(&self, rows: Vec<ImageRow>) -> Result<Vec<Self::Item>, Self::Error> {
+    let images: Vec<Image> = rows.into_iter().map(Into::into).collect();
 
-    for row in items {
-      let mut image: Image = row.into();
+    let unique_hashes: HashSet<Vec<u8>> =
+      images.iter().map(|img| img.content_hash.clone()).collect();
 
-      if let Ok(Some(existing_thumb)) = self
-        .repo
-        .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
-        .await
-      {
+    let existing_rows = self
+      .repo
+      .get_images_by_hashes_and_status(&unique_hashes, ImageStatus::Thumbnailed)
+      .await?;
+
+    let existing: HashMap<Vec<u8>, ImageRow> = existing_rows
+      .into_iter()
+      .filter_map(|row| row.content_hash.clone().map(|hash| (hash, row)))
+      .collect();
+
+    let mut duplicates: Vec<Image> = Vec::with_capacity(images.len());
+    let mut to_process: Vec<Image> = Vec::with_capacity(images.len());
+    let mut seen_in_batch: HashSet<Vec<u8>> = HashSet::new();
+
+    for mut image in images {
+      if let Some(existing) = existing.get(&image.content_hash) {
         tracing::info!(
-          "Duplicate content found for {}. Linking existing thumbnail.",
-          image.id
+          id = image.id,
+          "Duplicate content found, linking existing thumbnail."
         );
         image.update_image_metadata(ImageMetadata {
-          thumbnail_path: existing_thumb.thumbnail_path.unwrap_or_default(),
-          width: existing_thumb.width.unwrap_or(1),
-          height: existing_thumb.height.unwrap_or(1),
+          thumbnail_path: existing.thumbnail_path.clone().unwrap(),
+          width: existing.width.unwrap_or(1),
+          height: existing.height.unwrap_or(1),
         });
-        duplicate_images.push(image);
+        duplicates.push(image);
         continue;
       }
 
-      if seen_hashes_in_batch.contains(&image.content_hash) {
-        tracing::info!("Intra-batch duplicate deferred for {}.", image.id);
+      if !seen_in_batch.insert(image.content_hash.clone()) {
+        tracing::debug!(id = image.id, "Intra-batch duplicate, deferring.");
         continue;
       }
 
-      seen_hashes_in_batch.insert(image.content_hash.clone());
-      images_to_process.push(image);
+      to_process.push(image);
     }
 
-    if !duplicate_images.is_empty() {
-      if let Err(err) = self.repo.update_image_metadata(&duplicate_images).await {
-        tracing::error!(?err, "Failed to update metadata for duplicate images");
+    if !duplicates.is_empty() {
+      if let Err(err) = self.repo.update_image_metadata(&duplicates).await {
+        tracing::error!(?err, "Failed to commit metadata for duplicate images.");
       }
     }
 
-    Ok(images_to_process)
+    Ok(to_process)
   }
 
   fn process_batch(&self, mut images: Vec<Image>) -> Vec<Image> {

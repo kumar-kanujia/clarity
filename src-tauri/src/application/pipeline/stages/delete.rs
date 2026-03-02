@@ -50,43 +50,42 @@ impl PipelineStage for DeleteStage {
   }
 
   async fn filter_batch(&self, rows: Vec<Self::RawItem>) -> Result<Vec<Self::Item>, Self::Error> {
-    if rows.is_empty() {
-      return Ok(vec![]);
-    }
+    let images: Vec<Image> = rows.into_iter().map(Into::into).collect();
 
-    let mut batch = Vec::with_capacity(rows.len());
+    let unique_hashes = images.iter().map(|img| img.content_hash.clone()).collect();
 
-    let mut thumbnails_scheduled_for_deletion = HashSet::new();
+    let existing = self
+      .repo
+      .get_images_by_hashes_and_status(&unique_hashes, ImageStatus::Thumbnailed)
+      .await?;
 
-    for row in rows {
-      let image: Image = row.into();
+    let active_hashes: HashSet<Vec<u8>> = existing
+      .into_iter()
+      .filter_map(|row| row.content_hash)
+      .collect();
 
-      let has_active_sibling = matches!(
-        self
-          .repo
-          .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
-          .await,
-        Ok(Some(_))
-      );
+    let mut thumbs_to_delete = HashSet::new();
 
-      let should_delete_thumb = if has_active_sibling {
-        false
-      } else {
-        thumbnails_scheduled_for_deletion.insert(image.content_hash.clone())
-      };
+    let batch: Vec<DeletionTarget> = images
+      .into_iter()
+      .map(|image| {
+        let has_active_sibling = active_hashes.contains(&image.content_hash);
 
-      let thumbnail_path = if should_delete_thumb && !image.thumbnail_path.is_empty() {
-        Some(image.thumbnail_path)
-      } else {
-        None
-      };
-
-      batch.push(DeletionTarget {
-        id: image.id,
-        path: image.path,
-        thumbnail_path,
-      });
-    }
+        let thumbnail_path = if !has_active_sibling
+          && !image.thumbnail_path.is_empty()
+          && thumbs_to_delete.insert(image.content_hash.clone())
+        {
+          Some(image.thumbnail_path)
+        } else {
+          None
+        };
+        DeletionTarget {
+          id: image.id,
+          path: image.path,
+          thumbnail_path,
+        }
+      })
+      .collect();
 
     Ok(batch)
   }
@@ -118,7 +117,6 @@ impl PipelineStage for DeleteStage {
 
   async fn commit_batch(&self, items: Vec<DeletionTarget>) -> Result<u64, DatabaseError> {
     let ids: Vec<i64> = items.into_iter().map(|t| t.id).collect();
-    let deleted = self.repo.delete_images(&ids).await?;
-    Ok(deleted)
+    self.repo.delete_images(&ids).await
   }
 }
