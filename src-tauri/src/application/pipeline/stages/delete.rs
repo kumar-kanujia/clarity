@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::{
   application::pipeline::stage::PipelineStage,
   domain::image::Image,
@@ -6,12 +10,15 @@ use crate::{
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
+  setup::settings::MAX_PIPELINE_RETRIES,
 };
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use std::sync::Arc;
+pub struct DeletionTarget {
+  id: i64,
+  path: String,
+  thumbnail_path: Option<String>,
+}
 
-#[derive(Clone)]
 pub struct DeleteStage {
   repo: Arc<ImageRepository>,
 }
@@ -23,23 +30,32 @@ impl DeleteStage {
 }
 
 impl PipelineStage for DeleteStage {
-  type Input = Image;
-  type Output = i64;
+  type Item = DeletionTarget;
   type Error = DatabaseError;
 
   fn name(&self) -> &'static str {
     "delete_stage"
   }
 
-  /// Step 1: Check if we have a duplicate image
-  /// and are not marked for deletion
-  async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
-    let mut filtered_images = Vec::with_capacity(items.len());
-    for mut image in items {
-      if image.status != ImageStatus::Deleted {
-        continue;
-      }
+  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<DeletionTarget>, DatabaseError> {
+    let models = self
+      .repo
+      .get_images_for_processing(
+        batch_size as i64,
+        MAX_PIPELINE_RETRIES,
+        ImageStatus::Deleted,
+      )
+      .await?;
 
+    if models.is_empty() {
+      return Ok(vec![]);
+    }
+
+    let images: Vec<Image> = models.into_iter().map(Into::into).collect();
+
+    let mut batch = Vec::with_capacity(images.len());
+
+    for image in images {
       if let Ok(duplicate_image) = self
         .repo
         .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
@@ -50,38 +66,48 @@ impl PipelineStage for DeleteStage {
           "Duplicate content found for {}. Unlinking existing thumbnail.",
           image.id
         );
-        image.thumbnail_path = String::new();
+        batch.push(DeletionTarget {
+          id: image.id,
+          path: image.path.clone(),
+          thumbnail_path: None,
+        });
+        continue;
       }
-      filtered_images.push(image);
+      batch.push(DeletionTarget {
+        id: image.id,
+        path: image.path.clone(),
+        thumbnail_path: Some(image.thumbnail_path),
+      });
     }
-    filtered_images
+
+    Ok(batch)
   }
 
-  /// Step 2: CPU-Bound Processing (Synchronous)
-  fn process_batch(&self, images: Vec<Image>) -> Vec<i64> {
-    images
+  fn process_batch(&self, targets: Vec<DeletionTarget>) -> Vec<DeletionTarget> {
+    targets
       .into_par_iter()
-      .map(|image| {
-        if let Err(e) = ops::delete_file(image.path) {
-          tracing::error!(error = ?e, "Failed to delete file");
+      .filter_map(|target| {
+        if let Err(e) = ops::delete_file(&target.path) {
+          tracing::error!(error = ?e, path = %target.path, "Failed to delete image file");
+          return None; // Don't mark as deleted in DB if file removal failed.
         }
-        if !image.thumbnail_path.is_empty()
-          && let Err(e) = ops::delete_file(image.thumbnail_path)
-        {
-          tracing::warn!(error = ?e, "Failed to delete thumbnail file");
+
+        if let Some(ref thumb) = target.thumbnail_path {
+          if !thumb.is_empty() {
+            if let Err(e) = ops::delete_file(thumb) {
+              tracing::warn!(error = ?e, path = %thumb, "Failed to delete thumbnail");
+            }
+          }
         }
-        image.id
+
+        Some(target)
       })
       .collect()
   }
 
-  /// Step 1: DB Updates & Routing (Asynchronous)
-  async fn handle_completed_batch(&self, items: Vec<i64>) -> Result<u64, DatabaseError> {
-    let updated_count = self.repo.delete_images(&items).await?;
-    tracing::info!(
-      count = updated_count,
-      "Successfully deleted files and updated database."
-    );
-    Ok(updated_count)
+  async fn commit_batch(&self, items: Vec<DeletionTarget>) -> Result<u64, DatabaseError> {
+    let ids: Vec<i64> = items.into_iter().map(|t| t.id).collect();
+    let deleted = self.repo.delete_images(&ids).await?;
+    Ok(deleted)
   }
 }

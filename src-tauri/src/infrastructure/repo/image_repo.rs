@@ -26,16 +26,16 @@ impl ImageRepository {
   pub async fn create_images_by_file_metadata(
     &self,
     files: &[FileMetaData],
-  ) -> Result<Vec<ImageRow>, DatabaseError> {
+  ) -> Result<u64, DatabaseError> {
     if files.is_empty() {
-      return Ok(Vec::new());
+      return Ok(0);
     }
 
     const CHUNK_SIZE: usize = 200;
 
     let mut tx = self.db.begin().await?;
 
-    let mut inserted_images = Vec::new();
+    let mut total_inserted = 0;
 
     for chunk in files.chunks(CHUNK_SIZE) {
       let mut qb = QueryBuilder::new(
@@ -49,20 +49,14 @@ impl ImageRepository {
           .push_bind(&file.created_at);
       });
 
-      qb.push(
-        "RETURNING id, file_name, path, size_bytes, content_hash, width, height,
-            thumbnail_path, status, retry_count, error_message, created_at,
-            updated_at, is_favorite, is_deleted",
-      );
+      let result = qb.build().execute(&mut *tx).await?;
 
-      let mut rows: Vec<ImageRow> = qb.build_query_as().fetch_all(&mut *tx).await?;
-
-      inserted_images.append(&mut rows);
+      total_inserted += result.rows_affected();
     }
 
     tx.commit().await?;
 
-    Ok(inserted_images)
+    Ok(total_inserted)
   }
 
   // endregion
@@ -185,27 +179,27 @@ impl ImageRepository {
     }
   }
 
-  pub async fn update_image_status_deleted_all(&self) -> Result<Vec<ImageRow>, DatabaseError> {
+  pub async fn update_image_status_deleted_all(&self) -> Result<u64, DatabaseError> {
     let mut tx = self.db.begin().await?;
 
     let mut qb = QueryBuilder::new("UPDATE images SET status = ");
 
     qb.push_bind(ImageStatus::Deleted);
 
-    qb.push(" WHERE is_deleted = 1 RETURNING *");
+    qb.push(" WHERE is_deleted = 1");
 
-    let rows = qb.build_query_as::<ImageRow>().fetch_all(&mut *tx).await?;
+    let result = qb.build().execute(&mut *tx).await?;
 
     tx.commit().await?;
 
-    Ok(rows)
+    Ok(result.rows_affected())
   }
 
   pub async fn update_image_status(
     &self,
     image_ids: &[i64],
     status: ImageStatus,
-  ) -> Result<Vec<ImageRow>, DatabaseError> {
+  ) -> Result<u64, DatabaseError> {
     let mut tx = self.db.begin().await?;
 
     let mut qb = QueryBuilder::new("UPDATE images SET status = ");
@@ -220,13 +214,13 @@ impl ImageRepository {
       separated.push_bind(id);
     }
 
-    qb.push(") RETURNING *");
+    qb.push(")");
 
-    let rows = qb.build_query_as::<ImageRow>().fetch_all(&mut *tx).await?;
+    let result = qb.build().execute(&mut *tx).await?;
 
     tx.commit().await?;
 
-    Ok(rows)
+    Ok(result.rows_affected())
   }
 
   pub async fn update_image_deleted_status(
@@ -276,7 +270,6 @@ impl ImageRepository {
         FROM images
         WHERE content_hash = ?1
           AND status = ?2
-          AND is_deleted = 0
         LIMIT 1
         "#,
     )
@@ -472,7 +465,7 @@ mod tests {
     let inserted = repo.create_images_by_file_metadata(&files).await.unwrap();
 
     // Result should be 2 because the 3rd item is a duplicate path
-    assert_eq!(inserted.len(), 2);
+    assert_eq!(inserted, 2);
   }
 
   #[sqlx::test(migrations = "./migrations")]

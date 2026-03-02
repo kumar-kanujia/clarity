@@ -1,3 +1,5 @@
+use std::{path::PathBuf, sync::Arc};
+
 use crate::{
   application::{pipeline::stage::PipelineStage, service::thumbnail_service},
   domain::image::{Image, ImageMetadata},
@@ -5,56 +7,47 @@ use crate::{
     models::image_model::ImageStatus,
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
+  setup::settings::MAX_PIPELINE_RETRIES,
 };
 
-use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::mpsc;
-
-#[derive(Clone)]
 pub struct ThumbnailStage {
-  thumbnail_target: PathBuf,
-  next_stage_tx: mpsc::Sender<Image>,
   repo: Arc<ImageRepository>,
+  thumbnail_target: PathBuf,
 }
 
 impl ThumbnailStage {
-  pub fn new(
-    thumbnail_target: PathBuf,
-    next_stage_tx: mpsc::Sender<Image>,
-    repo: Arc<ImageRepository>,
-  ) -> Self {
+  pub fn new(repo: Arc<ImageRepository>, thumbnail_target: PathBuf) -> Self {
     Self {
-      thumbnail_target,
-      next_stage_tx,
       repo,
+      thumbnail_target,
     }
   }
 }
 
 impl PipelineStage for ThumbnailStage {
-  type Input = Image;
-  type Output = Image;
+  type Item = Image;
   type Error = DatabaseError;
 
   fn name(&self) -> &'static str {
     "thumbnail_stage"
   }
 
-  /// Step 1: Check if we have a duplicate image
-  /// Save new image with same thumbnail path
-  async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
-    let mut duplicate_images = Vec::with_capacity(items.len());
-    let mut hashed_images = Vec::with_capacity(items.len());
+  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<Image>, DatabaseError> {
+    let models = self
+      .repo
+      .get_images_for_processing(batch_size as i64, MAX_PIPELINE_RETRIES, ImageStatus::Hashed)
+      .await?;
 
-    for mut image in items {
-      if image.status != ImageStatus::Hashed {
-        if let Err(e) = self.next_stage_tx.send(image).await {
-          tracing::error!(error = ?e, "Failed to route image to thumbnail stage");
-        }
-        continue;
-      }
+    if models.is_empty() {
+      return Ok(vec![]);
+    }
 
+    let images: Vec<Image> = models.into_iter().map(Into::into).collect();
+
+    let mut duplicate_images = Vec::with_capacity(images.len());
+    let mut hashed_images = Vec::with_capacity(images.len());
+
+    for mut image in images {
       if let Ok(duplicate_image) = self
         .repo
         .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
@@ -75,30 +68,22 @@ impl PipelineStage for ThumbnailStage {
         hashed_images.push(image);
       }
     }
-
     let _ = self
       .repo
       .update_image_metadata(&duplicate_images)
       .await
       .map_err(|err| tracing::error!(err= ?err, "Failed to update images"));
 
-    hashed_images
+    Ok(hashed_images)
   }
 
-  /// Step 2: CPU-Bound Processing (Synchronous)
   fn process_batch(&self, mut images: Vec<Image>) -> Vec<Image> {
-    let target_dir = &self.thumbnail_target;
-    thumbnail_service::process_batch(&mut images, target_dir);
+    thumbnail_service::process_batch(&mut images, &self.thumbnail_target);
     images
   }
 
-  /// Step 1: DB Updates & Routing (Asynchronous)
-  async fn handle_completed_batch(&self, items: Vec<Image>) -> Result<u64, DatabaseError> {
-    let updated_count = self.repo.update_image_metadata(&items).await?;
-    tracing::info!(
-      count = updated_count,
-      "Successfully generated thumbnails and updated database."
-    );
-    Ok(updated_count)
+  async fn commit_batch(&self, items: Vec<Image>) -> Result<u64, DatabaseError> {
+    let updated = self.repo.update_image_metadata(&items).await?;
+    Ok(updated)
   }
 }

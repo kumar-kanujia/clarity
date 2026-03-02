@@ -1,6 +1,6 @@
 use crate::{
   application::error::AppError,
-  domain::{file::FileMetaData, image::Image},
+  domain::file::FileMetaData,
   infrastructure::{models::image_model::ImageStatus, repo::image_repo::ImageRepository},
 };
 
@@ -16,13 +16,13 @@ impl ImageMutationService {
   pub async fn persist_file_metadata_for_images(
     &self,
     image_metadata: &[FileMetaData],
-  ) -> Result<Vec<Image>, AppError> {
+  ) -> Result<u64, AppError> {
     let imported = self
       .repo
       .create_images_by_file_metadata(image_metadata)
       .await?;
 
-    Ok(imported.into_iter().map(Image::from).collect())
+    Ok(imported)
   }
 
   #[tracing::instrument(skip(self))]
@@ -45,21 +45,21 @@ impl ImageMutationService {
   }
 
   #[tracing::instrument(skip(self))]
-  pub async fn hard_delete_all_images(&self) -> Result<Vec<Image>, AppError> {
-    let image_rows = self.repo.update_image_status_deleted_all().await?;
-    Ok(image_rows.into_iter().map(Image::from).collect())
+  pub async fn hard_delete_all_images(&self) -> Result<u64, AppError> {
+    let rows_affected = self.repo.update_image_status_deleted_all().await?;
+    Ok(rows_affected)
   }
 
   #[tracing::instrument(skip(self))]
-  pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<Vec<Image>, AppError> {
+  pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<u64, AppError> {
     if image_ids.is_empty() {
-      return Ok(Vec::new());
+      return Ok(0);
     }
-    let image_rows = self
+    let rows_affected = self
       .repo
       .update_image_status(image_ids, ImageStatus::Deleted)
       .await?;
-    Ok(image_rows.into_iter().map(Image::from).collect())
+    Ok(rows_affected)
   }
 }
 
@@ -102,7 +102,7 @@ mod tests {
       .unwrap();
 
     // Verifies the service correctly returns the count as i64
-    assert_eq!(result.len(), 2);
+    assert_eq!(result, 2);
   }
 
   #[tokio::test]
