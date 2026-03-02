@@ -39,7 +39,7 @@ impl ImageMutationService {
   ) -> Result<u64, AppError> {
     let changed = self
       .repo
-      .update_image_deleted_status(image_ids, is_deleted)
+      .update_image_deleted_status(&image_ids, is_deleted)
       .await?;
     Ok(changed)
   }
