@@ -1,51 +1,52 @@
+use std::sync::Arc;
+
 use crate::{
-  application::{pipeline::stage::PipelineStage, service::file_hash_service},
+  application::{
+    pipeline::{orchestrator::PipelineHandle, signal::PipelineSignal, stage::PipelineStage},
+    service::file_hash_service,
+  },
   domain::image::Image,
   infrastructure::{
-    models::image_model::ImageStatus,
+    models::image_model::{ImageRow, ImageStatus},
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
+  setup::settings::MAX_PIPELINE_RETRIES,
 };
 
-use std::sync::Arc;
-use tokio::sync::mpsc;
-
-#[derive(Clone)]
 pub struct HashStage {
   repo: Arc<ImageRepository>,
-  next_stage_tx: mpsc::Sender<Image>,
+  handle: PipelineHandle,
 }
 
 impl HashStage {
-  pub fn new(repo: Arc<ImageRepository>, next_stage_tx: mpsc::Sender<Image>) -> Self {
-    Self {
-      repo,
-      next_stage_tx,
-    }
+  pub fn new(repo: Arc<ImageRepository>, handle: PipelineHandle) -> Self {
+    Self { repo, handle }
   }
 }
 
 impl PipelineStage for HashStage {
-  type Input = Image;
-  type Output = Image;
+  type RawItem = ImageRow;
+  type Item = Image;
   type Error = DatabaseError;
 
   fn name(&self) -> &'static str {
     "hash_stage"
   }
 
-  async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
-    let mut filtered_images = Vec::with_capacity(items.len());
-    for image in items {
-      if image.status == ImageStatus::Pending {
-        filtered_images.push(image);
-      } else {
-        if let Err(e) = self.next_stage_tx.send(image).await {
-          tracing::error!(error = ?e, "Failed to route image to thumbnail stage");
-        }
-      }
-    }
-    filtered_images
+  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<ImageRow>, DatabaseError> {
+    self
+      .repo
+      .get_images_for_processing(
+        batch_size as i64,
+        MAX_PIPELINE_RETRIES,
+        ImageStatus::Pending,
+      )
+      .await
+  }
+
+  /// All pending rows are valid candidates for hashing — no filtering needed.
+  async fn filter_batch(&self, rows: Vec<ImageRow>) -> Result<Vec<Image>, DatabaseError> {
+    Ok(rows.into_iter().map(Into::into).collect())
   }
 
   fn process_batch(&self, mut items: Vec<Image>) -> Vec<Image> {
@@ -53,21 +54,11 @@ impl PipelineStage for HashStage {
     items
   }
 
-  async fn handle_completed_batch(&self, items: Vec<Image>) -> Result<u64, DatabaseError> {
-    let mut processed_count = 0;
-
-    self.repo.update_images_content_hash(&items).await?;
-
-    for image in items {
-      if image.status == ImageStatus::Hashed {
-        processed_count += 1;
-        if let Err(e) = self.next_stage_tx.send(image).await {
-          processed_count -= 1;
-          tracing::error!(error = ?e, "Failed to route image to thumbnail stage");
-        }
-      }
+  async fn commit_batch(&self, items: Vec<Image>) -> Result<u64, DatabaseError> {
+    let count = self.repo.update_images_content_hash(&items).await?;
+    if count > 0 {
+      self.handle.emit(PipelineSignal::ImageHashed).await;
     }
-
-    Ok(processed_count)
+    Ok(count)
   }
 }

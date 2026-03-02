@@ -39,10 +39,9 @@ pub fn app_setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 
   let cancellation_token = cancellation_token.clone();
 
-  let orchestrator =
-    PipelineOrchestrator::start(image_repo, thumbnail_path, cancellation_token.clone());
+  let handle = PipelineOrchestrator::start(image_repo, thumbnail_path, cancellation_token.clone());
 
-  app_handle.manage(AppState::new(db.clone(), orchestrator, cancellation_token));
+  app_handle.manage(AppState::new(db.clone(), handle, cancellation_token));
 
   Ok(())
 }

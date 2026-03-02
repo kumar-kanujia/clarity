@@ -1,17 +1,24 @@
+use std::{collections::HashSet, sync::Arc};
+
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::{
   application::pipeline::stage::PipelineStage,
   domain::image::Image,
   infrastructure::{
-    fs::ops,
-    models::image_model::ImageStatus,
+    fs::{error::FSError, ops},
+    models::image_model::{ImageRow, ImageStatus},
     repo::{error::DatabaseError, image_repo::ImageRepository},
   },
+  setup::settings::MAX_PIPELINE_RETRIES,
 };
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use std::sync::Arc;
+pub struct DeletionTarget {
+  id: i64,
+  path: String,
+  thumbnail_path: Option<String>,
+}
 
-#[derive(Clone)]
 pub struct DeleteStage {
   repo: Arc<ImageRepository>,
 }
@@ -23,65 +30,93 @@ impl DeleteStage {
 }
 
 impl PipelineStage for DeleteStage {
-  type Input = Image;
-  type Output = i64;
+  type RawItem = ImageRow;
+  type Item = DeletionTarget;
   type Error = DatabaseError;
 
   fn name(&self) -> &'static str {
     "delete_stage"
   }
 
-  /// Step 1: Check if we have a duplicate image
-  /// and are not marked for deletion
-  async fn filter_batch(&self, items: Vec<Image>) -> Vec<Image> {
-    let mut filtered_images = Vec::with_capacity(items.len());
-    for mut image in items {
-      if image.status != ImageStatus::Deleted {
-        continue;
-      }
-
-      if let Ok(duplicate_image) = self
-        .repo
-        .find_image_by_hash_and_status(&image.content_hash, ImageStatus::Thumbnailed)
-        .await
-        && let Some(_) = duplicate_image
-      {
-        tracing::info!(
-          "Duplicate content found for {}. Unlinking existing thumbnail.",
-          image.id
-        );
-        image.thumbnail_path = String::new();
-      }
-      filtered_images.push(image);
-    }
-    filtered_images
+  async fn fetch_batch(&self, batch_size: usize) -> Result<Vec<ImageRow>, DatabaseError> {
+    self
+      .repo
+      .get_images_for_processing(
+        batch_size as i64,
+        MAX_PIPELINE_RETRIES,
+        ImageStatus::Deleted,
+      )
+      .await
   }
 
-  /// Step 2: CPU-Bound Processing (Synchronous)
-  fn process_batch(&self, images: Vec<Image>) -> Vec<i64> {
-    images
-      .into_par_iter()
+  async fn filter_batch(&self, rows: Vec<Self::RawItem>) -> Result<Vec<Self::Item>, Self::Error> {
+    let images: Vec<Image> = rows.into_iter().map(Into::into).collect();
+
+    let unique_hashes = images.iter().map(|img| img.content_hash.clone()).collect();
+
+    let existing = self
+      .repo
+      .get_images_by_hashes_and_status(&unique_hashes, ImageStatus::Thumbnailed)
+      .await?;
+
+    let active_hashes: HashSet<Vec<u8>> = existing
+      .into_iter()
+      .filter_map(|row| row.content_hash)
+      .collect();
+
+    let mut thumbs_to_delete = HashSet::new();
+
+    let batch: Vec<DeletionTarget> = images
+      .into_iter()
       .map(|image| {
-        if let Err(e) = ops::delete_file(image.path) {
-          tracing::error!(error = ?e, "Failed to delete file");
-        }
-        if !image.thumbnail_path.is_empty()
-          && let Err(e) = ops::delete_file(image.thumbnail_path)
+        let has_active_sibling = active_hashes.contains(&image.content_hash);
+
+        let thumbnail_path = if !has_active_sibling
+          && !image.thumbnail_path.is_empty()
+          && thumbs_to_delete.insert(image.content_hash.clone())
         {
-          tracing::warn!(error = ?e, "Failed to delete thumbnail file");
+          Some(image.thumbnail_path)
+        } else {
+          None
+        };
+        DeletionTarget {
+          id: image.id,
+          path: image.path,
+          thumbnail_path,
         }
-        image.id
+      })
+      .collect();
+
+    Ok(batch)
+  }
+
+  fn process_batch(&self, targets: Vec<DeletionTarget>) -> Vec<DeletionTarget> {
+    targets
+      .into_par_iter()
+      .filter_map(|target| {
+        if let Err(err) = ops::delete_file(&target.path) {
+          match err {
+            FSError::FileNotFound(_) => tracing::warn!(path = %target.path, "File already missing from disk, proceeding with DB cleanup."),
+            _ => {
+              tracing::error!(error = ?err, path = %target.path, "Failed to delete image file. Skipping DB cleanup.");
+              return None;
+            }
+          }
+        }
+
+        if let Some(ref thumb) = target.thumbnail_path {
+            if let Err(e) = ops::delete_file(thumb) {
+              tracing::warn!(error = ?e, path = %thumb, "Failed to delete thumbnail");
+            }
+        }
+
+        Some(target)
       })
       .collect()
   }
 
-  /// Step 1: DB Updates & Routing (Asynchronous)
-  async fn handle_completed_batch(&self, items: Vec<i64>) -> Result<u64, DatabaseError> {
-    let updated_count = self.repo.delete_images(&items).await?;
-    tracing::info!(
-      count = updated_count,
-      "Successfully deleted files and updated database."
-    );
-    Ok(updated_count)
+  async fn commit_batch(&self, items: Vec<DeletionTarget>) -> Result<u64, DatabaseError> {
+    let ids: Vec<i64> = items.into_iter().map(|t| t.id).collect();
+    self.repo.delete_images(&ids).await
   }
 }
