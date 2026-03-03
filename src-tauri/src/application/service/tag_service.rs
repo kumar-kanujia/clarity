@@ -27,17 +27,17 @@ impl TagService {
     }
     let tag_name = Tag::normalize_text(tag_name);
     let tag_color = Tag::normalize_color(tag_color);
-    let new_tag_id = self
+
+    self
       .repo
-      .create_new_tag(&tag_name, &tag_color, TagType::User)
+      .create_tag(&tag_name, &tag_color, TagType::User)
       .await
       .map_err(|err| match err {
         DatabaseError::RecordAlreadyExists => {
           AppError::Validation("Tag already exists".to_string())
         }
         _ => AppError::Database { source: err },
-      })?;
-    Ok(new_tag_id)
+      })
   }
 
   pub async fn edit_user_tag(
@@ -70,7 +70,7 @@ impl TagService {
   pub async fn list_user_tags(&self, limit: Option<i64>) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::User, limit)
+      .get_tags_by_image_count(TagType::User, limit)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }
@@ -81,7 +81,7 @@ impl TagService {
   ) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::Inactive, limit)
+      .get_tags_by_image_count(TagType::Inactive, limit)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }

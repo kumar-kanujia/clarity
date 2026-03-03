@@ -1,7 +1,7 @@
 use crate::{
   infrastructure::{
     models::tag_model::{TagItemRow, TagType},
-    repo::error::DatabaseError,
+    repo::{NO_LIMIT, error::DatabaseError, require_one_affected},
   },
   setup::state::Db,
 };
@@ -18,23 +18,21 @@ impl TagRepository {
 
   // region: Tag Create
 
-  pub async fn create_new_tag(
+  pub async fn create_tag(
     &self,
     text: &str,
     color: &str,
     tag_type: TagType,
   ) -> Result<i64, DatabaseError> {
-    let query_str = r#"
-            INSERT INTO tags (text, color, tag_type)
-            VALUES (?1, ?2, ?3)
-            RETURNING id
-        "#;
-    let id = sqlx::query_scalar::<_, i64>(query_str)
-      .bind(text)
-      .bind(color)
-      .bind(tag_type)
-      .fetch_one(&self.db)
-      .await?;
+    let id = sqlx::query_scalar::<_, i64>(
+      "INSERT INTO tags (text, color, tag_type) VALUES (?1, ?2, ?3) RETURNING id",
+    )
+    .bind(text)
+    .bind(color)
+    .bind(tag_type)
+    .fetch_one(&self.db)
+    .await?;
+
     Ok(id)
   }
 
@@ -67,54 +65,33 @@ impl TagRepository {
     .execute(&self.db)
     .await?;
 
-    if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound);
-    }
-
-    Ok(())
+    require_one_affected(result)
   }
 
   pub async fn update_tag_type(&self, tag_id: i64, tag_type: TagType) -> Result<(), DatabaseError> {
-    let query_str = r#"
-            UPDATE tags
-            SET tag_type = ?1
-            WHERE id = ?2
-        "#;
-    let result = sqlx::query(query_str)
+    let result = sqlx::query("UPDATE tags SET tag_type = ?1 WHERE id = ?2")
       .bind(tag_type)
       .bind(tag_id)
       .execute(&self.db)
       .await?;
 
-    if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound);
-    }
-
-    Ok(())
+    require_one_affected(result)
   }
 
   pub async fn delete_tag(&self, tag_id: i64) -> Result<(), DatabaseError> {
-    let query_str = r#"
-            DELETE FROM tags
-            WHERE id = ?1
-        "#;
-    let result = sqlx::query(query_str)
+    let result = sqlx::query("DELETE FROM tags WHERE id = ?1")
       .bind(tag_id)
       .execute(&self.db)
       .await?;
 
-    if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound);
-    }
-
-    Ok(())
+    require_one_affected(result)
   }
 
   // endregion
 
   // region: Tag Query
 
-  pub async fn get_tags_order_by_image_count(
+  pub async fn get_tags_by_image_count(
     &self,
     tag_type: TagType,
     limit: Option<i64>,
@@ -129,7 +106,7 @@ impl TagRepository {
       "#,
     )
     .bind(tag_type)
-    .bind(limit.unwrap_or(-1))
+    .bind(limit.unwrap_or(NO_LIMIT))
     .fetch_all(&self.db)
     .await?;
 
@@ -149,7 +126,7 @@ mod tests {
 
     // Test creating a "Category" type tag
     let tag_id = repo
-      .create_new_tag("Nature", "#00FF00", TagType::System)
+      .create_tag("Nature", "#00FF00", TagType::System)
       .await
       .expect("Failed to create tag");
 
@@ -161,7 +138,7 @@ mod tests {
     let repo = TagRepository::new(pool.clone());
 
     let tag_id = repo
-      .create_new_tag("Nature", "#00FF00", TagType::User)
+      .create_tag("Nature", "#00FF00", TagType::User)
       .await
       .unwrap();
 
@@ -189,7 +166,7 @@ mod tests {
 
     // 1. Setup: Create a tag
     let tag_id = repo
-      .create_new_tag("Original", "#FFFFFF", TagType::User)
+      .create_tag("Original", "#FFFFFF", TagType::User)
       .await
       .unwrap();
 
@@ -246,7 +223,7 @@ mod tests {
 
     // 2. Query popular tags
     let popular = repo
-      .get_tags_order_by_image_count(TagType::User, Some(1))
+      .get_tags_by_image_count(TagType::User, Some(1))
       .await
       .unwrap();
 

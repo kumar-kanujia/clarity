@@ -11,7 +11,23 @@ use crate::{
   setup::state::Db,
 };
 
-use sqlx::QueryBuilder;
+use sqlx::{QueryBuilder, Sqlite};
+
+const IMAGE_ITEM_SELECT_BASE: &str = r#"
+  SELECT
+    images.id, images.file_name, images.path, images.size_bytes,
+    images.width, images.height, images.thumbnail_path,
+    images.created_at, images.is_favorite
+  FROM images
+"#;
+
+const IMAGE_ROW_SELECT: &str = r#"
+  SELECT
+    id, file_name, path, size_bytes, content_hash,
+    width, height, thumbnail_path, status, retry_count,
+    error_message, created_at, updated_at, is_favorite, is_deleted
+  FROM images
+"#;
 
 #[derive(Clone, Debug)]
 pub struct ImageRepository {
@@ -51,13 +67,10 @@ impl ImageRepository {
           .push_bind(&file.created_at);
       });
 
-      let result = qb.build().execute(&mut *tx).await?;
-
-      total_inserted += result.rows_affected();
+      total_inserted += qb.build().execute(&mut *tx).await?.rows_affected();
     }
 
     tx.commit().await?;
-
     Ok(total_inserted)
   }
 
@@ -70,10 +83,7 @@ impl ImageRepository {
       return Ok(0);
     }
 
-    let mut tx = self.db.begin().await?;
-
     let mut qb = QueryBuilder::new("DELETE FROM images WHERE id IN (");
-
     let mut separated = qb.separated(", ");
 
     for id in image_ids {
@@ -81,12 +91,7 @@ impl ImageRepository {
     }
 
     separated.push_unseparated(")");
-
-    let result = qb.build().execute(&mut *tx).await?;
-
-    tx.commit().await?;
-
-    Ok(result.rows_affected())
+    Ok(qb.build().execute(&self.db).await?.rows_affected())
   }
 
   pub async fn update_images_content_hash(&self, updates: &[Image]) -> Result<u64, DatabaseError> {
@@ -94,10 +99,7 @@ impl ImageRepository {
       return Ok(0);
     }
 
-    let mut tx = self.db.begin().await?;
-    let mut total_updated = 0;
-
-    let query_str = r#"
+    const QUERY: &str = r#"
             UPDATE images
             SET
               content_hash = ?1,
@@ -107,16 +109,19 @@ impl ImageRepository {
             WHERE id = ?5
         "#;
 
+    let mut tx = self.db.begin().await?;
+    let mut total_updated = 0;
+
     for update in updates {
-      let result = sqlx::query(query_str)
+      total_updated += sqlx::query(QUERY)
         .bind(&update.content_hash)
         .bind(&update.status)
         .bind(update.retry_count)
         .bind(&update.error_message)
         .bind(update.id)
         .execute(&mut *tx)
-        .await?;
-      total_updated += result.rows_affected();
+        .await?
+        .rows_affected();
     }
 
     tx.commit().await?;
@@ -128,23 +133,23 @@ impl ImageRepository {
       return Ok(0);
     }
 
+    const QUERY: &str = r#"
+        UPDATE images
+        SET
+          width = ?1,
+          height = ?2,
+          thumbnail_path = ?3,
+          status = ?4,
+          retry_count = ?5,
+          error_message = ?6
+        WHERE id = ?7
+        "#;
+
     let mut tx = self.db.begin().await?;
     let mut total_updated = 0;
 
-    let query_str = r#"
-              UPDATE images
-              SET
-                width = ?1,
-                height = ?2,
-                thumbnail_path = ?3,
-                status = ?4,
-                retry_count = ?5,
-                error_message = ?6
-              WHERE id = ?7
-            "#;
-
     for update in updates {
-      let result = sqlx::query(query_str)
+      total_updated += sqlx::query(QUERY)
         .bind(update.width)
         .bind(update.height)
         .bind(&update.thumbnail_path)
@@ -153,9 +158,8 @@ impl ImageRepository {
         .bind(&update.error_message)
         .bind(update.id)
         .execute(&mut *tx)
-        .await?;
-
-      total_updated += result.rows_affected();
+        .await?
+        .rows_affected();
     }
 
     tx.commit().await?;
@@ -165,10 +169,10 @@ impl ImageRepository {
   pub async fn toggle_image_favorite(&self, image_id: i64) -> Result<bool, DatabaseError> {
     let result = sqlx::query_scalar::<_, i64>(
       r#"
-            UPDATE images
-            SET is_favorite = NOT is_favorite
-            WHERE id = ?1
-            RETURNING is_favorite
+        UPDATE images
+        SET is_favorite = NOT is_favorite
+        WHERE id = ?1
+        RETURNING is_favorite
       "#,
     )
     .bind(image_id)
@@ -182,19 +186,12 @@ impl ImageRepository {
   }
 
   pub async fn update_image_status_deleted_all(&self) -> Result<u64, DatabaseError> {
-    let mut tx = self.db.begin().await?;
-
-    let mut qb = QueryBuilder::new("UPDATE images SET status = ");
-
-    qb.push_bind(ImageStatus::Deleted);
-
-    qb.push(" WHERE is_deleted = 1");
-
-    let result = qb.build().execute(&mut *tx).await?;
-
-    tx.commit().await?;
-
-    Ok(result.rows_affected())
+    sqlx::query("UPDATE images SET status = ?1 WHERE is_deleted = 1")
+      .bind(ImageStatus::Deleted)
+      .execute(&self.db)
+      .await
+      .map(|r| r.rows_affected())
+      .map_err(DatabaseError::from)
   }
 
   pub async fn update_image_status(
@@ -202,59 +199,55 @@ impl ImageRepository {
     image_ids: &[i64],
     status: ImageStatus,
   ) -> Result<u64, DatabaseError> {
-    let mut tx = self.db.begin().await?;
+    if image_ids.is_empty() {
+      return Ok(0);
+    }
 
     let mut qb = QueryBuilder::new("UPDATE images SET status = ");
-
     qb.push_bind(status);
 
-    qb.push("WHERE is_deleted = 1 AND id IN (");
-
+    qb.push(" WHERE is_deleted = 1 AND id IN (");
     let mut separated = qb.separated(", ");
-
     for id in image_ids {
       separated.push_bind(id);
     }
-
     qb.push(")");
 
-    let result = qb.build().execute(&mut *tx).await?;
-
+    let mut tx = self.db.begin().await?;
+    let rows_count = qb.build().execute(&mut *tx).await?.rows_affected();
     tx.commit().await?;
-
-    Ok(result.rows_affected())
+    Ok(rows_count)
   }
 
   pub async fn update_image_deleted_status(
     &self,
-    image_ids: Vec<i64>,
+    image_ids: &[i64],
     is_deleted: bool,
   ) -> Result<u64, DatabaseError> {
-    let mut tx = self.db.begin().await?;
+    if image_ids.is_empty() {
+      return Ok(0);
+    }
 
     let mut qb = QueryBuilder::new("UPDATE images SET is_deleted = ");
-
     qb.push_bind(is_deleted);
-
-    qb.push("WHERE id IN (");
-
+    qb.push(" WHERE id IN (");
     let mut separated = qb.separated(", ");
-
     for id in image_ids {
       separated.push_bind(id);
     }
-
     qb.push(")");
 
-    let result = qb.build().execute(&mut *tx).await?;
+    let mut tx = self.db.begin().await?;
 
-    if result.rows_affected() == 0 {
-      return Err(DatabaseError::NotFound);
-    }
+    let rows_count = qb.build().execute(&mut *tx).await?.rows_affected();
 
     tx.commit().await?;
 
-    Ok(result.rows_affected())
+    if rows_count == 0 {
+      return Err(DatabaseError::NotFound);
+    }
+
+    Ok(rows_count)
   }
 
   // endregion
@@ -270,10 +263,10 @@ impl ImageRepository {
       return Ok(Vec::new());
     }
 
-    let mut qb = QueryBuilder::new("SELECT * FROM images WHERE content_hash IN (");
+    let mut qb = QueryBuilder::new(IMAGE_ROW_SELECT);
 
+    qb.push(" WHERE content_hash IN (");
     let mut separated = qb.separated(", ");
-
     for hash in hashes {
       separated.push_bind(hash);
     }
@@ -281,9 +274,10 @@ impl ImageRepository {
     separated.push_unseparated(") AND status = ");
     qb.push_bind(status);
 
-    let rows = qb.build_query_as::<ImageRow>().fetch_all(&self.db).await?;
-
-    Ok(rows)
+    qb.build_query_as::<ImageRow>()
+      .fetch_all(&self.db)
+      .await
+      .map_err(DatabaseError::from)
   }
 
   pub async fn get_images_for_processing(
@@ -292,25 +286,51 @@ impl ImageRepository {
     max_retry_count: i64,
     process_status: ImageStatus,
   ) -> Result<Vec<ImageRow>, DatabaseError> {
-    let result = sqlx::query_as::<_, ImageRow>(
-      r#"
-        SELECT
-          id, file_name, path, size_bytes, content_hash,
-          width, height, thumbnail_path, status, retry_count,
-          error_message, created_at, updated_at, is_favorite, is_deleted
-        FROM images
-        WHERE status = ?1 AND retry_count < ?2
-        ORDER BY created_at ASC
-        LIMIT ?3
-      "#,
-    )
-    .bind(process_status)
-    .bind(max_retry_count)
-    .bind(limit)
-    .fetch_all(&self.db)
-    .await?;
+    let mut qb = QueryBuilder::new(IMAGE_ROW_SELECT);
 
-    Ok(result)
+    qb.push(" WHERE status = ");
+    qb.push_bind(process_status);
+
+    qb.push(" AND retry_count < ");
+    qb.push_bind(max_retry_count);
+
+    qb.push(" ORDER BY created_at ASC");
+
+    qb.push(" LIMIT ");
+    qb.push_bind(limit);
+
+    qb.build_query_as::<ImageRow>()
+      .fetch_all(&self.db)
+      .await
+      .map_err(DatabaseError::from)
+  }
+
+  fn push_not_status(qb: &mut QueryBuilder<Sqlite>, status: ImageStatus) {
+    qb.push(" AND status != ");
+    qb.push_bind(status);
+  }
+
+  fn push_cursor(qb: &mut QueryBuilder<'_, Sqlite>, cursor: CreatedAtCursor) {
+    qb.push(" AND (images.created_at, images.id) < (");
+    qb.push_bind(cursor.created_at);
+    qb.push(", ");
+    qb.push_bind(cursor.id);
+    qb.push(")");
+  }
+
+  fn push_order_and_limit(qb: &mut QueryBuilder<'_, Sqlite>, limit: i64) {
+    qb.push(" ORDER BY images.created_at DESC, images.id DESC LIMIT ");
+    qb.push_bind(limit);
+  }
+
+  async fn fetch_image_rows(
+    &self,
+    mut qb: QueryBuilder<'_, Sqlite>,
+  ) -> Result<Vec<ImageItemRow>, DatabaseError> {
+    qb.build_query_as::<ImageItemRow>()
+      .fetch_all(&self.db)
+      .await
+      .map_err(DatabaseError::from)
   }
 
   pub async fn get_images_paginated(
@@ -320,39 +340,21 @@ impl ImageRepository {
     is_deleted: bool,
     is_favorite: Option<bool>,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
-    let mut qb = QueryBuilder::new(
-      "
-        SELECT
-          id, file_name, path, size_bytes, width,
-          height, thumbnail_path, created_at, is_favorite
-        FROM images
-        WHERE status != 3 AND is_deleted = ",
-    );
-
+    let mut qb = QueryBuilder::new(IMAGE_ITEM_SELECT_BASE);
+    qb.push(" WHERE images.is_deleted = ");
     qb.push_bind(is_deleted);
 
-    if let Some(is_favorite) = is_favorite {
-      qb.push(" AND is_favorite = ");
-      qb.push_bind(is_favorite);
+    Self::push_not_status(&mut qb, ImageStatus::Deleted);
+
+    if let Some(fav) = is_favorite {
+      qb.push(" AND images.is_favorite = ");
+      qb.push_bind(fav);
     }
-
-    if let Some(cursor) = cursor {
-      qb.push(" AND (created_at, id) < (");
-      qb.push_bind(cursor.created_at);
-      qb.push(", ");
-      qb.push_bind(cursor.id);
-      qb.push(")");
+    if let Some(c) = cursor {
+      Self::push_cursor(&mut qb, c);
     }
-
-    qb.push(" ORDER BY created_at DESC, id DESC LIMIT ");
-    qb.push_bind(limit);
-
-    let result = qb
-      .build_query_as::<ImageItemRow>()
-      .fetch_all(&self.db)
-      .await?;
-
-    Ok(result)
+    Self::push_order_and_limit(&mut qb, limit);
+    self.fetch_image_rows(qb).await
   }
 
   pub async fn get_untagged_images_paginated(
@@ -360,37 +362,23 @@ impl ImageRepository {
     cursor: Option<CreatedAtCursor>,
     limit: i64,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
-    let mut qb = QueryBuilder::new(
-      r#"
-        SELECT
-          id, file_name, path, size_bytes, width,
-          height, thumbnail_path, created_at, is_favorite
-        FROM images
-        WHERE NOT EXISTS (
-          SELECT 1 FROM image_tags WHERE image_tags.image_id = images.id
-        )
-    "#,
+    let mut qb = QueryBuilder::new(IMAGE_ITEM_SELECT_BASE);
+    qb.push(
+      " WHERE NOT EXISTS (
+            SELECT 1 FROM image_tags WHERE image_tags.image_id = images.id
+          )",
     );
 
-    qb.push(" AND is_deleted = 0");
+    qb.push(" AND images.is_deleted = ");
+    qb.push_bind(false);
 
-    if let Some(cursor) = cursor {
-      qb.push(" AND (images.created_at, images.id) < (");
-      qb.push_bind(cursor.created_at);
-      qb.push(", ");
-      qb.push_bind(cursor.id);
-      qb.push(")");
+    Self::push_not_status(&mut qb, ImageStatus::Deleted);
+
+    if let Some(c) = cursor {
+      Self::push_cursor(&mut qb, c);
     }
-
-    qb.push(" ORDER BY images.created_at DESC, images.id DESC LIMIT ");
-    qb.push_bind(limit);
-
-    let result = qb
-      .build_query_as::<ImageItemRow>()
-      .fetch_all(&self.db)
-      .await?;
-
-    Ok(result)
+    Self::push_order_and_limit(&mut qb, limit);
+    self.fetch_image_rows(qb).await
   }
 
   pub async fn get_images_by_tag_paginated(
@@ -399,36 +387,23 @@ impl ImageRepository {
     limit: i64,
     tag_id: i64,
   ) -> Result<Vec<ImageItemRow>, DatabaseError> {
-    let mut qb = QueryBuilder::new(
-      r#"
-        SELECT
-          id, file_name, path, size_bytes, width,
-          height, thumbnail_path, images.created_at, is_favorite
-        FROM images
-        JOIN image_tags ON images.id = image_tags.image_id
-        WHERE image_tags.tag_id =
-    "#,
-    );
+    let mut qb = QueryBuilder::new(IMAGE_ITEM_SELECT_BASE);
+
+    qb.push(" JOIN image_tags ON images.id = image_tags.image_id ");
+
+    qb.push(" WHERE image_tags.tag_id = ");
     qb.push_bind(tag_id);
-    qb.push(" AND is_deleted = 0");
 
-    if let Some(cursor) = cursor {
-      qb.push(" AND (image_tags.created_at, images.id) < (");
-      qb.push_bind(cursor.created_at);
-      qb.push(", ");
-      qb.push_bind(cursor.id);
-      qb.push(")");
+    qb.push(" AND images.is_deleted = ");
+    qb.push_bind(false);
+
+    Self::push_not_status(&mut qb, ImageStatus::Deleted);
+
+    if let Some(c) = cursor {
+      Self::push_cursor(&mut qb, c);
     }
-
-    qb.push(" ORDER BY image_tags.created_at DESC, id DESC LIMIT");
-    qb.push_bind(limit);
-
-    let result = qb
-      .build_query_as::<ImageItemRow>()
-      .fetch_all(&self.db)
-      .await?;
-
-    Ok(result)
+    Self::push_order_and_limit(&mut qb, limit);
+    self.fetch_image_rows(qb).await
   }
 }
 
@@ -495,7 +470,7 @@ mod tests {
 
     // 2. Test update_image_deleted_status
     repo
-      .update_image_deleted_status(vec![img_id], true)
+      .update_image_deleted_status(&vec![img_id], true)
       .await
       .unwrap();
     let is_deleted: bool = sqlx::query_scalar("SELECT is_deleted FROM images WHERE id = ?")
