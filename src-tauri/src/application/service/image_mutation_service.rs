@@ -25,13 +25,11 @@ impl ImageMutationService {
     Ok(imported)
   }
 
-  #[tracing::instrument(skip(self))]
   pub async fn change_image_is_favorite(&self, image_id: i64) -> Result<bool, AppError> {
     let is_favorite = self.repo.toggle_image_favorite(image_id).await?;
     Ok(is_favorite)
   }
 
-  #[tracing::instrument(skip(self, image_ids))]
   pub async fn change_image_is_deleted(
     &self,
     image_ids: Vec<i64>,
@@ -44,13 +42,11 @@ impl ImageMutationService {
     Ok(changed)
   }
 
-  #[tracing::instrument(skip(self))]
   pub async fn hard_delete_all_images(&self) -> Result<u64, AppError> {
     let rows_affected = self.repo.update_image_status_deleted_all().await?;
     Ok(rows_affected)
   }
 
-  #[tracing::instrument(skip(self, image_ids))]
   pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<u64, AppError> {
     if image_ids.is_empty() {
       return Ok(0);

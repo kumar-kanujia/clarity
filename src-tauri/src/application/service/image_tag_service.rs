@@ -4,6 +4,10 @@ use crate::{
   interface::dtos::tag_dto::TagItem,
 };
 
+fn into_tag_items(raw: Vec<impl Into<TagItem>>) -> Vec<TagItem> {
+  raw.into_iter().map(Into::into).collect()
+}
+
 pub struct ImageTagService {
   repo: ImageTagRepository,
 }
@@ -41,11 +45,11 @@ impl ImageTagService {
     image_id: i64,
     limit: Option<i64>,
   ) -> Result<Vec<TagItem>, AppError> {
-    let raw = self
+    let res = self
       .repo
       .get_tags_attached_to_image(image_id, TagType::User, limit)
-      .await?;
-    let res = raw.into_iter().map(TagItem::from).collect();
+      .await
+      .map(into_tag_items)?;
     Ok(res)
   }
 
@@ -54,11 +58,11 @@ impl ImageTagService {
     image_id: i64,
     limit: Option<i64>,
   ) -> Result<Vec<TagItem>, AppError> {
-    let raw = self
+    let res = self
       .repo
       .get_tags_not_attached_to_image(image_id, TagType::User, limit)
-      .await?;
-    let res = raw.into_iter().map(TagItem::from).collect();
+      .await
+      .map(into_tag_items)?;
     Ok(res)
   }
 
@@ -67,14 +71,11 @@ impl ImageTagService {
     image_ids: Vec<i64>,
     limit: Option<i64>,
   ) -> Result<Vec<TagItem>, AppError> {
-    if image_ids.is_empty() {
-      return Ok(vec![]);
-    }
-    let raw = self
+    let res = self
       .repo
       .get_tags_attached_to_images(image_ids, TagType::User, limit)
-      .await?;
-    let res = raw.into_iter().map(TagItem::from).collect();
+      .await
+      .map(into_tag_items)?;
     Ok(res)
   }
 
@@ -83,14 +84,11 @@ impl ImageTagService {
     image_ids: Vec<i64>,
     limit: Option<i64>,
   ) -> Result<Vec<TagItem>, AppError> {
-    if image_ids.is_empty() {
-      return Ok(vec![]);
-    }
-    let raw = self
+    let res = self
       .repo
       .get_tags_not_attached_to_images(image_ids, TagType::User, limit)
-      .await?;
-    let res = raw.into_iter().map(TagItem::from).collect();
+      .await
+      .map(into_tag_items)?;
     Ok(res)
   }
 }

@@ -23,7 +23,6 @@ pub fn is_file_readable<P: AsRef<Path>>(path: P) -> Result<(), FSError> {
   match File::open(path_ref) {
     Ok(_) => Ok(()),
     Err(e) => {
-      // We convert the path to a string only when an error actually occurs
       let path_str = path_ref.display().to_string();
       match e.kind() {
         ErrorKind::NotFound => Err(FSError::FileNotFound(path_str)),

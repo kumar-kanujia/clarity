@@ -27,7 +27,8 @@ impl TagService {
     }
     let tag_name = Tag::normalize_text(tag_name);
     let tag_color = Tag::normalize_color(tag_color);
-    let new_tag_id = self
+
+    self
       .repo
       .create_new_tag(&tag_name, &tag_color, TagType::User)
       .await
@@ -36,8 +37,7 @@ impl TagService {
           AppError::Validation("Tag already exists".to_string())
         }
         _ => AppError::Database { source: err },
-      })?;
-    Ok(new_tag_id)
+      })
   }
 
   pub async fn edit_user_tag(

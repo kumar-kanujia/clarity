@@ -1,5 +1,5 @@
 use crate::{
-  application::error::AppError,
+  application::error::{AppError, extract_panic_message},
   domain::image::{Image, ImageMetadata},
   infrastructure::{fs::ops, processing::thumbnail},
 };
@@ -11,29 +11,22 @@ use std::{
 
 #[cfg(debug_assertions)]
 use tauri::Runtime;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Error, Manager};
 
 #[cfg(not(debug_assertions))]
 pub fn get_thumbnail_target(app: &AppHandle) -> Result<PathBuf, AppError> {
-  let cache_dir = app
-    .path()
-    .app_cache_dir()
-    .map_err(|err| AppError::Internal { source: err })?;
-
-  let target_dir = cache_dir.join(".thumbnails");
-
-  ops::ensure_dir(&target_dir)?;
-
-  Ok(target_dir)
+  resolve_thumbnail_dir(app.path().app_cache_dir())
 }
 
 #[cfg(debug_assertions)]
 pub fn get_thumbnail_target<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, AppError> {
-  let app_dir = app
-    .path()
-    .app_data_dir()
-    .map_err(|err| AppError::Internal { source: err })?;
-  let target_dir = app_dir.join(".thumbnails");
+  resolve_thumbnail_dir(app.path().app_data_dir())
+}
+
+fn resolve_thumbnail_dir(base: Result<PathBuf, Error>) -> Result<PathBuf, AppError> {
+  let target_dir = base
+    .map_err(|err| AppError::Internal { source: err.into() })?
+    .join(".thumbnails");
   ops::ensure_dir(&target_dir)?;
   Ok(target_dir)
 }
@@ -49,37 +42,16 @@ pub fn process_batch(files: &mut [Image], thumbnail_target: &Path) {
 }
 
 fn create_thumbnail(image: &Image, thumbnail_target: &Path) -> Result<ImageMetadata, String> {
-  let result =
-    panic::catch_unwind(|| thumbnail::create_image_metadata(&image.path, thumbnail_target));
-
-  match result {
-    Ok(inner_res) => {
-      // Map the internal creation error to a string for the DB
-      inner_res.map_err(|e| {
-        tracing::error!(path = %image.path, id = image.id, error = %e, "Thumbnail creation failed");
-        e.to_string()
-      })
-    }
-    Err(panic_payload) => {
-      // Downcast to get the exact panic message
-      let panic_msg = if let Some(s) = panic_payload.downcast_ref::<&str>() {
-        s.to_string()
-      } else if let Some(s) = panic_payload.downcast_ref::<String>() {
-        s.clone()
-      } else {
-        "Unknown panic payload type".to_string()
-      };
-
-      tracing::error!(
-        path = %image.path,
-        id = image.id,
-        panic_message = %panic_msg,
-        "Thumbnail generator panicked"
-      );
-
-      Err(format!("Thumbnail generator panicked: {}", panic_msg))
-    }
-  }
+  panic::catch_unwind(|| thumbnail::create_image_metadata(&image.path, thumbnail_target))
+    .map_err(|payload| {
+      let msg = extract_panic_message(&payload);
+      tracing::error!(id = image.id, path = %image.path, panic_message = %msg, "Thumbnail generator panicked");
+      format!("Thumbnail generator panicked: {}", msg)
+    })?
+    .map_err(|err| {
+      tracing::error!(id = image.id, path = %image.path, error = %err, "Thumbnail creation failed");
+      err.to_string()
+    })
 }
 
 #[cfg(test)]
