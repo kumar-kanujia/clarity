@@ -83,9 +83,9 @@ export const ImageCard = memo(
           onClick={onSquareClick}
         >
           {selected ? (
-            <SquareCheck className="size-3 fill-primary text-primary-foreground" />
+            <SquareCheck className="size-4 fill-primary text-primary-foreground" />
           ) : (
-            <Square className="size-3" />
+            <Square className="size-4" />
           )}
         </button>
       </motion.div>

@@ -22,7 +22,7 @@ impl ImageTagRepository {
   /// Appends `IN (?1, ?2, ...) ` to a query builder, binding each id.
   /// Caller is responsible for pushing the leading `IN` keyword separator if needed.
   fn push_in_clause<'qb>(qb: &'qb mut QueryBuilder<'_, sqlx::Sqlite>, ids: &[i64]) {
-    qb.push("(");
+    qb.push(" (");
     let mut sep = qb.separated(", ");
     for id in ids {
       sep.push_bind(*id);
@@ -229,7 +229,7 @@ impl ImageTagRepository {
       FROM tags
       LEFT JOIN image_tags
         ON tags.id = image_tags.tag_id
-        AND image_tags.image_id IN (
+        AND image_tags.image_id IN
     "#,
     );
 
@@ -241,7 +241,7 @@ impl ImageTagRepository {
 
     qb.push(
       r#"
-      GROUP BY tags.id, tags.text, tags.color, tags.image_count
+       GROUP BY tags.id, tags.text, tags.color, tags.image_count
       HAVING COUNT(DISTINCT image_tags.image_id) <
     "#,
     );

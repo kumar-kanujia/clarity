@@ -34,6 +34,7 @@ export const TagAction = ({
   })
 
   const { mutate: attachTag, isPending: isPendingAttach } = useAttachTag()
+
   const { mutate: removeTag, isPending: isPendingRemove } = useRemoveTag()
 
   if (imageIds.length === 0) return null
@@ -63,24 +64,27 @@ export const TagAction = ({
             <DropdownMenuSeparator />
           </DropdownMenuGroup>
         )}
-        {isAvailableSuccess && availableTags.length > 0 && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Available</DropdownMenuLabel>
-            {availableTags?.map((tag) => (
-              <DropdownMenuItem
-                key={tag.id}
-                style={{ color: tag.tagColor }}
-                onClick={() => {
-                  attachTag({ imageIds, tagId: tag.id }, { onSuccess })
-                }}
-                disabled={isPendingAttach}
-              >
-                <Tag />
-                {tag.tagName}
-              </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Available</DropdownMenuLabel>
+          {isAvailableSuccess &&
+            (availableTags.length > 0 ? (
+              availableTags.map((tag) => (
+                <DropdownMenuItem
+                  key={tag.id}
+                  style={{ color: tag.tagColor }}
+                  onClick={() => {
+                    attachTag({ imageIds, tagId: tag.id }, { onSuccess })
+                  }}
+                  disabled={isPendingAttach}
+                >
+                  <Tag />
+                  {tag.tagName}
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem disabled>No tags available</DropdownMenuItem>
             ))}
-          </DropdownMenuGroup>
-        )}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
