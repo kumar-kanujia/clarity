@@ -30,7 +30,7 @@ impl TagService {
 
     self
       .repo
-      .create_new_tag(&tag_name, &tag_color, TagType::User)
+      .create_tag(&tag_name, &tag_color, TagType::User)
       .await
       .map_err(|err| match err {
         DatabaseError::RecordAlreadyExists => {
@@ -70,7 +70,7 @@ impl TagService {
   pub async fn list_user_tags(&self, limit: Option<i64>) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::User, limit)
+      .get_tags_by_image_count(TagType::User, limit)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }
@@ -81,7 +81,7 @@ impl TagService {
   ) -> Result<Vec<TagItem>, AppError> {
     let tag_rows = self
       .repo
-      .get_tags_order_by_image_count(TagType::Inactive, limit)
+      .get_tags_by_image_count(TagType::Inactive, limit)
       .await?;
     Ok(tag_rows.into_iter().map(TagItem::from).collect())
   }

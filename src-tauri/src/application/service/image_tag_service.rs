@@ -27,7 +27,7 @@ impl ImageTagService {
     image_ids: Vec<i64>,
     tag_id: i64,
   ) -> Result<u64, AppError> {
-    let res = self.repo.create_image_tags(image_ids, tag_id).await?;
+    let res = self.repo.create_image_tags(&image_ids, tag_id).await?;
     Ok(res)
   }
 
@@ -36,7 +36,7 @@ impl ImageTagService {
     image_ids: Vec<i64>,
     tag_id: i64,
   ) -> Result<u64, AppError> {
-    let res = self.repo.delete_image_tags(image_ids, tag_id).await?;
+    let res = self.repo.delete_image_tags(&image_ids, tag_id).await?;
     Ok(res)
   }
 
@@ -73,7 +73,7 @@ impl ImageTagService {
   ) -> Result<Vec<TagItem>, AppError> {
     let res = self
       .repo
-      .get_tags_attached_to_images(image_ids, TagType::User, limit)
+      .get_tags_attached_to_images(&image_ids, TagType::User, limit)
       .await
       .map(into_tag_items)?;
     Ok(res)
@@ -86,7 +86,7 @@ impl ImageTagService {
   ) -> Result<Vec<TagItem>, AppError> {
     let res = self
       .repo
-      .get_tags_not_attached_to_images(image_ids, TagType::User, limit)
+      .get_tags_not_attached_to_images(&image_ids, TagType::User, limit)
       .await
       .map(into_tag_items)?;
     Ok(res)
