@@ -24,7 +24,7 @@ import {
 
 import { getTopQueryOptions } from "@/features/tags/queries"
 import { useQuery } from "@tanstack/react-query"
-import { ImportDialog } from "../../components/import -dialog"
+import { ImportDialog } from "./import-dialog"
 
 export const AppSidebar = () => {
   const { pathname } = useLocation()
@@ -41,7 +41,7 @@ export const AppSidebar = () => {
   return (
     <Sidebar>
       <div
-        className="h-8 flex items-center justify-end px-2 mb-2"
+        className="mb-2 flex h-8 items-center justify-end px-2"
         data-tauri-drag-region
       >
         <ImportDialog />
@@ -123,7 +123,7 @@ export const AppSidebar = () => {
         )}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu className="pt-2 border-t">
+        <SidebarMenu className="border-t pt-2">
           <SidebarMenuItem>
             <Link to="/settings">
               <SidebarMenuButton

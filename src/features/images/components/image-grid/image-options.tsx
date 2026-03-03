@@ -1,6 +1,6 @@
+import { useQuery } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
 import { TagIcon, Trash2 } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
 
 import {
   ContextMenu,
@@ -11,17 +11,52 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger
 } from "@/components/ui/context-menu"
+
 import {
   getAttachedTagsQueryOptions,
   getAvailableTagsQueryOptions
-} from "../../queries"
-import { useMoveToTrash, useToggleTag } from "../../hooks"
+} from "@/features/images/queries"
+import { useMoveToTrash, useToggleTag } from "@/features/images/hooks"
+
+interface TagMenuSectionProps {
+  label: string
+  tags: { id: number; tagName: string; tagColor: string }[]
+  imageId: number
+  onToggleTag: (args: { imageId: number; tagId: number }) => void
+  disabled: boolean
+}
+
+const TagMenuSection = ({
+  label,
+  tags,
+  imageId,
+  onToggleTag,
+  disabled
+}: TagMenuSectionProps) => (
+  <ContextMenuGroup>
+    <ContextMenuLabel>{label}</ContextMenuLabel>
+    {tags.map((tag) => (
+      <ContextMenuItem
+        key={tag.id}
+        onClick={() => onToggleTag({ imageId, tagId: tag.id })}
+        disabled={disabled}
+      >
+        <TagIcon
+          style={{ backgroundColor: tag.tagColor }}
+          className="mr-2 rounded-3xl p-2"
+        />
+        {tag.tagName}
+      </ContextMenuItem>
+    ))}
+  </ContextMenuGroup>
+)
 
 interface ImageOptionsProps {
   children: ReactNode
   imageId: number
   hideOptions?: boolean
 }
+
 export const ImageOptions = ({
   children,
   imageId,
@@ -40,6 +75,7 @@ const ActiveContextMenu = ({
   imageId: number
 }) => {
   const [isOpen, setIsOpen] = useState(false)
+
   const { data: attachedTagData, isSuccess: attachedTagFetchSuccess } =
     useQuery({
       ...getAttachedTagsQueryOptions(imageId, 5),
@@ -52,62 +88,43 @@ const ActiveContextMenu = ({
       enabled: isOpen
     })
 
-  const { mutate: moveToTrash, isPending: isMoveToTrashPending } =
-    useMoveToTrash()
-
   const { mutate: toggleTag, isPending: isTagPending } = useToggleTag()
+
+  const { mutate: moveToTrash, isPending: isTrashPending } = useMoveToTrash()
+
+  const hasAttachedTags = attachedTagFetchSuccess && attachedTagData.length > 0
+
+  const hasAvailableTags =
+    availableTagFetchSuccess && availableTagData.length > 0
 
   return (
     <ContextMenu onOpenChange={setIsOpen} open={isOpen}>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
 
-      {/* Restored original styling */}
       <ContextMenuContent className="bg-background/80 w-48">
-        {attachedTagFetchSuccess && attachedTagData.length > 0 && (
-          <>
-            <ContextMenuGroup>
-              <ContextMenuLabel>Attached Tags</ContextMenuLabel>
-              {attachedTagData.map((tag) => (
-                <ContextMenuItem
-                  key={tag.id}
-                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
-                  disabled={isTagPending}
-                >
-                  {/* Restored original TagIcon styling */}
-                  <TagIcon
-                    style={{ backgroundColor: tag.tagColor }}
-                    className="p-2 rounded-3xl mr-2"
-                  />
-                  {tag.tagName}
-                </ContextMenuItem>
-              ))}
-            </ContextMenuGroup>
-            <ContextMenuSeparator />
-          </>
+        {hasAttachedTags && (
+          <TagMenuSection
+            label="Attached Tags"
+            tags={attachedTagData}
+            imageId={imageId}
+            onToggleTag={toggleTag}
+            disabled={isTagPending}
+          />
         )}
 
-        {availableTagFetchSuccess && availableTagData.length > 0 && (
-          <>
-            <ContextMenuGroup>
-              <ContextMenuLabel>Attach a new tag</ContextMenuLabel>
-              {availableTagData.map((tag) => (
-                <ContextMenuItem
-                  key={tag.id}
-                  onClick={() => toggleTag({ imageId, tagId: tag.id })}
-                  disabled={isTagPending}
-                >
-                  {/* Restored original TagIcon styling */}
-                  <TagIcon
-                    style={{ backgroundColor: tag.tagColor }}
-                    className="p-2 rounded-3xl mr-2"
-                  />
-                  {tag.tagName}
-                </ContextMenuItem>
-              ))}
-            </ContextMenuGroup>
-            <ContextMenuSeparator />
-          </>
+        {hasAttachedTags && hasAvailableTags && <ContextMenuSeparator />}
+
+        {hasAvailableTags && (
+          <TagMenuSection
+            label="Attach a new tag"
+            tags={availableTagData}
+            imageId={imageId}
+            onToggleTag={toggleTag}
+            disabled={isTagPending}
+          />
         )}
+
+        {(hasAttachedTags || hasAvailableTags) && <ContextMenuSeparator />}
 
         <ContextMenuGroup>
           <ContextMenuItem
@@ -116,7 +133,7 @@ const ActiveContextMenu = ({
               e.stopPropagation()
               moveToTrash({ imageIds: [imageId] })
             }}
-            disabled={isMoveToTrashPending}
+            disabled={isTrashPending}
           >
             <Trash2 className="mr-2 size-4" /> Move to Trash
           </ContextMenuItem>

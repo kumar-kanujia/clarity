@@ -57,63 +57,98 @@ export const TagCard = ({
               </div>
             </div>
           </div>
-          <div className="flex flex-col justify-center  gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            {isInactive ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (markActivePending) return
-                    markActive(tag.id)
-                  }}
-                >
-                  <Undo2 />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openDeleteDialog(tag)
-                  }}
-                >
-                  <TrashIcon />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openEditDialog(tag)
-                  }}
-                >
-                  <Edit2 />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (markInactivePending) return
-                    markInactive(tag.id)
-                  }}
-                >
-                  <Trash2 />
-                </Button>
-              </>
-            )}
-          </div>
+          <TagCardActions
+            isInactive={Boolean(isInactive)}
+            isMarkActivePending={markActivePending}
+            isMarkInactivePending={markInactivePending}
+            onMarkActive={() => markActive(tag.id)}
+            onMarkInactive={() => markInactive(tag.id)}
+            onEdit={() => openEditDialog(tag)}
+            onDelete={() => openDeleteDialog(tag)}
+          />
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+interface TagCardActionsProps {
+  isInactive: boolean
+  isMarkActivePending: boolean
+  isMarkInactivePending: boolean
+  onMarkActive: () => void
+  onMarkInactive: () => void
+  onEdit: () => void
+  onDelete: () => void
+}
+
+const TagCardActions = ({
+  isInactive,
+  isMarkActivePending,
+  isMarkInactivePending,
+  onMarkActive,
+  onMarkInactive,
+  onEdit,
+  onDelete
+}: TagCardActionsProps) => {
+  const baseButtonClass =
+    "rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+
+  if (isInactive) {
+    return (
+      <div className="flex flex-col justify-center  gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={baseButtonClass}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isMarkActivePending) return
+            onMarkActive()
+          }}
+        >
+          <Undo2 />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`${baseButtonClass} hover:text-destructive`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+        >
+          <TrashIcon />
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col justify-center  gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button
+        variant="ghost"
+        size="icon"
+        className={baseButtonClass}
+        onClick={(e) => {
+          e.stopPropagation()
+          onEdit()
+        }}
+      >
+        <Edit2 />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`${baseButtonClass} hover:text-destructive`}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (isMarkInactivePending) return
+          onMarkInactive()
+        }}
+      >
+        <Trash2 />
+      </Button>
+    </div>
   )
 }

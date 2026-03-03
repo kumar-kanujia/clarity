@@ -1,12 +1,18 @@
+import type { ImageItem } from "@/tauri"
+import { convertFileSrc } from "@tauri-apps/api/core"
+
 import React, { memo, type ReactNode } from "react"
+
 import { motion } from "motion/react"
 import { Square, SquareCheck } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-import type { ImageItem } from "@/tauri"
-import { convertFileSrc } from "@tauri-apps/api/core"
-import { useInfoStore, useLightBox, useSelectStore } from "../../store"
+import {
+  useInfoStore,
+  useLightBox,
+  useSelectStore
+} from "@/features/images/store"
 
 export const ImageCard = memo(
   ({
@@ -54,8 +60,8 @@ export const ImageCard = memo(
           opacity: { duration: 0.15 }
         }}
         className={cn(
-          "group relative aspect-square rounded-2xl overflow-hidden select-none",
-          selected ? "ring-2 ring-primary" : "hover:ring-2 ring-black/20"
+          "group relative aspect-square overflow-hidden rounded-2xl select-none",
+          selected ? "ring-primary ring-2" : "ring-black/20 hover:ring-2"
         )}
         onClick={handleClick}
       >
@@ -77,21 +83,18 @@ export const ImageCard = memo(
           className={cn(
             "absolute top-3 left-3 z-10 transition-opacity focus:outline-none",
             selected
-              ? "opacity-100 text-primary"
+              ? "text-primary opacity-100"
               : "opacity-0 group-hover:opacity-100"
           )}
           onClick={onSquareClick}
         >
           {selected ? (
-            <SquareCheck className="size-4 fill-primary text-primary-foreground" />
+            <SquareCheck className="fill-primary text-primary-foreground size-4" />
           ) : (
             <Square className="size-4" />
           )}
         </button>
       </motion.div>
     )
-  },
-  (prev, next) => {
-    return prev.image.id === next.image.id
   }
 )

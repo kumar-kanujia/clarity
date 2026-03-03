@@ -3,9 +3,8 @@ import { useEffect, useRef, type ReactNode } from "react"
 
 import type { ImageItem } from "@/tauri"
 
+import { useContainerCols } from "@/features/images/hooks"
 import { ImageCard } from "./image-card"
-
-import { useResponsiveCols } from "../../hooks"
 import { ImageOptions } from "./image-options"
 
 interface ImageGridProps {
@@ -26,7 +25,9 @@ export const ImageGrid = ({
   hideOptions
 }: ImageGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null)
-  const cols = useResponsiveCols()
+
+  const cols = useContainerCols(parentRef)
+
   const rowCount = Math.ceil(images.length / cols)
 
   const virtualizer = useVirtualizer({
@@ -49,7 +50,7 @@ export const ImageGrid = ({
   return (
     <div
       ref={parentRef}
-      className="size-full py-4 overflow-y-scroll ease-in-out duration-75"
+      className="size-full overflow-y-scroll py-4 duration-75 ease-in-out"
     >
       <div
         className="relative w-full"
@@ -69,7 +70,7 @@ export const ImageGrid = ({
               }}
             >
               <div
-                className="grid gap-x-6 pb-6 px-2"
+                className="grid gap-x-6 px-2 pb-6"
                 style={{
                   gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
                 }}

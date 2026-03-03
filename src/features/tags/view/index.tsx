@@ -6,16 +6,16 @@ import { Badge } from "@/components/ui/badge"
 import { TagCard } from "../components/tag-card"
 import { EditTagDialog } from "../components/edit-tag-dialog"
 import { DeleteTagDialog } from "../components/delete-tag-dialog"
-import { AppHeader } from "@/features/common/layout/app-header"
 import { Button } from "@/components/ui/button"
 import { DialogTrigger } from "@/components/ui/dialog"
+import { AppHeader } from "@/features/common/components/app-header"
 
 const EmptyTagState = () => (
-  <div className="flex flex-col items-center justify-center h-full text-center min-h-[25vh]">
-    <div className="w-20 h-20 bg-muted/30 border rounded-3xl flex items-center justify-center mb-6 shadow-xl">
-      <TagIcon className="w-10 h-10 text-muted-foreground" />
+  <div className="flex h-full min-h-[25vh] flex-col items-center justify-center text-center">
+    <div className="bg-muted/30 mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border shadow-xl">
+      <TagIcon className="text-muted-foreground h-10 w-10" />
     </div>
-    <h2 className="text-xl font-bold mb-2">No Active tags found</h2>
+    <h2 className="mb-2 text-xl font-bold">No Active tags found</h2>
     <p className="text-muted-foreground max-w-sm text-sm">
       Create a new tag to start categorizing your visual library
     </p>
@@ -29,14 +29,14 @@ const ActiveTags = () => {
       {tags.length === 0 ? (
         <EmptyTagState />
       ) : (
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto max-w-7xl">
           <div className="mb-2">
-            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex justify-between items-center">
+            <span className="flex items-center justify-between text-xs font-bold tracking-widest text-zinc-500 uppercase">
               Active Tags <Badge>{tags.length}</Badge>
             </span>
           </div>
-          <div className="max-h-100 overflow-y-scroll pe-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="max-h-100 overflow-y-scroll py-4 pe-4">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {tags.map((tag) => (
                 <TagCard key={tag.id} tag={tag} />
               ))}
@@ -54,14 +54,14 @@ const InactiveTags = () => {
   if (tags.length === 0) return null
 
   return (
-    <div className="max-w-7xl mx-auto mt-4">
+    <div className="mx-auto mt-4 max-w-7xl">
       <div className="mb-2">
-        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex justify-between items-center">
+        <span className="flex items-center justify-between text-xs font-bold tracking-widest text-zinc-500 uppercase">
           Inactive Tags <Badge>{tags.length}</Badge>
         </span>
       </div>
-      <div className="h-50 pe-4 py-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="h-50 py-4 pe-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {tags.map((tag) => (
             <TagCard key={tag.id} tag={tag} isInactive />
           ))}
@@ -73,7 +73,7 @@ const InactiveTags = () => {
 
 export const TagsView = () => {
   return (
-    <div className="flex flex-col size-full bg-background overflow-hidden relative">
+    <div className="bg-background relative flex size-full flex-col overflow-hidden">
       <AppHeader>
         <div className="ms-auto px-4">
           <CreateTagDialog>

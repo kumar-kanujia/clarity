@@ -1,6 +1,9 @@
 import { useEffect, useMemo } from "react"
+import { useLocation } from "@tanstack/react-router"
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
+import { X } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import type { AnySuspenseInfiniteQueryOptions } from "@/types"
 import type { ImageItemResult } from "@/tauri"
 
@@ -9,15 +12,14 @@ import {
   ErrorBanner,
   ImageGrid,
   ImageLightbox,
-  LoadingBanner
-} from "../components"
-import { State } from "@/features/common/components/state"
-import { useLocation } from "@tanstack/react-router"
-import { useInfoStore, useLightboxPrefetch, useSelectStore } from "../store"
-import { FavoriteButton } from "../components/image-grid/favorite-button"
+  LoadingBanner,
+  InfoSheet
+} from "@/features/images/components"
+
 import { cn } from "@/lib/utils"
-import { AppHeader } from "@/features/common/layout/app-header"
-import { InfoSheet } from "../components/info-sheet"
+
+import { StateWithHeader } from "@/features/common/components/state"
+import { useInfoStore, useLightboxPrefetch, useSelectStore } from "../store"
 import {
   EmptyTrash,
   MoveToTrash,
@@ -25,18 +27,21 @@ import {
   RemoveSelected,
   RestoreImages
 } from "../components/image-actions"
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+
+import {
+  FavoriteButton,
+  UndoTrashButton
+} from "../components/image-grid/action-buttons"
+
+import { AppHeader } from "@/features/common/components/app-header"
 
 interface ImageGridViewProps<T extends AnySuspenseInfiniteQueryOptions> {
   queryOptions: T
 }
 
-export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
-  queryOptions
-}: ImageGridViewProps<T>) => {
-  const { pathname } = useLocation()
-
+const useImageGridData = <T extends AnySuspenseInfiniteQueryOptions>(
+  queryOptions: T
+) => {
   const {
     data,
     hasNextPage,
@@ -48,7 +53,61 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
 
   const images = useMemo(() => data.pages.flatMap((page) => page.data), [data])
 
+  return {
+    images,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isFetching,
+    isFetchNextPageError
+  }
+}
+
+const SelectionHeader = ({ isTrashRoute }: { isTrashRoute: boolean }) => {
   const { selectedIds, reset } = useSelectStore()
+
+  if (selectedIds.size === 0) return null
+
+  const selectedIdsArray = Array.from(selectedIds)
+
+  return (
+    <div className="ms-auto flex items-center justify-end gap-x-1 px-4">
+      <Button variant="ghost" onClick={reset}>
+        <p className="text-muted-foreground text-sm">{selectedIds.size}</p>
+        <X className="size-4" />
+      </Button>
+
+      {isTrashRoute ? (
+        <>
+          <RestoreImages imageIds={selectedIdsArray} onSuccess={reset} />
+          <RemoveSelected imageIds={selectedIdsArray} onSuccess={reset} />
+          <EmptyTrash />
+        </>
+      ) : (
+        <>
+          <TagAction imageIds={selectedIdsArray} onSuccess={reset} />
+          <MoveToTrash imageIds={selectedIdsArray} onSuccess={reset} />
+        </>
+      )}
+    </div>
+  )
+}
+
+export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
+  queryOptions
+}: ImageGridViewProps<T>) => {
+  const { pathname } = useLocation()
+
+  const {
+    images,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isFetching,
+    isFetchNextPageError
+  } = useImageGridData(queryOptions)
+
+  const { reset } = useSelectStore()
   const { closeInfoSheet } = useInfoStore()
 
   useEffect(() => {
@@ -63,15 +122,9 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
     fetchNextPage
   })
 
-  if (images.length === 0)
-    return (
-      <div className="flex h-screen w-full overflow-hidden">
-        <main className="flex flex-1 flex-col">
-          <AppHeader />
-          <State variant="empty" message="Nothing to show here!" />
-        </main>
-      </div>
-    )
+  if (images.length === 0) {
+    return <StateWithHeader variant="empty" message="Nothing to show here!" />
+  }
 
   const showEnd = !hasNextPage && !isFetching && !isFetchingNextPage
 
@@ -82,52 +135,20 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
     <div className="flex h-screen w-full overflow-hidden">
       <main className="flex flex-1 flex-col">
         <AppHeader>
-          <div className="ms-auto px-4 flex items-center justify-end gap-x-1">
-            {selectedIds.size > 0 && (
-              <>
-                <Button variant="ghost" onClick={reset}>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedIds.size}
-                  </p>
-                  <X className="size-4" />
-                </Button>
-              </>
-            )}
-            {isTrashRoute && (
-              <>
-                <RestoreImages
-                  imageIds={Array.from(selectedIds)}
-                  onSuccess={reset}
-                />
-                <RemoveSelected
-                  imageIds={Array.from(selectedIds)}
-                  onSuccess={reset}
-                />
-                <EmptyTrash />
-              </>
-            )}
-            {!isTrashRoute && (
-              <>
-                <TagAction imageIds={Array.from(selectedIds)} />
-                <MoveToTrash
-                  imageIds={Array.from(selectedIds)}
-                  onSuccess={reset}
-                />
-              </>
-            )}
-          </div>
+          <SelectionHeader isTrashRoute={isTrashRoute} />
         </AppHeader>
         <div className="flex-1 overflow-hidden">
-          <div className="px-2 select-none h-screen">
+          <div className="h-screen px-2 select-none">
             <ImageGrid
               images={images}
               hideOptions={isTrashRoute}
               fetchMore={fetchNextPage}
               hasMore={hasNextPage && !isFetchingNextPage}
-              renderImageAction={(image) => {
-                if (isTrashRoute) return null
-                return (
-                  <div className="absolute top-2 right-2 z-10">
+              renderImageAction={(image) => (
+                <div className="absolute top-2 right-2 z-10">
+                  {isTrashRoute ? (
+                    <UndoTrashButton imageId={image.id} />
+                  ) : (
                     <FavoriteButton
                       isFavorite={image.isFavorite}
                       imageId={image.id}
@@ -135,9 +156,9 @@ export const ImageGridView = <T extends AnySuspenseInfiniteQueryOptions>({
                         isFavoritesRoute && "opacity-0 group-hover:opacity-100"
                       )}
                     />
-                  </div>
-                )
-              }}
+                  )}
+                </div>
+              )}
             >
               {showEnd && <EndBanner />}
               {isFetchingNextPage && <LoadingBanner />}
