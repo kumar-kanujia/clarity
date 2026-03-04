@@ -22,7 +22,6 @@ export const useInfoStore = () => {
   const { state, setState } = infoStore()
 
   const openInfoSheet = (image: ImageItem) => {
-    console.log(image)
     setState({ type: "image", image })
   }
 

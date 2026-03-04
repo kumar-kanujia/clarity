@@ -14,4 +14,6 @@ const RootLayout = () => (
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
-}>()({ component: RootLayout })
+}>()({
+  component: RootLayout
+})

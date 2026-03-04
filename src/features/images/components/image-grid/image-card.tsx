@@ -1,4 +1,4 @@
-import React, { memo, type ReactNode } from "react"
+import React, { memo, useCallback, type ReactNode } from "react"
 import { motion, type Transition } from "motion/react"
 import { Square, SquareCheck } from "lucide-react"
 
@@ -24,67 +24,122 @@ interface ImageCardProps {
 
 export const ImageCard = memo(({ image, index, children }: ImageCardProps) => {
   const { open: openLightbox } = useLightBox()
-
   const { openInfoSheet } = useInfoStore()
+  const { selectedIds, toggleSelect } = useSelectStore()
 
-  const { selectedIds, toggleSelect, reset } = useSelectStore()
   const selected = selectedIds.has(image.id)
+  const isSelecting = selectedIds.size > 0
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.altKey) return openLightbox(index)
-    if (e.metaKey) return toggleSelect(image.id)
-    if (selectedIds.size > 0) return reset()
-    openInfoSheet(image)
-  }
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.altKey) return openLightbox(index)
+      if (e.metaKey || isSelecting) return toggleSelect(image.id)
+      openInfoSheet(image)
+    },
+    [image, index, isSelecting, openLightbox, openInfoSheet, toggleSelect]
+  )
 
-  const handleSquareClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    toggleSelect(image.id)
-  }
+  const handleSelectClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation()
+      toggleSelect(image.id)
+    },
+    [image.id, toggleSelect]
+  )
+
+  const src = convertFileSrc(image.thumbnailPath ?? image.filePath)
 
   return (
     <motion.div
       layoutId={`image-${image.id}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
       transition={SPRING_TRANSITION}
-      className={cn(
-        "group relative aspect-square overflow-hidden rounded-2xl select-none",
-        selected ? "ring-primary ring-2" : "ring-black/20 hover:ring-2"
-      )}
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      aria-label={image.fileName}
+      onKeyDown={(e) => e.key === "Enter" && openInfoSheet(image)}
       onClick={handleClick}
+      className={cn(
+        "group relative aspect-square cursor-pointer overflow-hidden rounded-xl select-none",
+        "shadow-sm transition-shadow duration-300 hover:shadow-lg",
+        selected
+          ? "ring-primary ring-offset-background ring-2 ring-offset-2"
+          : "ring-1 ring-white/10 hover:ring-white/20"
+      )}
     >
       <img
-        src={convertFileSrc(image.thumbnailPath || image.filePath)}
-        className="size-full object-cover"
+        src={src}
         alt={image.fileName}
+        draggable={false}
+        className={cn(
+          "size-full object-cover transition-transform duration-500 ease-out",
+          "group-hover:scale-105"
+        )}
       />
 
+      {/* Gradient overlay — richer than flat black */}
       <div
+        aria-hidden
         className={cn(
-          "absolute inset-0 bg-black/20 transition-opacity",
+          "absolute inset-0 transition-opacity duration-200",
+          "bg-linear-to-t from-black/50 via-black/10 to-transparent",
           selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
       />
 
-      <button
+      {/* Top-left vignette for checkbox contrast */}
+      <div
+        aria-hidden
         className={cn(
-          "absolute top-3 left-3 z-10 transition-opacity focus:outline-none",
-          selected
-            ? "text-primary opacity-100"
-            : "opacity-0 group-hover:opacity-100"
+          "absolute inset-0 bg-linear-to-br from-black/30 via-transparent to-transparent",
+          "transition-opacity duration-200",
+          selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
-        onClick={handleSquareClick}
+      />
+
+      <motion.button
+        initial={false}
+        animate={{
+          opacity: selected ? 1 : 0,
+          scale: selected ? 1 : 0.8
+        }}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        aria-label={selected ? "Deselect image" : "Select image"}
+        aria-checked={selected}
+        role="checkbox"
+        onClick={handleSelectClick}
+        className={cn(
+          "absolute top-2.5 left-2.5 z-10 rounded-md p-0.5",
+          "focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none",
+          "group-hover:opacity-100"
+        )}
       >
         {selected ? (
-          <SquareCheck className="fill-primary text-primary-foreground size-4" />
+          <SquareCheck className="fill-primary text-primary-foreground size-4.5 drop-shadow-sm" />
         ) : (
-          <Square className="size-4" />
+          <Square className="size-4.5 text-white drop-shadow-sm" />
         )}
-      </button>
+      </motion.button>
+
+      <div
+        aria-hidden
+        className={cn(
+          "absolute inset-x-0 bottom-0 px-2.5 py-2",
+          "translate-y-1 transition-transform duration-200 group-hover:translate-y-0",
+          "opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        )}
+      >
+        <p className="truncate text-[11px] leading-none font-medium text-white/90 drop-shadow-sm">
+          {image.fileName}
+        </p>
+      </div>
 
       {children}
     </motion.div>

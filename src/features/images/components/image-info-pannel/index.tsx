@@ -5,13 +5,18 @@ import { SheetActions } from "./sheet-actions"
 import { Tags } from "./tags"
 import type { ImageItem } from "@/tauri"
 import { useInfoStore } from "@/features/common/store"
+import { useLocation } from "@tanstack/react-router"
 
 interface ImageInfoPanelProps {
   image: ImageItem
 }
 
 export const ImageInfoPanel = ({ image }: ImageInfoPanelProps) => {
+  const { pathname } = useLocation()
+
   const { closeInfoSheet } = useInfoStore()
+
+  const isTrashRoue = pathname === "/trash"
 
   return (
     <>
@@ -22,14 +27,21 @@ export const ImageInfoPanel = ({ image }: ImageInfoPanelProps) => {
           className="h-auto max-h-62.5 w-full object-contain"
         />
       </div>
-
-      <Separator />
-      <Tags imageId={image.id} />
+      {!isTrashRoue && (
+        <>
+          <Separator />
+          <Tags imageId={image.id} />
+        </>
+      )}
       <Separator />
       <Metadata image={image} />
       <Separator />
 
-      <SheetActions imageId={image.id} close={closeInfoSheet} />
+      <SheetActions
+        imageId={image.id}
+        close={closeInfoSheet}
+        isTrashRoue={isTrashRoue}
+      />
     </>
   )
 }

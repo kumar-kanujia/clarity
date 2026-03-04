@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import { type AnyUseSuspenseInfiniteQueryOptions } from "@tanstack/react-query"
 
 import { cn } from "@/lib/utils"
@@ -13,7 +13,7 @@ import {
   SelectionHeader
 } from "@/features/images/components"
 
-import { useLightboxPrefetch, useSelectStore } from "../store"
+import { useLightboxPrefetch } from "../store"
 import {
   FavoriteButton,
   UndoTrashButton
@@ -22,7 +22,6 @@ import {
 import { useImageGridData } from "../hooks"
 import { useHeaderSlot } from "@/features/common/providers/header-slot-provider"
 import { State } from "@/features/common/components"
-import { useInfoStore } from "@/features/common/store"
 
 export type GridMode = "default" | "trash" | "favorites" | "tag"
 
@@ -35,6 +34,10 @@ export const ImageGridView = <T extends AnyUseSuspenseInfiniteQueryOptions>({
   queryOptions,
   mode = "default"
 }: ImageGridViewProps<T>) => {
+  const headerSlot = useMemo(() => <SelectionHeader mode={mode} />, [mode])
+
+  useHeaderSlot(headerSlot)
+
   const {
     images,
     hasNextPage,
@@ -44,24 +47,12 @@ export const ImageGridView = <T extends AnyUseSuspenseInfiniteQueryOptions>({
     isFetchNextPageError
   } = useImageGridData(queryOptions)
 
-  const { reset } = useSelectStore()
-  const { closeInfoSheet } = useInfoStore()
-
-  useEffect(() => {
-    closeInfoSheet()
-    reset()
-  }, [])
-
   useLightboxPrefetch({
     totalImages: images.length,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage
   })
-
-  const headerSlot = useMemo(() => <SelectionHeader mode={mode} />, [mode])
-
-  useHeaderSlot(headerSlot)
 
   if (images.length === 0) {
     return <State variant="empty" message="Nothing to show here!" />
@@ -71,7 +62,7 @@ export const ImageGridView = <T extends AnyUseSuspenseInfiniteQueryOptions>({
   const isTrash = mode === "trash"
 
   return (
-    <div className="h-screen">
+    <>
       <ImageGrid
         images={images}
         hideOptions={isTrash}
@@ -84,7 +75,7 @@ export const ImageGridView = <T extends AnyUseSuspenseInfiniteQueryOptions>({
         {isFetchNextPageError && <ErrorBanner />}
       </ImageGrid>
       <ImageLightbox data={images} />
-    </div>
+    </>
   )
 }
 
