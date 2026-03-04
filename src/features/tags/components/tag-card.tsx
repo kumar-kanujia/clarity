@@ -1,6 +1,5 @@
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Edit2, TagIcon, Trash2, TrashIcon, Undo2 } from "lucide-react"
+import { Loader2, Pencil, TagIcon, Trash, Trash2, Undo2 } from "lucide-react"
 import { useRouter } from "@tanstack/react-router"
 import type { TagItem } from "@/tauri"
 import { Card, CardContent } from "@/components/ui/card"
@@ -16,51 +15,48 @@ export const TagCard = ({
   isInactive?: boolean
 }) => {
   const { navigate } = useRouter()
-
   const { openDeleteDialog } = useDeleteTagStore()
   const { openEditDialog } = useEditTagStore()
-
   const { mutate: markInactive, isPending: markInactivePending } =
     useMarkTagInactive()
-
   const { mutate: markActive, isPending: markActivePending } =
     useMarkTagActive()
 
   return (
     <Card
-      key={tag.id}
       className={cn(
-        "group bg-background hover:border-primary/50 relative cursor-pointer overflow-hidden border shadow-sm transition-all duration-500 hover:shadow-xl",
-        isInactive && "cursor-default opacity-75 hover:border"
+        "group relative cursor-pointer overflow-hidden border shadow-sm",
+        "bg-background hover:border-primary/30 hover:shadow-lg",
+        "transition-all duration-200",
+        isInactive && "hover:border-border cursor-default opacity-60"
       )}
       onClick={() => {
         if (isInactive) return
         navigate({ to: "/tags/$tagid", params: { tagid: tag.id.toString() } })
       }}
     >
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <CardContent className="px-4 py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          {/* Icon + name */}
+          <div className="flex min-w-0 items-center gap-3">
             <div
-              className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-500 group-hover:scale-110"
-              style={{ backgroundColor: `${tag.tagColor}15` }}
+              className="flex size-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+              style={{ backgroundColor: `${tag.tagColor}18` }}
             >
-              <TagIcon className="h-5 w-5" style={{ color: tag.tagColor }} />
+              <TagIcon className="size-4" style={{ color: tag.tagColor }} />
             </div>
-            <div className="flex flex-col">
-              <h3 className="text-base font-bold tracking-tight">
+
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-semibold tracking-tight">
                 {tag.tagName}
-              </h3>
-              <div className="mt-0.5 flex items-center gap-2">
-                <Badge
-                  variant={"outline"}
-                  className="bg-muted/50 h-5 rounded-md border-none px-1.5 font-mono text-[10px]"
-                >
-                  {tag.imageCount} items
-                </Badge>
-              </div>
+              </span>
+              <span className="text-muted-foreground/70 mt-0.5 text-[11px] tabular-nums">
+                {tag.imageCount} {tag.imageCount === 1 ? "image" : "images"}
+              </span>
             </div>
           </div>
+
+          {/* Actions */}
           <TagCardActions
             isInactive={Boolean(isInactive)}
             isMarkActivePending={markActivePending}
@@ -86,6 +82,13 @@ interface TagCardActionsProps {
   onDelete: () => void
 }
 
+const actionBtn = cn(
+  "size-7 rounded-lg",
+  "opacity-0 group-hover:opacity-100",
+  "transition-opacity duration-150",
+  "cursor-pointer"
+)
+
 const TagCardActions = ({
   isInactive,
   isMarkActivePending,
@@ -95,63 +98,68 @@ const TagCardActions = ({
   onEdit,
   onDelete
 }: TagCardActionsProps) => {
-  const baseButtonClass =
-    "rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-
   if (isInactive) {
     return (
-      <div className="flex flex-col justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
-          className={baseButtonClass}
+          disabled={isMarkActivePending}
+          className={actionBtn}
           onClick={(e) => {
             e.stopPropagation()
-            if (isMarkActivePending) return
             onMarkActive()
           }}
         >
-          <Undo2 />
+          {isMarkActivePending ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Undo2 className="size-3.5" />
+          )}
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className={`${baseButtonClass} hover:text-destructive`}
+          className={cn(actionBtn, "hover:bg-red-500/10 hover:text-red-500")}
           onClick={(e) => {
             e.stopPropagation()
             onDelete()
           }}
         >
-          <TrashIcon />
+          <Trash className="size-3.5" />
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="flex items-center gap-1">
       <Button
         variant="ghost"
         size="icon"
-        className={baseButtonClass}
+        className={actionBtn}
         onClick={(e) => {
           e.stopPropagation()
           onEdit()
         }}
       >
-        <Edit2 />
+        <Pencil className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
         size="icon"
-        className={`${baseButtonClass} hover:text-destructive`}
+        disabled={isMarkInactivePending}
+        className={cn(actionBtn, "hover:bg-red-500/10 hover:text-red-500")}
         onClick={(e) => {
           e.stopPropagation()
-          if (isMarkInactivePending) return
           onMarkInactive()
         }}
       >
-        <Trash2 />
+        {isMarkInactivePending ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <Trash2 className="size-3.5" />
+        )}
       </Button>
     </div>
   )

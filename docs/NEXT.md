@@ -73,23 +73,23 @@ Goal: Elevate the UI from "good" to "sharp." Improve visual hierarchy, component
 
 ## Part 3.1 — Visual Hierarchy & Typography
 
-- [ ] Refine typography (font sizes, weights, line heights) for better readability
-- [ ] Standardize spacing, padding, and margins across all gallery views and sidebars
-- [ ] Polish border radii, subtle borders, and contrast ratios for a cleaner aesthetic
-- [ ] Improve scrollbar styling to match the application theme
+- [x] Refine typography (font sizes, weights, line heights) for better readability
+- [x] Standardize spacing, padding, and margins across all gallery views and sidebars
+- [x] Polish border radii, subtle borders, and contrast ratios for a cleaner aesthetic
+- [x] Improve scrollbar styling to match the application theme
 
 ## Part 3.2 — Component Feedback & Interactions
 
-- [ ] Enhance hover states on image thumbnails, tags, and buttons
-- [ ] Polish multi-selection visual indicators (e.g., clearer checkmarks, border highlights)
-- [ ] Smooth out transitions for entering/exiting selection mode
-- [ ] Ensure loading states (skeletons or spinners) are subtle and non-jarring
-- [ ] Sharpen modal and dialog animations (bulk action confirmations, tag creation)
+- [x] Enhance hover states on image thumbnails, tags, and buttons
+- [x] Polish multi-selection visual indicators (e.g., clearer checkmarks, border highlights)
+- [x] Smooth out transitions for entering/exiting selection mode
+- [x] Ensure loading states (skeletons or spinners) are subtle and non-jarring
+- [x] Sharpen modal and dialog animations (bulk action confirmations, tag creation)
 
 Completion Check:
 
-- [ ] UI feels immediately responsive and visually cohesive
-- [ ] Selection and action states are unmistakable to the user
+- [x] UI feels immediately responsive and visually cohesive
+- [x] Selection and action states are unmistakable to the user
 
 ---
 
