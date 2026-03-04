@@ -8,12 +8,13 @@ import {
   EndBanner,
   ErrorBanner,
   ImageGrid,
+  ImageHeader,
   ImageLightbox,
-  LoadingBanner,
-  SelectionHeader
+  LoadingBanner
 } from "@/features/images/components"
 
 import { useLightboxPrefetch } from "../store"
+
 import {
   FavoriteButton,
   UndoTrashButton
@@ -34,7 +35,7 @@ export const ImageGridView = <T extends AnyUseSuspenseInfiniteQueryOptions>({
   queryOptions,
   mode = "default"
 }: ImageGridViewProps<T>) => {
-  const headerSlot = useMemo(() => <SelectionHeader mode={mode} />, [mode])
+  const headerSlot = useMemo(() => <ImageHeader mode={mode} />, [mode])
 
   useHeaderSlot(headerSlot)
 
