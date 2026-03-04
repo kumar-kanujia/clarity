@@ -13,7 +13,7 @@ import {
 import { TrashIcon } from "lucide-react"
 import { useState } from "react"
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query"
-import { getTrashImageQueryOptions } from "../../queries"
+import { getTrashQueryOptions } from "../../queries"
 import { useEmptyTrash } from "../../hooks"
 
 export const EmptyTrash = () => {
@@ -21,7 +21,7 @@ export const EmptyTrash = () => {
 
   const { mutate, isPending } = useEmptyTrash()
 
-  const { data } = useSuspenseInfiniteQuery(getTrashImageQueryOptions())
+  const { data } = useSuspenseInfiniteQuery(getTrashQueryOptions())
 
   const handleClick = () => {
     mutate({}, { onSuccess: () => setOpen(false) })

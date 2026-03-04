@@ -3,6 +3,7 @@ import { getTagImageQueryOptions } from "@/features/images/queries"
 import { ImageGridView } from "@/features/images/view"
 import { createFileRoute, useParams } from "@tanstack/react-router"
 import { Suspense, useMemo } from "react"
+
 export const Route = createFileRoute("/tags/$tagid")({
   component: RouteComponent,
   loader: ({ context, params }) => {
@@ -25,7 +26,7 @@ function RouteComponent() {
 
   return (
     <Suspense fallback={<StateWithHeader variant="loading" />}>
-      <ImageGridView queryOptions={queryOptions} />
+      <ImageGridView queryOptions={queryOptions} mode="tag" />
     </Suspense>
   )
 }

@@ -71,24 +71,22 @@ const InactiveTags = () => {
   )
 }
 
-export const TagsView = () => {
-  return (
-    <div className="bg-background relative flex size-full flex-col overflow-hidden">
-      <AppHeader>
-        <div className="ms-auto px-4">
-          <CreateTagDialog>
-            <DialogTrigger render={<Button variant="ghost" />}>
-              <Plus /> Create Tag
-            </DialogTrigger>
-          </CreateTagDialog>
-        </div>
-      </AppHeader>
-      <EditTagDialog />
-      <DeleteTagDialog />
-      <main className="flex-1 overflow-y-auto p-8">
-        <ActiveTags />
-        <InactiveTags />
-      </main>
-    </div>
-  )
-}
+export const TagsView = () => (
+  <div className="bg-background relative flex size-full flex-col overflow-hidden">
+    <AppHeader>
+      <div className="ms-auto px-4">
+        <CreateTagDialog>
+          <DialogTrigger render={<Button variant="ghost" />}>
+            <Plus /> Create Tag
+          </DialogTrigger>
+        </CreateTagDialog>
+      </div>
+    </AppHeader>
+    <EditTagDialog />
+    <DeleteTagDialog />
+    <main className="flex-1 overflow-y-auto p-8">
+      <ActiveTags />
+      <InactiveTags />
+    </main>
+  </div>
+)

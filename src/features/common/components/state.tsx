@@ -1,21 +1,17 @@
-import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
-import type { JSX } from "react"
+import { cn } from "@/lib/utils"
 import { AppHeader } from "./app-header"
 
-type StateVariant = "empty" | "loading" | "error"
+type StateVariant = "loading" | "error" | "empty"
 
-export const State = ({
-  variant,
-  message,
-  icon,
-  action
-}: {
+export interface StateProps {
   variant: StateVariant
   message?: string
-  icon?: JSX.Element
+  icon?: React.ReactNode
   action?: React.ReactNode
-}) => {
+}
+
+export const State = ({ variant, message, icon, action }: StateProps) => {
   const isError = variant === "error"
   const isLoading = variant === "loading"
 
@@ -35,9 +31,9 @@ export const State = ({
           )}
 
           <p
-            className={
+            className={cn(
               isError ? "text-destructive font-medium" : "text-muted-foreground"
-            }
+            )}
           >
             {message}
           </p>
@@ -49,20 +45,11 @@ export const State = ({
   )
 }
 
-export const StateWithHeader = ({
-  ...props
-}: {
-  variant: StateVariant
-  message?: string
-  icon?: JSX.Element
-  action?: React.ReactNode
-}) => {
-  return (
-    <div className="flex w-full flex-col">
-      <AppHeader />
-      <div className="flex-1">
-        <State {...props} />
-      </div>
+export const StateWithHeader = (props: StateProps) => (
+  <div className="flex w-full flex-col">
+    <AppHeader />
+    <div className="flex-1">
+      <State {...props} />
     </div>
-  )
-}
+  </div>
+)

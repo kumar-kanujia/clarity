@@ -35,21 +35,21 @@ export const getAllImageQueryOptions = () =>
     ...paginationBase
   })
 
-export const getUntaggedImageQueryOptions = () =>
+export const getUntaggedQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: untaggedImagesQueryKey,
     queryFn: cursorQueryFn(fetchUntaggedImages),
     ...paginationBase
   })
 
-export const getFavoriteImageQueryOptions = () =>
+export const getFavoritesQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: favoritesQueryKey,
     queryFn: cursorQueryFn(fetchFavorites),
     ...paginationBase
   })
 
-export const getTrashImageQueryOptions = () =>
+export const getTrashQueryOptions = () =>
   infiniteQueryOptions({
     queryKey: trashQueryKey,
     queryFn: cursorQueryFn(fetchTrash),

@@ -6,7 +6,8 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card"
-import { AppHeader } from "@/features/common/layout/app-header"
+import { AppHeader } from "@/features/common/components/app-header"
+
 import { useTheme } from "@/features/common/providers/theme-provider"
 import { createFileRoute } from "@tanstack/react-router"
 import { Moon, Sun } from "lucide-react"
@@ -20,14 +21,14 @@ function RouteComponent() {
   return (
     <div className="size-full">
       <AppHeader />
-      <div className="size-full flex flex-col items-center justify-start pt-16">
+      <div className="flex size-full flex-col items-center justify-start pt-16">
         <Card className="min-w-lg">
           <CardHeader className="border-b">
             <CardTitle>Settings</CardTitle>
             <CardDescription>Change settings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-10 flex justify-between items-center px-4">
+            <div className="flex h-10 w-full items-center justify-between px-4">
               <div className="text-muted-foreground">Dark Mode</div>
 
               <Button

@@ -13,9 +13,9 @@ export const InfoSheet = () => {
   if (!isOpen || !image) return null
 
   return (
-    <aside className="w-80 shrink-0 flex-col h-full border-l bg-background shadow-sm hidden md:flex select-none">
+    <aside className="bg-background hidden h-full w-80 shrink-0 flex-col border-l shadow-sm select-none md:flex">
       <div
-        className="flex items-center justify-end pt-3 pe-2 h-8"
+        className="flex h-8 items-center justify-end pe-2 pt-3"
         data-tauri-drag-region
       >
         <Button variant="ghost" size="icon" onClick={closeInfoSheet}>
@@ -24,14 +24,15 @@ export const InfoSheet = () => {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        <div className="relative flex items-center justify-center overflow-hidden rounded-lg ">
+      <div className="flex-1 space-y-6 overflow-y-auto p-4">
+        <div className="relative flex items-center justify-center overflow-hidden rounded-lg">
           <img
             src={convertFileSrc(image.filePath)}
             alt={image.fileName}
-            className="w-full h-auto max-h-62.5 object-contain"
+            className="h-auto max-h-62.5 w-full object-contain"
           />
         </div>
+
         <Separator />
         <Tags imageId={image.id} />
         <Separator />

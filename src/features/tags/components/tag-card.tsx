@@ -6,6 +6,7 @@ import type { TagItem } from "@/tauri"
 import { Card, CardContent } from "@/components/ui/card"
 import { useMarkTagActive, useMarkTagInactive } from "../hooks"
 import { useDeleteTagStore, useEditTagStore } from "../store/tag-store"
+import { cn } from "@/lib/utils"
 
 export const TagCard = ({
   tag,
@@ -28,7 +29,10 @@ export const TagCard = ({
   return (
     <Card
       key={tag.id}
-      className="group relative overflow-hidden border bg-background hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-xl cursor-pointer"
+      className={cn(
+        "group bg-background hover:border-primary/50 relative cursor-pointer overflow-hidden border shadow-sm transition-all duration-500 hover:shadow-xl",
+        isInactive && "cursor-default opacity-75 hover:border"
+      )}
       onClick={() => {
         if (isInactive) return
         navigate({ to: "/tags/$tagid", params: { tagid: tag.id.toString() } })
@@ -38,19 +42,19 @@ export const TagCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-500 group-hover:scale-110"
               style={{ backgroundColor: `${tag.tagColor}15` }}
             >
-              <TagIcon className="w-5 h-5" style={{ color: tag.tagColor }} />
+              <TagIcon className="h-5 w-5" style={{ color: tag.tagColor }} />
             </div>
             <div className="flex flex-col">
-              <h3 className="font-bold text-base tracking-tight">
+              <h3 className="text-base font-bold tracking-tight">
                 {tag.tagName}
               </h3>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="mt-0.5 flex items-center gap-2">
                 <Badge
                   variant={"outline"}
-                  className="text-[10px] font-mono h-5 px-1.5 rounded-md bg-muted/50 border-none"
+                  className="bg-muted/50 h-5 rounded-md border-none px-1.5 font-mono text-[10px]"
                 >
                   {tag.imageCount} items
                 </Badge>
@@ -96,7 +100,7 @@ const TagCardActions = ({
 
   if (isInactive) {
     return (
-      <div className="flex flex-col justify-center  gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex flex-col justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"
@@ -125,7 +129,7 @@ const TagCardActions = ({
   }
 
   return (
-    <div className="flex flex-col justify-center  gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex flex-col justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
       <Button
         variant="ghost"
         size="icon"
