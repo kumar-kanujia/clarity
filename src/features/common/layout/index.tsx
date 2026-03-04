@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 
-import { AppHeader, AppSidebar } from "../components"
-import { InfoSheet } from "@/features/images/components"
+import { AppHeader, AppSidebar, InfoSheet } from "../components"
 
 export const AppLayout = ({ children }: { children: ReactNode }) => {
   return (

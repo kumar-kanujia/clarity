@@ -13,7 +13,7 @@ import {
   SelectionHeader
 } from "@/features/images/components"
 
-import { useInfoStore, useLightboxPrefetch, useSelectStore } from "../store"
+import { useLightboxPrefetch, useSelectStore } from "../store"
 import {
   FavoriteButton,
   UndoTrashButton
@@ -22,6 +22,7 @@ import {
 import { useImageGridData } from "../hooks"
 import { useHeaderSlot } from "@/features/common/providers/header-slot-provider"
 import { State } from "@/features/common/components"
+import { useInfoStore } from "@/features/common/store"
 
 export type GridMode = "default" | "trash" | "favorites" | "tag"
 

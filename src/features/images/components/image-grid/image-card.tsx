@@ -8,11 +8,8 @@ import { cn } from "@/lib/utils"
 
 import type { ImageItem } from "@/tauri"
 
-import {
-  useInfoStore,
-  useLightBox,
-  useSelectStore
-} from "@/features/images/store"
+import { useLightBox, useSelectStore } from "@/features/images/store"
+import { useInfoStore } from "@/features/common/store"
 
 const SPRING_TRANSITION = {
   layout: { type: "spring", stiffness: 380, damping: 32 },
