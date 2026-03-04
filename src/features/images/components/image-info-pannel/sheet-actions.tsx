@@ -1,25 +1,26 @@
 import { Button } from "@/components/ui/button"
 import { Trash, Undo } from "lucide-react"
 import { useMoveToTrash, useUndoMoveToTrash } from "../../hooks"
-import { useLocation } from "@tanstack/react-router"
+
+interface SheetActionsProps {
+  imageId: number
+  close: () => void
+  isTrashRoue?: boolean
+}
 
 export const SheetActions = ({
   imageId,
+  isTrashRoue,
   close
-}: {
-  imageId: number
-  close: () => void
-}) => {
-  const { pathname } = useLocation()
-
+}: SheetActionsProps) => {
   const { mutate: moveToTrash, isPending: isPendingMove } = useMoveToTrash()
 
   const { mutate: undoMoveToTrash, isPending: isPendingUndo } =
     useUndoMoveToTrash()
 
   return (
-    <div className="space-y-4 w-full flex items-center justify-center ">
-      {pathname === "/trash" && (
+    <div className="flex w-full items-center justify-center space-y-4">
+      {isTrashRoue ? (
         <Button
           variant={"outline"}
           onClick={() =>
@@ -33,8 +34,7 @@ export const SheetActions = ({
           <Undo />
           <span>Restore</span>
         </Button>
-      )}
-      {pathname !== "/trash" && (
+      ) : (
         <Button
           variant={"destructive"}
           onClick={() =>

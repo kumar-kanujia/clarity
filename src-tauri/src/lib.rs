@@ -33,7 +33,6 @@ pub fn run() {
 
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
-    .plugin(tauri_plugin_opener::init())
     .setup(app_setup)
     .invoke_handler(tauri::generate_handler![
       // Images

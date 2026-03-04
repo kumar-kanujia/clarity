@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
-import { Undo } from "lucide-react"
+import { Loader2, Undo } from "lucide-react"
 import { useUndoMoveToTrash } from "../../hooks"
+import { actionBtn } from "."
 
 export const RestoreImages = ({
   imageIds,
@@ -10,16 +11,22 @@ export const RestoreImages = ({
   onSuccess?: () => void
 }) => {
   const { mutate, isPending } = useUndoMoveToTrash()
-
   if (imageIds.length === 0) return null
 
   return (
     <Button
-      variant={"ghost"}
+      variant="ghost"
+      size="sm"
       disabled={isPending}
+      className={actionBtn}
       onClick={() => mutate({ imageIds }, { onSuccess })}
     >
-      <Undo /> Restore
+      {isPending ? (
+        <Loader2 className="size-3.5 animate-spin" />
+      ) : (
+        <Undo className="size-3.5" />
+      )}
+      Restore
     </Button>
   )
 }

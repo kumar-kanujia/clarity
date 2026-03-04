@@ -1,26 +1,24 @@
-import { Suspense, useMemo } from "react"
+import { Suspense } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { getAllImageQueryOptions } from "@/features/images/queries"
 import { ImageGridView } from "@/features/images/view"
-import { StateWithHeader } from "@/features/common/components/state"
-
-export const Route = createFileRoute("/")({
-  component: HomePage,
-  loader: ({ context }) => {
-    context.queryClient.ensureInfiniteQueryData(getAllImageQueryOptions())
-  },
-  errorComponent: () => (
-    <StateWithHeader variant="error" message="Something went wrong!" />
-  )
-})
+import { State } from "@/features/common/components"
+const imageQueryOptions = getAllImageQueryOptions()
 
 function HomePage() {
-  const queryOptions = useMemo(() => getAllImageQueryOptions(), [])
-
   return (
-    <Suspense fallback={<StateWithHeader variant="loading" />}>
-      <ImageGridView queryOptions={queryOptions} />
+    <Suspense fallback={<State variant="loading" />}>
+      <ImageGridView queryOptions={imageQueryOptions} />
     </Suspense>
   )
 }
+
+export const Route = createFileRoute("/")({
+  component: HomePage,
+  loader: ({ context }) =>
+    context.queryClient.ensureInfiniteQueryData(imageQueryOptions),
+  errorComponent: () => (
+    <State variant="error" message="Something went wrong!" />
+  )
+})

@@ -3,9 +3,9 @@ import { useEffect, useRef, type ReactNode } from "react"
 
 import type { ImageItem } from "@/tauri"
 
-import { ImageCard } from "./image-card"
+import { useResponsiveCols } from "@/features/images/hooks"
 
-import { useResponsiveCols } from "../../hooks"
+import { ImageCard } from "./image-card"
 import { ImageOptions } from "./image-options"
 
 interface ImageGridProps {
@@ -22,10 +22,11 @@ export const ImageGrid = ({
   fetchMore,
   hasMore,
   children,
-  renderImageAction,
-  hideOptions
+  hideOptions,
+  renderImageAction
 }: ImageGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null)
+
   const cols = useResponsiveCols()
   const rowCount = Math.ceil(images.length / cols)
 
@@ -38,56 +39,49 @@ export const ImageGrid = ({
 
   const virtualItems = virtualizer.getVirtualItems()
 
+  const lastItem = virtualItems[virtualItems.length - 1]
+
   useEffect(() => {
-    const lastItem = virtualItems[virtualItems.length - 1]
-    if (!lastItem) return
-    if (lastItem.index >= rowCount - 1 && hasMore) {
+    if (lastItem && lastItem.index >= rowCount - 1 && hasMore) {
       fetchMore()
     }
-  }, [virtualItems, rowCount, hasMore, fetchMore])
+  }, [lastItem?.index, rowCount, hasMore, fetchMore])
 
   return (
-    <div
-      ref={parentRef}
-      className="size-full py-4 overflow-y-scroll ease-in-out duration-75"
-    >
+    <div ref={parentRef} className="size-full overflow-y-auto p-4 select-none">
       <div
         className="relative w-full"
-        style={{ height: `${virtualizer.getTotalSize()}px` }}
+        style={{ height: virtualizer.getTotalSize() }}
       >
         {virtualItems.map((virtualRow) => {
           const startIndex = virtualRow.index * cols
           const rowImages = images.slice(startIndex, startIndex + cols)
+
           return (
             <div
               key={virtualRow.key}
               data-index={virtualRow.index}
               ref={virtualizer.measureElement}
               className="absolute top-0 left-0 w-full"
-              style={{
-                transform: `translateY(${virtualRow.start}px)`
-              }}
+              style={{ transform: `translateY(${virtualRow.start}px)` }}
             >
               <div
-                className="grid gap-x-6 pb-6 px-2"
+                className="grid gap-x-5 pb-5"
                 style={{
                   gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
                 }}
               >
-                {rowImages.map((image, i) => {
-                  const actualIndex = startIndex + i
-                  return (
-                    <ImageOptions imageId={image.id} hideOptions={hideOptions}>
-                      <ImageCard
-                        key={image.id}
-                        image={image}
-                        index={actualIndex}
-                      >
-                        {renderImageAction?.(image)}
-                      </ImageCard>
-                    </ImageOptions>
-                  )
-                })}
+                {rowImages.map((image, i) => (
+                  <ImageOptions
+                    key={image.id}
+                    imageId={image.id}
+                    hidden={hideOptions}
+                  >
+                    <ImageCard image={image} index={startIndex + i}>
+                      {renderImageAction?.(image)}
+                    </ImageCard>
+                  </ImageOptions>
+                ))}
               </div>
             </div>
           )

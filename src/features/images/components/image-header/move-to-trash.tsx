@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
-import { Trash } from "lucide-react"
+import { Loader2, Trash } from "lucide-react"
 import { useMoveToTrash } from "../../hooks"
+import { destructiveBtn } from "."
 
 export const MoveToTrash = ({
   imageIds,
@@ -10,17 +11,22 @@ export const MoveToTrash = ({
   onSuccess?: () => void
 }) => {
   const { mutate, isPending } = useMoveToTrash()
-
   if (imageIds.length === 0) return null
 
   return (
     <Button
-      variant={"ghost"}
-      className="hover:text-red-600 flex"
+      variant="ghost"
+      size="sm"
       disabled={isPending}
+      className={destructiveBtn}
       onClick={() => mutate({ imageIds }, { onSuccess })}
     >
-      <Trash /> Move to trash
+      {isPending ? (
+        <Loader2 className="size-3.5 animate-spin" />
+      ) : (
+        <Trash className="size-3.5" />
+      )}
+      Move to trash
     </Button>
   )
 }

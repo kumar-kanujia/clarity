@@ -48,22 +48,22 @@ Goal: Audit and improve existing backend commands to ensure maximum consistency,
 ## Part 2.1 — Command Audit & Consistency
 
 - [x] Improve image pipline
-- [ ] Review all single-item and bulk commands for consistent parameter handling
-- [ ] Ensure single DB transactions are strictly used where multiple mutations occur
-- [ ] Audit all SQL queries for N+1 execution flaws
-- [ ] Verify that all commands return clean, predictable payload structures to the frontend
+- [x] Review all single-item and bulk commands for consistent parameter handling
+- [x] Ensure single DB transactions are strictly used where multiple mutations occur
+- [x] Audit all SQL queries for N+1 execution flaws
+- [x] Verify that all commands return clean, predictable payload structures to the frontend
 
 ## Part 2.2 — Error Handling & Logging Standardization
 
-- [ ] Ensure all commands map failures to the explicit error taxonomy (`AppError`, `DatabaseError`, etc.)
-- [ ] Verify no raw image data or sensitive OS paths are leaked in frontend error messages
-- [ ] Standardize structured tracing logs across all commands (inputs, execution time, result state)
-- [ ] Audit worker panic containment and retry limits
+- [x] Ensure all commands map failures to the explicit error taxonomy (`AppError`, `DatabaseError`, etc.)
+- [x] Verify no raw image data or sensitive OS paths are leaked in frontend error messages
+- [x] Standardize structured tracing logs across all commands (inputs, execution time, result state)
+- [x] Audit worker panic containment and retry limits
 
 Completion Check:
 
-- [ ] Backend commands are universally consistent in input, output, and failure modes
-- [ ] Logs provide full operational observability without noise
+- [x] Backend commands are universally consistent in input, output, and failure modes
+- [x] Logs provide full operational observability without noise
 
 ---
 
@@ -73,23 +73,23 @@ Goal: Elevate the UI from "good" to "sharp." Improve visual hierarchy, component
 
 ## Part 3.1 — Visual Hierarchy & Typography
 
-- [ ] Refine typography (font sizes, weights, line heights) for better readability
-- [ ] Standardize spacing, padding, and margins across all gallery views and sidebars
-- [ ] Polish border radii, subtle borders, and contrast ratios for a cleaner aesthetic
-- [ ] Improve scrollbar styling to match the application theme
+- [x] Refine typography (font sizes, weights, line heights) for better readability
+- [x] Standardize spacing, padding, and margins across all gallery views and sidebars
+- [x] Polish border radii, subtle borders, and contrast ratios for a cleaner aesthetic
+- [x] Improve scrollbar styling to match the application theme
 
 ## Part 3.2 — Component Feedback & Interactions
 
-- [ ] Enhance hover states on image thumbnails, tags, and buttons
-- [ ] Polish multi-selection visual indicators (e.g., clearer checkmarks, border highlights)
-- [ ] Smooth out transitions for entering/exiting selection mode
-- [ ] Ensure loading states (skeletons or spinners) are subtle and non-jarring
-- [ ] Sharpen modal and dialog animations (bulk action confirmations, tag creation)
+- [x] Enhance hover states on image thumbnails, tags, and buttons
+- [x] Polish multi-selection visual indicators (e.g., clearer checkmarks, border highlights)
+- [x] Smooth out transitions for entering/exiting selection mode
+- [x] Ensure loading states (skeletons or spinners) are subtle and non-jarring
+- [x] Sharpen modal and dialog animations (bulk action confirmations, tag creation)
 
 Completion Check:
 
-- [ ] UI feels immediately responsive and visually cohesive
-- [ ] Selection and action states are unmistakable to the user
+- [x] UI feels immediately responsive and visually cohesive
+- [x] Selection and action states are unmistakable to the user
 
 ---
 
