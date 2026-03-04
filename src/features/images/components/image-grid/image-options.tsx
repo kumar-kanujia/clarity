@@ -54,16 +54,15 @@ const TagMenuSection = ({
 interface ImageOptionsProps {
   children: ReactNode
   imageId: number
-  hideOptions?: boolean
+  hidden?: boolean
 }
 
 export const ImageOptions = ({
   children,
   imageId,
-  hideOptions
+  hidden
 }: ImageOptionsProps) => {
-  if (hideOptions) return <>{children}</>
-
+  if (hidden) return <>{children}</>
   return <ActiveContextMenu imageId={imageId}>{children}</ActiveContextMenu>
 }
 

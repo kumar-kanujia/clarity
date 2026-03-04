@@ -1,30 +1,41 @@
 import { useState, useEffect, type RefObject } from "react"
 
+const getColsFromWidth = (width: number) =>
+  width >= 1920
+    ? 6
+    : width >= 1024
+      ? 5
+      : width >= 768
+        ? 4
+        : width >= 480
+          ? 3
+          : width >= 320
+            ? 2
+            : 1
+
 export const useContainerCols = (
   ref: RefObject<HTMLElement | null>,
   defaultCols = 4
 ) => {
-  const [cols, setCols] = useState(defaultCols)
+  const [cols, setCols] = useState(() => {
+    if (typeof window === "undefined") return defaultCols
+    return getColsFromWidth(window.innerWidth)
+  })
 
   useEffect(() => {
     const element = ref.current
     if (!element) return
 
+    setCols(getColsFromWidth(element.getBoundingClientRect().width))
+
     let animationFrameId: number
 
     const observer = new ResizeObserver((entries) => {
       cancelAnimationFrame(animationFrameId)
-
       animationFrameId = requestAnimationFrame(() => {
-        for (let entry of entries) {
-          const width = entry.contentRect.width
-
-          let newCols = 1
-          if (width >= 1920) newCols = 5
-          else if (width >= 1024) newCols = 4
-          else if (width >= 768) newCols = 3
-          else if (width >= 480) newCols = 2
-          setCols((prevCols) => (prevCols !== newCols ? newCols : prevCols))
+        for (const entry of entries) {
+          const newCols = getColsFromWidth(entry.contentRect.width)
+          setCols((prev) => (prev !== newCols ? newCols : prev))
         }
       })
     })
