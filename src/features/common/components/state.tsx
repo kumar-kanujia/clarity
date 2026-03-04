@@ -1,6 +1,5 @@
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AppHeader } from "./app-header"
 
 type StateVariant = "loading" | "error" | "empty"
 
@@ -44,12 +43,3 @@ export const State = ({ variant, message, icon, action }: StateProps) => {
     </div>
   )
 }
-
-export const StateWithHeader = (props: StateProps) => (
-  <div className="flex w-full flex-col">
-    <AppHeader />
-    <div className="flex-1">
-      <State {...props} />
-    </div>
-  </div>
-)

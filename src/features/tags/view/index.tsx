@@ -8,7 +8,7 @@ import { EditTagDialog } from "../components/edit-tag-dialog"
 import { DeleteTagDialog } from "../components/delete-tag-dialog"
 import { Button } from "@/components/ui/button"
 import { DialogTrigger } from "@/components/ui/dialog"
-import { AppHeader } from "@/features/common/components/app-header"
+import { useHeaderSlot } from "@/features/common/providers/header-slot-provider"
 
 const EmptyTagState = () => (
   <div className="flex h-full min-h-[25vh] flex-col items-center justify-center text-center">
@@ -71,22 +71,27 @@ const InactiveTags = () => {
   )
 }
 
-export const TagsView = () => (
-  <div className="bg-background relative flex size-full flex-col overflow-hidden">
-    <AppHeader>
-      <div className="ms-auto px-4">
-        <CreateTagDialog>
-          <DialogTrigger render={<Button variant="ghost" />}>
-            <Plus /> Create Tag
-          </DialogTrigger>
-        </CreateTagDialog>
-      </div>
-    </AppHeader>
-    <EditTagDialog />
-    <DeleteTagDialog />
-    <main className="flex-1 overflow-y-auto p-8">
-      <ActiveTags />
-      <InactiveTags />
-    </main>
+const TagsHeaderActions = (
+  <div className="ms-auto px-4">
+    <CreateTagDialog>
+      <DialogTrigger render={<Button variant="ghost" />}>
+        <Plus /> Create Tag
+      </DialogTrigger>
+    </CreateTagDialog>
   </div>
 )
+
+export const TagsView = () => {
+  useHeaderSlot(TagsHeaderActions)
+
+  return (
+    <div className="bg-background relative flex size-full flex-col overflow-hidden">
+      <EditTagDialog />
+      <DeleteTagDialog />
+      <main className="flex-1 overflow-y-auto p-8">
+        <ActiveTags />
+        <InactiveTags />
+      </main>
+    </div>
+  )
+}

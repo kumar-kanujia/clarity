@@ -1,4 +1,4 @@
-import { StateWithHeader } from "@/features/common/components/state"
+import { State } from "@/features/common/components/state"
 import { getTrashQueryOptions } from "@/features/images/queries"
 import { ImageGridView } from "@/features/images/view"
 import { createFileRoute } from "@tanstack/react-router"
@@ -8,7 +8,7 @@ const trashQueryOptions = getTrashQueryOptions()
 
 function TrashPage() {
   return (
-    <Suspense fallback={<StateWithHeader variant="loading" />}>
+    <Suspense fallback={<State variant="loading" />}>
       <ImageGridView queryOptions={trashQueryOptions} mode="trash" />
     </Suspense>
   )
@@ -19,6 +19,6 @@ export const Route = createFileRoute("/trash")({
   loader: ({ context }) =>
     context.queryClient.ensureInfiniteQueryData(trashQueryOptions),
   errorComponent: () => (
-    <StateWithHeader variant="error" message="Something went wrong!" />
+    <State variant="error" message="Something went wrong!" />
   )
 })

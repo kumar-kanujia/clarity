@@ -22,8 +22,8 @@ export const ImageGrid = ({
   fetchMore,
   hasMore,
   children,
-  renderImageAction,
-  hideOptions
+  hideOptions,
+  renderImageAction
 }: ImageGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null)
   const cols = useContainerCols(parentRef)
@@ -46,7 +46,7 @@ export const ImageGrid = ({
   }, [lastItem, rowCount, hasMore, fetchMore])
 
   return (
-    <div ref={parentRef} className="size-full overflow-y-scroll py-4">
+    <div ref={parentRef} className="size-full overflow-y-scroll p-4">
       <div
         className="relative w-full"
         style={{ height: virtualizer.getTotalSize() }}

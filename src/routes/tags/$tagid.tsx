@@ -1,4 +1,4 @@
-import { StateWithHeader } from "@/features/common/components/state"
+import { State } from "@/features/common/components/state"
 import { getTagImageQueryOptions } from "@/features/images/queries"
 import { ImageGridView } from "@/features/images/view"
 import { createFileRoute, useParams } from "@tanstack/react-router"
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/tags/$tagid")({
     )
   },
   errorComponent: () => (
-    <StateWithHeader variant="error" message="Something went wrong!" />
+    <State variant="error" message="Something went wrong!" />
   )
 })
 
@@ -25,7 +25,7 @@ function RouteComponent() {
   )
 
   return (
-    <Suspense fallback={<StateWithHeader variant="loading" />}>
+    <Suspense fallback={<State variant="loading" />}>
       <ImageGridView queryOptions={queryOptions} mode="tag" />
     </Suspense>
   )
