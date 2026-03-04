@@ -1,8 +1,16 @@
 use crate::infrastructure::fs::error::FSError;
 
 use std::fs::{self, File};
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 use std::path::Path;
+
+pub fn delete_file<P: AsRef<Path>>(path: P) -> Result<(), FSError> {
+  fs::remove_file(&path).map_err(|err: Error| match err.kind() {
+    ErrorKind::NotFound => FSError::FileNotFound(String::new()),
+    _ => FSError::Io(err),
+  })?;
+  Ok(())
+}
 
 pub fn ensure_dir(path: &Path) -> Result<(), FSError> {
   fs::create_dir_all(path)?;
@@ -15,7 +23,6 @@ pub fn is_file_readable<P: AsRef<Path>>(path: P) -> Result<(), FSError> {
   match File::open(path_ref) {
     Ok(_) => Ok(()),
     Err(e) => {
-      // We convert the path to a string only when an error actually occurs
       let path_str = path_ref.display().to_string();
       match e.kind() {
         ErrorKind::NotFound => Err(FSError::FileNotFound(path_str)),

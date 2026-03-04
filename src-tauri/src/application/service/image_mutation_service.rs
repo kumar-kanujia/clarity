@@ -1,6 +1,7 @@
 use crate::{
-  application::error::AppError, domain::file::FileMetaData,
-  infrastructure::repo::image_repo::ImageRepository,
+  application::error::AppError,
+  domain::file::FileMetaData,
+  infrastructure::{models::image_model::ImageStatus, repo::image_repo::ImageRepository},
 };
 
 pub struct ImageMutationService {
@@ -12,36 +13,49 @@ impl ImageMutationService {
     Self { repo }
   }
 
-  #[tracing::instrument(skip(self))]
   pub async fn persist_file_metadata_for_images(
     &self,
     image_metadata: &[FileMetaData],
-  ) -> Result<i64, AppError> {
+  ) -> Result<u64, AppError> {
     let imported = self
       .repo
       .create_images_by_file_metadata(image_metadata)
       .await?;
 
-    Ok(imported as i64)
+    Ok(imported)
   }
 
-  #[tracing::instrument(skip(self))]
   pub async fn change_image_is_favorite(&self, image_id: i64) -> Result<bool, AppError> {
     let is_favorite = self.repo.toggle_image_favorite(image_id).await?;
     Ok(is_favorite)
   }
 
-  #[tracing::instrument(skip(self))]
   pub async fn change_image_is_deleted(
     &self,
-    image_id: i64,
+    image_ids: Vec<i64>,
     is_deleted: bool,
-  ) -> Result<(), AppError> {
-    self
+  ) -> Result<u64, AppError> {
+    let changed = self
       .repo
-      .set_image_deleted_status(image_id, is_deleted)
+      .update_image_deleted_status(&image_ids, is_deleted)
       .await?;
-    Ok(())
+    Ok(changed)
+  }
+
+  pub async fn hard_delete_all_images(&self) -> Result<u64, AppError> {
+    let rows_affected = self.repo.update_image_status_deleted_all().await?;
+    Ok(rows_affected)
+  }
+
+  pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<u64, AppError> {
+    if image_ids.is_empty() {
+      return Ok(0);
+    }
+    let rows_affected = self
+      .repo
+      .update_image_status(image_ids, ImageStatus::Deleted)
+      .await?;
+    Ok(rows_affected)
   }
 }
 
@@ -123,7 +137,10 @@ mod tests {
     .unwrap();
 
     // Mark as deleted
-    service.change_image_is_deleted(200, true).await.unwrap();
+    service
+      .change_image_is_deleted(vec![200], true)
+      .await
+      .unwrap();
 
     let is_del: bool = sqlx::query_scalar("SELECT is_deleted FROM images WHERE id = 200")
       .fetch_one(&pool)
@@ -137,7 +154,7 @@ mod tests {
     let (service, _) = setup_service().await;
 
     // Try to delete an image that doesn't exist
-    let result = service.change_image_is_deleted(999, true).await;
+    let result = service.change_image_is_deleted(vec![999], true).await;
 
     // This verifies that the Repository's DatabaseError::NotFound
     // is correctly converted into an AppError (assuming your ? handles this)

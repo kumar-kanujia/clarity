@@ -2,8 +2,6 @@
 
 ## Implemented Capabilities
 
----
-
 ### Image Discovery & Import
 
 **Status:** ✅ Implemented
@@ -16,6 +14,7 @@
 - Data stored per image:
   - File path, file name, file size (bytes)
   - Creation and modification timestamps
+
 - Import produces a deterministic summary: total scanned, imported, skipped, failed
 
 ---
@@ -47,12 +46,40 @@
 
 **Status:** ✅ Implemented
 
-- SHA-256 hash computed from full file content via streaming read
+- BLAKE3 hash computed from full file content via streaming read
 - Prevents high memory usage for large files
 - Hash stored persistently in database
-- Hashing runs as a background worker (`FileHashWorker`)
-- Hashing is the first stage of the processing pipeline (`Pending → Hashed`)
-- Foundation for deterministic duplicate detection
+- Hashing is performed by a dedicated background worker
+- Hash establishes deterministic file identity
+- Provides foundation for exact duplicate detection
+
+---
+
+### Event-Driven Worker System
+
+**Status:** ✅ Implemented
+
+The processing pipeline is fully event-driven.
+
+- Workers execute only when work exists
+- Workers remain idle when no work is available
+- Workers activate immediately when events are emitted
+- No continuous polling or loop-based processing exists
+
+Event guarantees:
+
+- Events emitted only after successful database commit
+- Duplicate events cannot cause duplicate processing
+- Worker execution is deterministic
+- Worker crash isolation enforced via panic containment
+- Retry logic ensures transient failures do not block processing
+- Worker restart safely resumes unfinished work
+
+Pipeline stages:
+
+`Pending → Hashed → Thumbnailed`
+
+Each stage emits events that trigger the next stage.
 
 ---
 
@@ -61,14 +88,18 @@
 **Status:** ✅ Implemented
 
 - Thumbnails generated at 256px (longest edge), saved as `.webp`
-- Thumbnails generated as a background worker (`ThumbnailWorker`), after hashing completes
-- Two-stage processing pipeline: `Pending → Hashed → Thumbnailed`
-- Thumbnail generation does not block import or DB operations
-- Each worker uses Rayon-parallel batch processing (batch size = `num_cpus * factor`)
-- Workers use `MAX_WORKER_RETRIES` to skip files that fail repeatedly
-- Worker execution is wrapped in `panic::catch_unwind` for crash isolation
+- Thumbnail generation triggered automatically after hashing completes
+- Thumbnail generation performed by background workers
+- Thumbnail generation does not block import or database operations
 - Thumbnails cached in the OS app cache directory
 - Thumbnails associated with image records by ID
+- Thumbnail cache lifecycle tied to image lifecycle
+
+Reliability guarantees:
+
+- Worker crash isolation via panic containment
+- Retry limits enforced for problematic files
+- Batch processing performed safely
 
 ---
 
@@ -78,20 +109,8 @@
 
 - Any image can be marked as a favorite via a toggle
 - Favorite state persisted in the database
-- Favorites gallery view: cursor-paginated listing of all favorited images
-- Favorite toggle returns the new state after the operation
-
----
-
-### Soft Delete (Bin)
-
-**Status:** ✅ Implemented
-
-- Images can be soft-deleted (moved to the Bin) without removing from disk or database
-- Soft-deleted images are excluded from the main gallery
-- Bin view shows all soft-deleted images (cursor-paginated)
-- Undo soft delete restores an image to the main gallery
-- No files are modified or deleted on disk
+- Favorites gallery view supported
+- Favorite toggle returns new state after operation
 
 ---
 
@@ -99,22 +118,121 @@
 
 **Status:** ✅ Implemented
 
-- Tags stored in a dedicated database table (`TagType`: `User` / `Deleted`)
-- Many-to-many relationship between images and tags enforced at the database level
-- Referential integrity enforced
-- Tags persist across application restarts
-- Tag management:
-  - Create a new user tag (name + hex color; name is normalized to lowercase-hyphenated; color validated and uppercased)
-  - Edit tag name and/or color (partial updates supported)
-  - Soft-delete a tag (changes type to `Deleted`; not physically removed)
-  - List all tags sorted by usage count (most used first)
-  - Fetch top N most-used tags
-- Tag assignment on images:
-  - Toggle tag on/off for a given image
-  - Duplicate tag assignments prevented at DB level
-  - List tags attached to a specific image
-  - List tags _not yet_ attached to a specific image (available tags)
-- Tag Gallery: cursor-paginated image listing scoped to a specific tag
+Tag system supports full lifecycle management.
+
+Tag creation:
+
+- Create user-defined tag (name + hex color)
+- Name normalization enforced
+- Color validation enforced
+
+Tag assignment:
+
+- Assign tag to image
+- Remove tag from image
+- Prevent duplicate assignments
+- List tags on image
+- List tags not yet assigned
+
+Tag lifecycle:
+
+- Soft delete tag (reversible)
+- Restore deleted tag
+- Permanent tag delete
+
+Integrity guarantees:
+
+- Tag ID preserved across restore
+- Tag assignments preserved across restore
+- Permanent delete removes all tag relationships
+- Referential integrity enforced at database level
+
+Tag querying:
+
+- List all active tags
+- List deleted tags
+- List all tags
+- List tags sorted by usage count
+- Retrieve most-used tags
+
+Tag gallery:
+
+- Cursor-paginated image listing by tag
+
+---
+
+### Soft Delete (Bin)
+
+**Status:** ✅ Implemented
+
+- Images can be soft-deleted without affecting original files
+- Soft-deleted images excluded from main gallery
+- Bin view shows soft-deleted images
+- Undo operation restores image
+- No filesystem modifications occur
+
+---
+
+### Permanent Image Delete
+
+**Status:** ✅ Implemented
+
+Permanent delete fully removes image from application state.
+
+Permanent delete removes:
+
+- Image database record
+- Tag assignments
+- Favorite state
+- Processing pipeline state
+- Duplicate relationships
+- Thumbnail cache file
+
+Safety guarantees:
+
+- Original image file on disk is never modified or deleted
+- Operation requires explicit invocation
+- Operation is fully logged
+- No orphan records or files remain
+
+---
+
+### Bulk Operations
+
+**Status:** ✅ Implemented
+
+Provides deterministic bulk state transition primitives executed within a single database transaction.
+
+Supported bulk operations:
+
+- **Bulk Soft Delete:** Marks multiple specified images as soft-deleted without modifying original files.
+- **Bulk Restore:** Restores multiple soft-deleted images.
+- **Bulk Permanent Delete:** Fully removes multiple image records, tag assignments, favorite states, pipeline states, duplicate relationships, and safely cleans up thumbnail cache files.
+- **Bulk Tag Attach:** Assigns a tag to multiple images, preventing duplicate assignments.
+- **Bulk Tag Removal:** Removes a tag from multiple specified images.
+
+Integrity guarantees:
+
+- Operations never internally call single-item operations.
+- No partial state transitions are possible.
+- Referential integrity is strictly preserved.
+- Thumbnail cache cleanup occurs only after a successful database delete.
+- Structured logs are emitted for all bulk operations.
+
+---
+
+### Multi-Selection UI
+
+**Status:** ✅ Implemented
+
+Integrates deterministic multi-selection with backend bulk operations.
+
+- Maintains selection state independently without implementing state transition logic.
+- Supported selection models:
+  - Single selection
+  - Multi-selection
+  - Selection clearing
+- Directly invokes backend bulk actions for tag attach, tag removal, soft delete, restore, and permanent delete.
 
 ---
 
@@ -122,18 +240,27 @@
 
 **Status:** ✅ Implemented
 
-- Explicit error taxonomy at each layer:
-  - `AppError`: `Scan`, `Join`, `Database`, `Internal`, `FileAccess`, `Validation`, `Unknown`
-  - `DatabaseError`: wraps `sqlx::Error`, includes `RecordAlreadyExists` variant
-  - `CommandError`: frontend-safe serialization of application errors
-  - Processing errors: `MetadataError`, `ThumbnailError`, `HashError`
+Explicit error taxonomy:
 
-- Worker errors handled per-item with retry tracking
-- Individual item failures do not abort the batch
-- `panic::catch_unwind` isolation prevents any single file from crashing a worker
-- Fatal errors terminate cleanly with structured diagnostics
+- AppError
+- DatabaseError
+- CommandError
+- MetadataError
+- ThumbnailError
+- HashError
 
-- Logs never include raw image data
+Reliability guarantees:
+
+- Worker errors handled per-item
+- Retry tracking prevents infinite retries
+- Worker crashes isolated
+- Fatal errors terminate cleanly
+
+Logging guarantees:
+
+- Structured tracing logs
+- No raw image data logged
+- Full operational observability
 
 ---
 
@@ -141,21 +268,22 @@
 
 **Status:** ✅ Implemented
 
-Each import produces a deterministic summary:
+Each import produces deterministic metrics:
 
 - Total files visited
 - Valid images indexed
-- Skipped / walk errors
-- Metadata extraction failures
-- Total imported to database
+- Skipped files
+- Metadata failures
+- Successfully imported images
 
-Each worker batch logs:
+Worker batches log:
 
-- Input count, output count, DB updated count
-- Batch duration (milliseconds)
-- Worker name and batch ID
+- Batch input/output counts
+- Database update counts
+- Batch duration
+- Worker identity
 
-System state and health can be diagnosed from logs alone.
+System state diagnosable from logs alone.
 
 ---
 
@@ -163,48 +291,62 @@ System state and health can be diagnosed from logs alone.
 
 **Status:** ✅ Implemented
 
-Four distinct gallery views, all cursor-paginated with readability filtering:
+Four distinct gallery views:
 
-| View ID     | Filter                                    |
-| ----------- | ----------------------------------------- |
-| Gallery     | Active images (`is_deleted = false`)      |
-| Favorites   | Favorited active images                   |
-| Bin         | Soft-deleted images (`is_deleted = true`) |
-| Tag Gallery | Active images with a specific tag         |
+| View        | Description             |
+| ----------- | ----------------------- |
+| Gallery     | Active images           |
+| Favorites   | Favorited active images |
+| Trash       | Soft-deleted images     |
+| Tag Gallery | Images filtered by tag  |
 
-- Readability check applied at retrieval: unreadable files are silently skipped with a warning log
-- Next-page cursor returned when more results exist
+Properties:
 
----
-
-## Out of Scope (For Now)
-
-- File copying or app-managed storage
-- Automatic file reorganization
-- Similarity or AI-based image matching
-- Cloud sync or sharing features
-- Automatic duplicate resolution
-- Physical file deletion from disk
+- Cursor-paginated
+- Deterministic ordering
+- Readability filtering applied
+- Next-page cursor provided when applicable
 
 ---
 
 ## System Design Guarantees
 
-The system is built around the following principles:
+Clarity enforces the following guarantees:
 
-- **Deterministic behavior** — same input always produces same output
-- **Local-first operation** — no network calls, no cloud dependency
-- **Explicit state transitions** — `Pending → Hashed → Thumbnailed` tracked in DB
-- **No hidden or automatic file modification** — files are never moved, renamed, or deleted
-- **Database as single source of truth** — all state is in SQLite
-- **Observable and diagnosable operation** through structured `tracing` logs
-- **Panic isolation** — background workers cannot crash the application
+- Deterministic behavior
+- Local-first operation
+- Explicit state transitions
+- Event-driven processing
+- Database as single source of truth
+- No hidden or implicit state mutation
+- No modification of original files
+- Full lifecycle integrity
+- Crash-safe background processing
+- Observable and diagnosable operation
 
 ---
 
-## How to Use This Document
+## Out of Scope
 
-- Anything listed under **Implemented Capabilities** must work end-to-end.
-- This document reflects production-level backend guarantees.
-- Capabilities are added only after full implementation and validation.
-- Planned or experimental features must not appear here.
+The following are intentionally not implemented:
+
+- File copying or relocation
+- Automatic file organization
+- Cloud synchronization
+- AI-based image classification
+- Automatic duplicate resolution
+- Physical deletion of original image files
+
+---
+
+## Capability Promotion Rule
+
+Capabilities are added to this document only when:
+
+- Fully implemented
+- Fully tested
+- Deterministic
+- Reliable
+- Production-safe
+
+This document defines the production guarantees of the Clarity backend.

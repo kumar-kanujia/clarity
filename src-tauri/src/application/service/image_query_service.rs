@@ -34,11 +34,11 @@ impl ImageQueryService {
     }
   }
 
-  async fn filter_and_process_image(
+  async fn filter_and_process_images(
     &self,
     images: Vec<ImageItemRow>,
   ) -> Result<Vec<ImageItem>, AppError> {
-    let processed = tokio::task::spawn_blocking(move || {
+    tokio::task::spawn_blocking(move || {
       images
         .into_iter()
         .filter_map(|raw| {
@@ -55,9 +55,17 @@ impl ImageQueryService {
         .collect()
     })
     .await
-    .map_err(|e| AppError::Join { source: e })?;
+    .map_err(|e| AppError::Join { source: e })
+  }
 
-    Ok(processed)
+  async fn paginate_and_process(
+    &self,
+    raw_images: Vec<ImageItemRow>,
+    limit: i64,
+  ) -> Result<ImageItemResult, AppError> {
+    let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
+    let data = self.filter_and_process_images(images_to_process).await?;
+    Ok(ImageItemResult { data, next_cursor })
   }
 
   pub async fn list_image_items(
@@ -67,16 +75,23 @@ impl ImageQueryService {
     is_deleted: bool,
     is_favorite: Option<bool>,
   ) -> Result<ImageItemResult, AppError> {
-    let raw_images = self
+    let raw = self
       .repo
       .get_images_paginated(cursor, limit + 1, is_deleted, is_favorite)
       .await?;
+    self.paginate_and_process(raw, limit).await
+  }
 
-    let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
-
-    let data = self.filter_and_process_image(images_to_process).await?;
-
-    Ok(ImageItemResult { data, next_cursor })
+  pub async fn list_untagged_image_items(
+    &self,
+    limit: i64,
+    cursor: Option<CreatedAtCursor>,
+  ) -> Result<ImageItemResult, AppError> {
+    let raw = self
+      .repo
+      .get_untagged_images_paginated(cursor, limit + 1)
+      .await?;
+    self.paginate_and_process(raw, limit).await
   }
 
   pub async fn list_tagged_image_items(
@@ -85,16 +100,11 @@ impl ImageQueryService {
     limit: i64,
     cursor: Option<CreatedAtCursor>,
   ) -> Result<ImageItemResult, AppError> {
-    let raw_images = self
+    let raw = self
       .repo
       .get_images_by_tag_paginated(cursor, limit + 1, tag_id)
       .await?;
-
-    let (next_cursor, images_to_process) = self.split_for_pagination(raw_images, limit);
-
-    let data = self.filter_and_process_image(images_to_process).await?;
-
-    Ok(ImageItemResult { data, next_cursor })
+    self.paginate_and_process(raw, limit).await
   }
 }
 

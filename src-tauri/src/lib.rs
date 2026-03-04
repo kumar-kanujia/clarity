@@ -7,10 +7,21 @@ mod tests;
 
 use crate::{
   interface::command::{
-    gallery_command::{fetch_bin, fetch_favorites, fetch_gallery, fetch_tag_gallery},
-    image_command::{import_images, soft_delete_image, toggle_favorite, undo_soft_delete_image},
-    image_tag_command::{fetch_attached_tags, fetch_available_tags, toggle_tag},
-    tag_command::{create_tag, edit_tag, fetch_all_tags, fetch_top_tags, soft_delete_tag},
+    gallery_command::{
+      fetch_all_images, fetch_favorites, fetch_tag_images, fetch_trash, fetch_untagged_images,
+    },
+    image_command::{
+      delete_from_trash, empty_trash, import_images, move_to_trash, restore_from_trash,
+      toggle_favorite,
+    },
+    image_tag_command::{
+      attach_tag, attached_tags, attached_tags_multiple, available_tags, available_tags_multiple,
+      remove_tag, toggle_tag,
+    },
+    tag_command::{
+      create_tag, delete_tag, edit_tag, fetch_active_tags, fetch_inactive_tags, fetch_top_tags,
+      mark_tag_active, mark_tag_inactive,
+    },
   },
   setup::{app_callback, app_setup, logger::Logger},
 };
@@ -22,27 +33,37 @@ pub fn run() {
 
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
-    .plugin(tauri_plugin_opener::init())
     .setup(app_setup)
     .invoke_handler(tauri::generate_handler![
+      // Images
       import_images,
-      fetch_gallery,
-      toggle_favorite,
-      soft_delete_image,
-      undo_soft_delete_image,
+      fetch_all_images,
       fetch_favorites,
-      fetch_bin,
-      fetch_tag_gallery,
+      fetch_untagged_images,
+      fetch_tag_images,
+      toggle_favorite,
+      fetch_trash,
+      move_to_trash,
+      restore_from_trash,
+      empty_trash,
+      delete_from_trash,
       // Tags
       create_tag,
       edit_tag,
       fetch_top_tags,
-      fetch_all_tags,
-      soft_delete_tag,
-      // Image tags
+      fetch_active_tags,
+      fetch_inactive_tags,
+      mark_tag_inactive,
+      mark_tag_active,
+      delete_tag,
+      // Image Tags
+      attached_tags,
+      available_tags,
       toggle_tag,
-      fetch_attached_tags,
-      fetch_available_tags
+      available_tags_multiple,
+      attached_tags_multiple,
+      attach_tag,
+      remove_tag,
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Field, FieldGroup, FieldError } from "@/components/ui/field"
+import { cn } from "@/lib/utils"
+import { Field, FieldError, FieldGroup } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { cn } from "@/lib/utils"
 
 export const ColorEnum = z.enum(
   [
@@ -40,7 +40,7 @@ export const tagFormSchema = z.object({
   tagText: z
     .string()
     .min(3, "Tag must be at least 3 characters.")
-    .max(6, "Tag cannot exceed 6 characters."),
+    .max(8, "Tag cannot exceed 8 characters."),
   color: ColorEnum
 })
 

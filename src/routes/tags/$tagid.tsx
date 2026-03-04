@@ -1,22 +1,32 @@
-import { MainImageView } from "@/components/view"
-import { getTagGalleryQueryOptions } from "@/features/tags/hooks"
+import { State } from "@/features/common/components/state"
+import { getTagImageQueryOptions } from "@/features/images/queries"
+import { ImageGridView } from "@/features/images/view"
 import { createFileRoute, useParams } from "@tanstack/react-router"
-import { useMemo } from "react"
+import { Suspense, useMemo } from "react"
 
 export const Route = createFileRoute("/tags/$tagid")({
   component: RouteComponent,
   loader: ({ context, params }) => {
     context.queryClient.ensureInfiniteQueryData(
-      getTagGalleryQueryOptions(Number.parseInt(params.tagid))
+      getTagImageQueryOptions(Number.parseInt(params.tagid))
     )
-  }
+  },
+  errorComponent: () => (
+    <State variant="error" message="Something went wrong!" />
+  )
 })
 
 function RouteComponent() {
   const { tagid } = useParams({ from: "/tags/$tagid" })
+
   const queryOptions = useMemo(
-    () => getTagGalleryQueryOptions(Number(tagid)),
+    () => getTagImageQueryOptions(Number.parseInt(tagid)),
     [tagid]
   )
-  return <MainImageView queryOptions={queryOptions} />
+
+  return (
+    <Suspense fallback={<State variant="loading" />}>
+      <ImageGridView queryOptions={queryOptions} mode="tag" />
+    </Suspense>
+  )
 }

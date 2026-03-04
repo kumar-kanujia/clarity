@@ -28,7 +28,7 @@ impl ImageImportWorkflow {
     let files_metadata =
       file_scan_service::extract_metadata_for_files(file_scan_summary.files).await?;
 
-    let imported_count = self
+    let imported_images = self
       .mutation_service
       .persist_file_metadata_for_images(&files_metadata)
       .await?;
@@ -37,7 +37,7 @@ impl ImageImportWorkflow {
       total_scanned,
       walk_errors,
       files_metadata.len() as i64,
-      imported_count,
+      imported_images as i64,
     ))
   }
 }

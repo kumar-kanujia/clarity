@@ -45,7 +45,7 @@
       "force": false,
       "includePatterns": null,
       "includePrivate": false,
-      "outputPath": "./src/services/tauri",
+      "outputPath": "./src/tauri",
       "projectPath": "./src-tauri",
       "typeMappings": null,
       "validationLibrary": "zod",

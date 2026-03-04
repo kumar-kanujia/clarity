@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::infrastructure::{
   fs::error::FSError, processing::error::ProcessingError, repo::error::DatabaseError,
 };
@@ -39,6 +41,16 @@ pub enum AppError {
     source: tauri::Error,
   },
 
-  #[error("Something went wrong")]
-  Unknown,
+  #[error("Unknown error: {0}")]
+  Unknown(String),
+}
+
+pub fn extract_panic_message(payload: &Box<dyn Any + Send>) -> String {
+  if let Some(s) = payload.downcast_ref::<&str>() {
+    s.to_string()
+  } else if let Some(s) = payload.downcast_ref::<String>() {
+    s.clone()
+  } else {
+    "Unknown panic payload".to_string()
+  }
 }

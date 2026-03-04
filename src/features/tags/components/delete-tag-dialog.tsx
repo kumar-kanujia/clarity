@@ -8,19 +8,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog"
-import { useDeleteTagStore } from "../store"
 import { useEffect, useState } from "react"
-import { useSoftDeleteTag } from "../hooks"
-import { useQueryClient } from "@tanstack/react-query"
+import { useDeleteTagStore } from "../store/tag-store"
+
+import { useDeleteTag } from "../hooks"
 
 export const DeleteTagDialog = () => {
-  const qc = useQueryClient()
-
   const [open, setOpen] = useState(false)
 
   const { tag, closeDeleteDialog } = useDeleteTagStore()
 
-  const { mutate, isPending } = useSoftDeleteTag()
+  const { mutate, isPending } = useDeleteTag()
 
   useEffect(() => {
     if (tag) {
@@ -33,11 +31,7 @@ export const DeleteTagDialog = () => {
   const handleConfirmDelete = () => {
     if (tag) {
       mutate(tag.id, {
-        onSuccess: async () => {
-          await qc.invalidateQueries({
-            refetchType: "all",
-            queryKey: ["tags"]
-          })
+        onSuccess: () => {
           closeDeleteDialog()
         }
       })
