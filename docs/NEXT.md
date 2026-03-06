@@ -1,95 +1,54 @@
-# NEXT — Untagged Gallery, Backend Refinement, and UI Polish
+# NEXT — Duplicate & Similar Image Detection
 
-Context: Core backend functionality and bulk state transitions are complete and production-ready. Before advancing to duplicate detection, this phase focuses on structural polish: introducing an untagged gallery view, rigorously auditing existing backend commands, and sharpening the UI for a tighter, more cohesive user experience.
+Context: The core gallery views and backend pipelines are complete. This phase introduces a unified architecture for finding and resolving duplicate images. It is split into two parts: first, identifying exact duplicates using the existing BLAKE3 hashes, and second, extending that foundation to identify visually similar images.
 
 Rule:
 Work top to bottom.
 Do not skip sections.
-Do not introduce implicit behavior.
+Do not introduce implicit behavior (e.g., auto-deleting duplicates).
 All state transitions must remain explicit, deterministic, and observable.
 
 ---
 
-# SECTION 1 — Untagged Gallery View
+# SECTION 1 — Exact Duplicate Resolution (Content Hash)
 
-Goal: Implement a deterministic gallery view for images that currently have zero tag assignments, ensuring no images get "lost" in the library.
+Goal: Leverage existing BLAKE3 hashes to group exact duplicates and provide a UI for users to safely resolve them using the existing bulk operation architecture.
 
-## Part 1.1 — Backend Implementation
+## Part 1.1 — Backend Grouping API
 
-- [x] Define backend query for retrieving untagged images
-- [x] Ensure query respects soft-delete (exclude images in trash)
-- [x] Ensure query utilizes cursor-based (keyset) pagination
-- [x] Guarantee deterministic ordering (e.g., by ID or timestamp)
-- [x] Ensure readability filtering is applied
+- [ ] Define a standard API response for groups: e.g., `{ group_id, match_type: "EXACT", items: [...] }`.
+- [ ] Implement query to group active images by identical BLAKE3 hashes (where `count > 1`).
+- [ ] Ensure query respects soft-delete (exclude images in trash).
+- [ ] Utilize cursor-based (keyset) pagination across the _groups_ to guarantee deterministic ordering and efficient loading.
+- [ ] Guarantee deterministic ordering within each group (e.g., sort by ID or import timestamp).
 
-Completion Check:
+## Part 1.2 — Duplicates Gallery UI
 
-- [x] Query returns correct, paginated results
-- [x] Performance remains stable on large datasets
-
-## Part 1.2 — UI Integration
-
-- [x] Add "Untagged" to the main navigation/sidebar views
-- [x] Wire up the untagged gallery to the new backend query
-- [x] Ensure multi-selection and bulk operations work seamlessly within this view
-- [x] Provide a clear "Empty State" message when all images are tagged
-
-Completion Check:
-
-- [x] Untagged view correctly displays images missing tags
-- [x] Bulk tagging an image immediately removes it from the untagged view
+- [ ] Add "Duplicates" to the main navigation/sidebar views.
+- [ ] Build a UI layout that visually separates distinct groups (e.g., card containers or distinct dividers per group).
+- [ ] Display vital metadata inline (file size, resolution, import date) to assist user decisions.
+- [ ] Integrate the existing multi-selection UI within the grouped view.
+- [ ] Add "Keep Oldest" or "Keep Newest" quick-action helpers for faster selection within a group.
+- [ ] Wire selected removals to the existing single-transaction bulk soft-delete operation.
+- [ ] Ensure a group is immediately removed from the view once resolved (only one image remains).
 
 ---
 
-# SECTION 2 — Backend Command Refinement
+# SECTION 2 — Similar Image Detection (Visual/Perceptual)
 
-Goal: Audit and improve existing backend commands to ensure maximum consistency, performance, and adherence to the project's strict error taxonomy and logging rules.
+Goal: Introduce perceptual hashing (or embeddings) to find visually similar, but not byte-for-byte identical, images. Seamlessly integrate this into the UI built in Section 1.
 
-## Part 2.1 — Command Audit & Consistency
+## Part 2.1 — Backend Implementation
 
-- [x] Improve image pipline
-- [x] Review all single-item and bulk commands for consistent parameter handling
-- [x] Ensure single DB transactions are strictly used where multiple mutations occur
-- [x] Audit all SQL queries for N+1 execution flaws
-- [x] Verify that all commands return clean, predictable payload structures to the frontend
+- [ ] Implement a new hashing strategy (e.g., dHash, pHash) during the import/thumbnailing pipeline to represent visual content.
+- [ ] Create a background job or query to identify images with high similarity (low Hamming distance).
+- [ ] Extend the Grouping API from Section 1 to return `{ match_type: "SIMILAR" }` payloads.
 
-## Part 2.2 — Error Handling & Logging Standardization
+## Part 2.2 — UI Integration
 
-- [x] Ensure all commands map failures to the explicit error taxonomy (`AppError`, `DatabaseError`, etc.)
-- [x] Verify no raw image data or sensitive OS paths are leaked in frontend error messages
-- [x] Standardize structured tracing logs across all commands (inputs, execution time, result state)
-- [x] Audit worker panic containment and retry limits
-
-Completion Check:
-
-- [x] Backend commands are universally consistent in input, output, and failure modes
-- [x] Logs provide full operational observability without noise
-
----
-
-# SECTION 3 — UI Polish and Sharpness
-
-Goal: Elevate the UI from "good" to "sharp." Improve visual hierarchy, component feedback, and overall aesthetic crispness without bloating the frontend.
-
-## Part 3.1 — Visual Hierarchy & Typography
-
-- [x] Refine typography (font sizes, weights, line heights) for better readability
-- [x] Standardize spacing, padding, and margins across all gallery views and sidebars
-- [x] Polish border radii, subtle borders, and contrast ratios for a cleaner aesthetic
-- [x] Improve scrollbar styling to match the application theme
-
-## Part 3.2 — Component Feedback & Interactions
-
-- [x] Enhance hover states on image thumbnails, tags, and buttons
-- [x] Polish multi-selection visual indicators (e.g., clearer checkmarks, border highlights)
-- [x] Smooth out transitions for entering/exiting selection mode
-- [x] Ensure loading states (skeletons or spinners) are subtle and non-jarring
-- [x] Sharpen modal and dialog animations (bulk action confirmations, tag creation)
-
-Completion Check:
-
-- [x] UI feels immediately responsive and visually cohesive
-- [x] Selection and action states are unmistakable to the user
+- [ ] Update the Duplicates view to support a toggle or separate tab for "Exact Matches" vs "Similar Matches".
+- [ ] Ensure the "Similar" view reuses the group separation layout, multi-selection, and bulk deletion workflows built in Part 1.2.
+- [ ] Surface a "Similarity Score" or visual indicator in the UI to help users understand why the images were grouped.
 
 ---
 
@@ -97,9 +56,9 @@ Completion Check:
 
 When all sections are complete:
 
-- Update CAPABILITIES.md to reflect the Untagged View and UI/Backend stability guarantees.
+- Update CAPABILITIES.md to reflect Exact and Similar Image Detection features.
 - Archive this file.
-- Create new NEXT.md for the Duplicate Detection phase.
+- Create new NEXT.md for the next phase.
 
 System must remain:
 
