@@ -48,12 +48,9 @@ impl ImageMutationService {
   }
 
   pub async fn hard_delete_images(&self, image_ids: &[i64]) -> Result<u64, AppError> {
-    if image_ids.is_empty() {
-      return Ok(0);
-    }
     let rows_affected = self
       .repo
-      .update_image_status(image_ids, ImageStatus::Deleted)
+      .update_image_status(image_ids, ImageStatus::Deleted, Some(true))
       .await?;
     Ok(rows_affected)
   }

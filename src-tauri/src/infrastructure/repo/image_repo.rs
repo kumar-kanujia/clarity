@@ -83,6 +83,8 @@ impl ImageRepository {
       return Ok(0);
     }
 
+    let mut tx = self.db.begin().await?;
+
     let mut qb = QueryBuilder::new("DELETE FROM images WHERE id IN (");
     let mut separated = qb.separated(", ");
 
@@ -91,7 +93,12 @@ impl ImageRepository {
     }
 
     separated.push_unseparated(")");
-    Ok(qb.build().execute(&self.db).await?.rows_affected())
+
+    let rows_affected = qb.build().execute(&mut *tx).await?.rows_affected();
+
+    tx.commit().await?;
+
+    Ok(rows_affected)
   }
 
   pub async fn update_images_content_hash(&self, updates: &[Image]) -> Result<u64, DatabaseError> {
@@ -198,6 +205,7 @@ impl ImageRepository {
     &self,
     image_ids: &[i64],
     status: ImageStatus,
+    is_deleted: Option<bool>,
   ) -> Result<u64, DatabaseError> {
     if image_ids.is_empty() {
       return Ok(0);
@@ -206,7 +214,16 @@ impl ImageRepository {
     let mut qb = QueryBuilder::new("UPDATE images SET status = ");
     qb.push_bind(status);
 
-    qb.push(" WHERE is_deleted = 1 AND id IN (");
+    qb.push(" WHERE ");
+
+    if let Some(is_deleted) = is_deleted {
+      qb.push("is_deleted = ");
+      qb.push_bind(is_deleted);
+      qb.push(" AND ");
+    }
+
+    qb.push("id IN (");
+
     let mut separated = qb.separated(", ");
     for id in image_ids {
       separated.push_bind(id);
@@ -214,6 +231,7 @@ impl ImageRepository {
     qb.push(")");
 
     let mut tx = self.db.begin().await?;
+
     let rows_count = qb.build().execute(&mut *tx).await?.rows_affected();
     tx.commit().await?;
     Ok(rows_count)
@@ -230,6 +248,7 @@ impl ImageRepository {
 
     let mut qb = QueryBuilder::new("UPDATE images SET is_deleted = ");
     qb.push_bind(is_deleted);
+    
     qb.push(" WHERE id IN (");
     let mut separated = qb.separated(", ");
     for id in image_ids {

@@ -26,15 +26,14 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE INDEX IF NOT EXISTS idx_images_active_pagination 
-ON images (created_at DESC, id DESC) 
-WHERE is_deleted = 0;
+CREATE INDEX IF NOT EXISTS idx_images_active_pagination
+ON images (is_deleted, is_favorite, status, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_images_work_queue
 ON images (status, retry_count, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_images_hash_created_at
-ON images (content_hash, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_images_content_hash_status
+ON images (content_hash, status);
 
 CREATE INDEX IF NOT EXISTS idx_image_file_name
 ON images (file_name);
