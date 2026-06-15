@@ -1,3 +1,4 @@
+pub mod collection_query_service;
 pub mod file_hash_service;
 pub mod file_scan_service;
 pub mod image_mutation_service;

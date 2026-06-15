@@ -7,6 +7,7 @@ mod tests;
 
 use crate::{
   interface::command::{
+    collection_command::exact_duplicate_stats,
     gallery_command::{
       fetch_all_images, fetch_favorites, fetch_tag_images, fetch_trash, fetch_untagged_images,
     },
@@ -64,6 +65,8 @@ pub fn run() {
       attached_tags_multiple,
       attach_tag,
       remove_tag,
+      // Collection
+      exact_duplicate_stats,
     ])
     .build(tauri::generate_context!())
     .expect("error while running tauri application");
